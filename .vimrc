@@ -69,8 +69,9 @@ set mat=2
 " My editor my rules
 set textwidth=120
 set wrapmargin=2
-set linebreak
-
+"set wrap "Wrap lines
+"set linebreak
+"
 " Keep all backups in one place, needs to be aligned with the system (VIM does
 " not create directories)
 set backup
@@ -108,7 +109,6 @@ autocmd Filetype python setlocal ts=2 sts=2 sw=2
 
 set ai "Auto indent
 set si "Smart indent
-set wrap "Wrap lines
 
 map <C-n> :bnext<CR>
 map <C-p> :bp<CR>
@@ -134,7 +134,7 @@ set statusline+=\ [POS=%.4l/%.4L\ (%p%%)]
 set hidden
 
 if &diff
-	colorscheme blue
+	colorscheme monokai "too cool :)
 else
 	colorscheme monokai
 endif
@@ -182,3 +182,5 @@ let g:syntastic_auto_jump = 1
 let g:neocomplcache_enable_at_startup=1
 set omnifunc=syntaxcomplete#Complete
 set completeopt=longest,menuone
+highlight Pmenu ctermfg=black ctermbg=lightblue
+highlight PmenuSel ctermfg=white ctermbg=red
