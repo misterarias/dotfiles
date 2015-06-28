@@ -5,4 +5,6 @@
 [rerere]
 		enabled = true
 [color]
-		ui = true
+  ui = true
+[alias]
+    lg = log --pretty=oneline --abbrev-commit --graph --decorate --all
