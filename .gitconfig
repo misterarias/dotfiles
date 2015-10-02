@@ -1,7 +1,7 @@
 [user]
   name = Juan Arias
 [push]
-  default = upstream
+  default = simple
 [rerere]
   enabled = true
 [color]
