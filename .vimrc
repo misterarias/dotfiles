@@ -67,7 +67,7 @@ set showmatch
 set mat=2
 
 " My editor my rules
-set textwidth=120
+set textwidth=200
 set wrapmargin=2
 "set wrap "Wrap lines
 "set linebreak
@@ -124,7 +124,7 @@ set laststatus=2
 "set wildmenu
 
 set statusline= "clear, for when vimrc is reloaded
-set statusline+=%.45F%m%r%h%w
+set statusline+=%.80F%m%r%h%w
 set statusline+=\ [ENC=%{&fenc}]
 set statusline+=\ [TYPE=%Y]
 set statusline+=%= " right align
@@ -174,9 +174,9 @@ let g:syntastic_yaml_checkers = ['yaml-lint']
 let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_aggregate_errors = 1
 let g:syntastic_auto_loc_list = 1
-let g:syntastic_check_on_open = 1
+let g:syntastic_check_on_open = 0
 let g:syntastic_check_on_wq = 0
-let g:syntastic_auto_jump = 1
+let g:syntastic_auto_jump = 0
 
 " Completion stuff
 let g:neocomplcache_enable_at_startup=1
