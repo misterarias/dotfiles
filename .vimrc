@@ -67,7 +67,7 @@ set showmatch
 set mat=2
 
 " My editor my rules
-set textwidth=200
+set textwidth=240
 set wrapmargin=2
 "set wrap "Wrap lines
 "set linebreak
@@ -174,9 +174,11 @@ let g:syntastic_yaml_checkers = ['yaml-lint']
 let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_aggregate_errors = 1
 let g:syntastic_auto_loc_list = 1
-let g:syntastic_check_on_open = 0
+let g:syntastic_check_on_open = 1
 let g:syntastic_check_on_wq = 0
 let g:syntastic_auto_jump = 0
+let g:syntastic_error_symbol = "✗"
+let g:syntastic_warning_symbol = "⚠"
 
 " Completion stuff
 let g:neocomplcache_enable_at_startup=1
