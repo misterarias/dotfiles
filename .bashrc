@@ -20,7 +20,7 @@ fi
 if [ $ARCH == "Darwin" ] ; then
 	export CLICOLOR=1
 fi
-LSCOLORS=gxfxcxdxbxegedabagacad
+export LSCOLORS=gxfxcxdxbxegedabagacad
 
 #enables color for iTerm
 export TERM=xterm-color
@@ -45,23 +45,25 @@ HISTFILESIZE=100000
 
 # make less more friendly for non-text input files, see lesspipe(1)
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
-LESS="--RAW-CONTROL-CHARS"
+export LESS="--RAW-CONTROL-CHARS"
 
 BOLD=$(tput bold)
 BLUECOLOR=$(tput setaf 4)
 REDCOLOR=$(tput setaf 1)
 GREENCOLOR=$(tput setaf 2)
-BLUECOLOR_BOLD=$BLUECOLOR$BOLD
-REDCOLOR_BOLD=$REDCOLOR$BOLD
-GREENCOLOR_BOLD=$GREENCOLOR$BOLD
+WHITECOLOR=$(tput setaf 7)
+export BLUECOLOR_BOLD=$BLUECOLOR$BOLD
+export REDCOLOR_BOLD=$REDCOLOR$BOLD
+export GREENCOLOR_BOLD=$GREENCOLOR$BOLD
+export WHITECOLOR_BOLD=$WHITECOLOR$BOLD
 ENDCOLOR=$(tput sgr0)
 SEPARATOR="::"
 PROMPT=' $ '
 
 function __jobs() {
     JOB_NUMBER=$(jobs | egrep -c "^\[[0-9]+\]")
-    if [ ${JOB_NUMBER} -gt 0 ] ; then
-        printf "($JOB_NUMBER)"
+    if [ "${JOB_NUMBER}" -gt 0 ] ; then
+      printf "(%d)" "$JOB_NUMBER"
     else
         printf ""
     fi

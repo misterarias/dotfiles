@@ -1,7 +1,6 @@
 # User specific aliases and functions
 alias grep='grep --color'
 alias borracaca='rm `find . | grep -e \.*~ -e *\.rej -e *\.orig` 2>/dev/null'
-alias time='/usr/bin/time -v'
 alias xtidy='tidy -xml -i -c'
 
 # remove duplicates from input file into stdout
@@ -28,13 +27,13 @@ gg() {
 }
 
 # Chorrada
-git() { 
-  case $* in 
-    blame*) 
+git() {
+  case $* in
+    blame*)
       command echo "Probablemente tu, así que mejor no preguntes" ;;
-    * ) 
-      command git "$@" 
-  esac 
+    * )
+      command git "$@"
+  esac
 }
 
 # Thanks: http://stackoverflow.com/questions/10683349/forcing-bash-to-expand-variables-in-a-string-loaded-from-a-file
@@ -46,4 +45,7 @@ apply_shell_expansion() {
   eval "$command"
 }
 
+alias cd..='cd ..'
+alias myip='dig +short myip.opendns.com @resolver1.opendns.com'
+alias gitowners='for branch in `git branch -r | grep -v HEAD`;do echo -e `git show --format="%an ---> %ai %ar" $branch | head -n 1` \\t$branch; done | sort -r'
 #ft=sh; ts=2; sw=2
