@@ -186,3 +186,34 @@ set omnifunc=syntaxcomplete#Complete
 set completeopt=longest,menuone
 highlight Pmenu ctermfg=black ctermbg=lightblue
 highlight PmenuSel ctermfg=white ctermbg=red
+
+" Spell checking!
+let b:myLang=0
+let g:myLangList=["nospell","en_gb"]
+function! ToggleSpell()
+  if !exists( "b:myLang" )
+    if &spell
+      let b:myLang=index(g:myLangList, &spelllang)
+    else
+      let b:myLang=0
+    endif
+  endif
+  let b:myLang=b:myLang+1
+  if b:myLang>=len(g:myLangList)
+    let b:myLang=0
+  endif
+  if b:myLang==0
+    setlocal nospell
+  else
+    execute "setlocal spell spelllang=".get(g:myLangList, b:myLang)
+  endif
+  echo "spell checking language:" g:myLangList[b:myLang]
+endfunction
+
+nmap <silent> <F7> :call ToggleSpell()<CR>
+" ]s -> next spelling error
+nmap z+ ]s
+" [s -> previous spelling error
+nmap z- [s
+" z= -> bring up list of suggestions
+" zg -> Add current spelling error to dictionary
