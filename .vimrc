@@ -12,9 +12,9 @@ Plugin 'scrooloose/syntastic'
 Plugin 'Shougo/neocomplcache.vim'
 Plugin 'kien/ctrlp.vim'
 Plugin 'vim-scripts/bufkill.vim'
-Plugin 'derekwyatt/vim-scala'
-Plugin 'git://git.code.sf.net/p/vim-latex/vim-latex'
-Plugin 'othree/html5.vim'
+"Plugin 'derekwyatt/vim-scala'
+"Plugin 'git://git.code.sf.net/p/vim-latex/vim-latex'
+"Plugin 'othree/html5.vim'
 
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
@@ -191,8 +191,14 @@ highlight PmenuSel ctermfg=white ctermbg=red
 let b:myLang=0
 let g:myLangList=["nospell","en_gb"]
 function! ToggleSpell()
-  let b:myLang=b:myLang+1
-  if b:myLang>=len(g:myLangList) | let b:myLang=0 | endif
+  if !exists( "b:myLang" )
+    let b:myLang=0
+  else
+    let b:myLang=b:myLang+1
+    if b:myLang>=len(g:myLangList)
+      let b:myLang=0
+    endif
+  endif
   if b:myLang==0
     setlocal nospell
   else
