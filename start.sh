@@ -14,9 +14,6 @@ git clone https://github.com/gmarik/Vundle.vim ${VIMDIR}/bundle/Vundle.vim
 cp .vimrc ~/.vimrc
 vim +PluginInstall +qall
 
-echo -e "${GREENCOLOR}Installing 'Conque-Shell' from .vba file ...${ENDCOLOR}"
-vim 'https://conque.googlecode.com/files/conque_2.3.vmb' -c ':so % | q'
-
 # Next, setup session dotfiles
 echo -e "${GREENCOLOR}Setting up bashrc.....${ENDCOLOR}"
 [[ $(grep -c "\. ~/.bashrc" ~/.bash_profile) -ne 1 ]] && cat >> ~/.bash_profile << _EOF 
