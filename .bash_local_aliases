@@ -1,3 +1,4 @@
+# vi: ft=sh ts=2 sw=2
 # User specific aliases and functions
 alias grep='grep --color'
 alias borracaca='rm `find . | grep -e \.*~ -e *\.rej -e *\.orig` 2>/dev/null'
@@ -45,7 +46,31 @@ apply_shell_expansion() {
   eval "$command"
 }
 
+# Get the N% of the files of the input file
+get_rand_lines() {
+
+  local in=$1
+  local N=$2
+
+  if [ -z "$in" -o ! -f "$in" ] ; then 
+    echo "[ERROR ] Invalid input file: Syntax is $0 <input_file> [<percentage of lines (Default: 10%)>]"
+  else 
+    [ -z "$N" -o $N -lt 0 -o $N -gt 100 ] && N=10
+
+    while read line ; do
+      [ $((RANDOM % 100)) -le $N ] && echo "$line"
+    done < $in
+  fi
+}
+
 alias cd..='cd ..'
 alias myip='dig +short myip.opendns.com @resolver1.opendns.com'
 alias gitowners='for branch in `git branch -r | grep -v HEAD`;do echo -e `git show --format="%an ---> %ai %ar" $branch | head -n 1` \\t$branch; done | sort -r'
-#ft=sh; ts=2; sw=2
+alias pyspark_notebook='PYSPARK_DRIVER_PYTHON=ipython PYSPARK_DRIVER_PYTHON_OPTS="notebook --no-browser --port=7777" pyspark --packages com.databricks:spark-csv_2.10:1.1.0 --executor-memory 6400M --driver-memory 6400M'
+alias sagi='sudo apt-get install'
+alias ls='ls --color'
+alias grep='grep --color'
+alias iso_to_utf='iconv --from-code=iso-8859-1 --to-code=utf-8'
+alias utf_to_iso='iconv --to-code=iso-8859-1 --from-code=utf-8'
+alias spawn_server='sudo http-server -p 443 --cors --ssl -a dev.customerscience.net --cert ~/ssl/certificates/dev.customerscience.net.crt --key ~/ssl/private/dev.customerscience.net.key'
+alias ccp='xclip -selection clipboard'
