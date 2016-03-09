@@ -12,9 +12,8 @@ Plugin 'scrooloose/syntastic'
 Plugin 'Shougo/neocomplcache.vim'
 Plugin 'kien/ctrlp.vim'
 Plugin 'vim-scripts/bufkill.vim'
-"Plugin 'derekwyatt/vim-scala'
-"Plugin 'git://git.code.sf.net/p/vim-latex/vim-latex'
-"Plugin 'othree/html5.vim'
+Plugin 'vim-scripts/dbext.vim'
+Plugin 'othree/html5.vim'
 
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
