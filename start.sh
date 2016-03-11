@@ -2,6 +2,7 @@
 
 REDCOLOR=$(tput setaf 1)
 GREENCOLOR=$(tput setaf 2)
+BLUECOLOR=$(tput setaf 4)
 ENDCOLOR=$(tput sgr0)
 
 # First of all, setup VIM
@@ -28,9 +29,13 @@ cp .bash_local_aliases ~/.bash_local_aliases
 
 # Some git basics
 echo -e "${GREENCOLOR}Setting up some git defaults.....${ENDCOLOR}"
-git config --global user.name 'Juan Arias'
-git config --global rerere.enabled true
-git config --global color.ui true
+while read line ; do 
+    echo -e "${BLUECOLOR}${line}${ENDCOLOR}"
+    section=$(echo $line | cut -d" " -f1)
+    value=$(echo $line | cut -d" " -f2-)
+
+    git config --global "$section" "$value"
+done < .gitconfig
 
 # Done!
 echo -e "${REDCOLOR}Everything is done, enjoy!${ENDCOLOR}"
