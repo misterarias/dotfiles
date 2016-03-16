@@ -13,6 +13,8 @@ Plugin 'Shougo/neocomplcache.vim'
 Plugin 'kien/ctrlp.vim'
 Plugin 'vim-scripts/bufkill.vim'
 Plugin 'vim-scripts/dbext.vim'
+"Plugin 'derekwyatt/vim-scala'
+"Plugin 'git://git.code.sf.net/p/vim-latex/vim-latex'
 Plugin 'othree/html5.vim'
 
 " All of your Plugins must be added before the following line
@@ -104,13 +106,13 @@ set tabstop=2
 set sts=2
 set expandtab
 autocmd Filetype ruby setlocal ts=2 sts=2 sw=2
-autocmd Filetype python setlocal ts=2 sts=2 sw=2
+autocmd Filetype python setlocal ts=4 sts=4 sw=4
 
 set ai "Auto indent
 set si "Smart indent
 
 map <C-n> :bnext<CR>
-map <C-p> :bp<CR>
+map <C-b> :bp<CR>
 
 " Testing: change workspace to current file's location
 "set autochdir
@@ -170,6 +172,7 @@ set statusline+=%{SyntasticStatuslineFlag()}
 set statusline+=%*
 
 let g:syntastic_yaml_checkers = ['yaml-lint']
+let g:syntastic_javascript_checkers = ['jshint']
 let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_aggregate_errors = 1
 let g:syntastic_auto_loc_list = 1
@@ -216,3 +219,12 @@ nmap z+ ]s
 nmap z- [s
 " z= -> bring up list of suggestions
 " zg -> Add current spelling error to dictionary
+
+" Set type for custom extensions:
+" hbs: Handlebars template
+autocmd BufEnter *.hbs :set ft=html
+
+" Command to yank into clipboard (needs vim-gtk)
+if has('clipboard')==1
+  set clipboard=unnamedplus
+endif
