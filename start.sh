@@ -37,5 +37,9 @@ while read line ; do
     git config --global "$section" "$value"
 done < .gitconfig
 
+# PostgreSQL client defaults
+echo -e "${GREENCOLOR}Setting up some PostgreSQL defaults.....${ENDCOLOR}"
+cp .psqlrc ~/.psqlrc
+
 # Done!
 echo -e "${REDCOLOR}Everything is done, enjoy!${ENDCOLOR}"
