@@ -92,6 +92,9 @@ else
   export PS1=$WHO$WHEN$SEPARATOR$WHERE$JOBS$GIT_PS1$PROMPT
 fi
 
+# This sets the tab title:
+PROMPT_COMMAND='echo -en "\033]0;$(whoami)$(__jobs)@$PWD\a"'
+
 # I want cores
 ulimit -c unlimited
 
@@ -107,5 +110,12 @@ export PSQL_EDITOR='vim -c"set syntax=sql"'
 if [ -f ~/.bash_local_aliases ]; then
 	. ~/.bash_local_aliases
 fi
+
+# Add profile info (beware of redirections)
+if [ -z $loaded_bash_profile ] && [ -f ~/.bash_profile ] ; then
+  export loaded_bash_profile=1
+	. ~/.bash_profile
+fi
+unset loaded_bash_profile
 
 #ft=sh; ts=2; sw=2
