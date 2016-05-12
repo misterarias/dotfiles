@@ -16,6 +16,7 @@ Plugin 'vim-scripts/dbext.vim'
 "Plugin 'derekwyatt/vim-scala'
 "Plugin 'git://git.code.sf.net/p/vim-latex/vim-latex'
 Plugin 'othree/html5.vim'
+Plugin 'scrooloose/nerdtree' " again!!
 
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
@@ -228,3 +229,12 @@ autocmd BufEnter *.hbs :set ft=html
 if has('clipboard')==1
   set clipboard=unnamedplus
 endif
+
+" Nerdtree starts OFF by default
+"autocmd vimenter * NERDTree
+
+" CLose vim if the only window left open is nerdtree
+autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
+"nmap <silent> <F2> :NERDTreeToggle<CR>
+map <leader>nt :NERDTreeToggle<cr>
+map <leader>ff :NERDTreeFind<cr>
