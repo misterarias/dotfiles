@@ -1,5 +1,6 @@
 -- ORIGINAL \set PROMPT1 '%[%033[1m%]%M %n@%/%R%[%033[0m%]%# '
-\set PROMPT1 '%[%033[1;33;40m%]%M%[%033[0m%]\n%[%033[1m%]%n@%/%R%[%033[0m%]%# '
+--\set PROMPT1 '%[%033[1;33;40m%]%M%[%033[0m%]\n%[%033[1m%]%n@%/%R%[%033[0m%]%# '
+\set PROMPT1 '%[%033[1;33;40m%]%M%[%033[0m%]%[%033[1m%]%n@%/%R%[%033[0m%]%# '
 \set PROMPT2 '[more] %R > '
 -- By default, NULL displays as an empty space. Is it actually an empty
 -- string, or is it null? This makes that distinction visible.
