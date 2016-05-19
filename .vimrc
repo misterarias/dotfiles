@@ -138,7 +138,7 @@ set hidden
 if &diff
 	colorscheme monokai "too cool :)
 else
-	colorscheme monokai
+	colorscheme koehler
 endif
 
 " Delete trailing white space on save, useful for Python and CoffeeScript ;)
