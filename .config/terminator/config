@@ -9,23 +9,24 @@
   title_receive_bg_color = "#c95e00"
   title_transmit_bg_color = "#0061c8"
 [keybindings]
+  switch_to_tab_6 = <Alt>6
+  new_window = <Primary><Shift>n
   broadcast_all = <Primary><Shift>i
   switch_to_tab_4 = <Alt>4
-  new_window = <Primary><Shift>n
+  switch_to_tab_5 = <Alt>5
   switch_to_tab_2 = <Alt>2
   switch_to_tab_3 = <Alt>3
   broadcast_off = <Primary><Shift><Alt>i
   switch_to_tab_1 = <Alt>1
 [profiles]
   [[default]]
-    scrollbar_position = hidden
-    use_system_font = False
+    background_image = None
     copy_on_selection = True
     background_darkness = 0.92
     background_type = transparent
-    background_image = None
+    scrollbar_position = hidden
     foreground_color = "#ffffff"
-    font = Monospace 9
+    font = Monospace 10
     background_color = "#300a24"
 [layouts]
   [[default]]
