@@ -10,14 +10,37 @@ GREENCOLOR_BOLD=$GREENCOLOR$BOLD
 WHITECOLOR_BOLD=$WHITECOLOR$BOLD
 ENDCOLOR=$(tput sgr0)
 
-error() {
+# Copies of system files will be kept here
+BACKUP_FOLDER="${HOME}/backup"
+
+# return the absolute path of a local file
+dotfiles.absolute() {
+  local file=$1
+  echo "$(cd $(dirname $file) && pwd)/$(basename $file)"
+}
+
+# Easily choose the link method between a symbolic link or a copy
+dotfiles.link() {
+  local local_dotfile=$(dotfiles.absolute "$1")
+  local system_dotfile="$2"
+
+  [ ! -d $BACKUP_FOLDER ] && mkdir -p $BACKUP_FOLDER
+
+  # save a copy of the system file, if it is not a link already
+  readlink $system_dotfile >/dev/null && \
+    mv $system_dotfile $BACKUP_FOLDER 2>&1 >/dev/null
+  ln -sf $local_dotfile $system_dotfile
+}
+
+dotfiles.error() {
   echo "[ERROR] $@"
   exit 1
 }
 
 setup.git() {
   echo -e "${GREENCOLOR}Setting up some git defaults.....${ENDCOLOR}"
-  while read line ; do 
+  while read line ; do
+
     echo -e "${BLUECOLOR}${line}${ENDCOLOR}"
     section=$(echo $line | cut -d" " -f1)
     value=$(echo $line | cut -d" " -f2-)
@@ -30,29 +53,30 @@ setup.vim() {
   VIMDIR=~/.vim
   echo -e "${GREENCOLOR}Setting up VIM in ${VIMDIR} ...${ENDCOLOR}"
   rm -rf ${VIMDIR}/bundle
-  mkdir -p ${VIMDIR}/tmp ${VIMDIR}/backup ${VIMDIR}/colors > /dev/null 2>&1 
+  mkdir -p ${VIMDIR}/tmp ${VIMDIR}/backup ${VIMDIR}/colors > /dev/null 2>&1
   cp .vim/colors/monokai.vim ${VIMDIR}/colors/
   git clone https://github.com/gmarik/Vundle.vim ${VIMDIR}/bundle/Vundle.vim
-  cp .vimrc ~/.vimrc
+  dotfiles.link .vimrc ~/.vimrc
   vim +PluginInstall +qall
 }
 
 setup.dotfiles() {
-  echo -e "${GREENCOLOR}Setting up bashrc.....${ENDCOLOR}"
-  [[ $(grep -c "\. ~/.bashrc" ~/.bash_profile) -ne 1 ]] && cat >> ~/.bash_profile << _EOF 
-# Get the aliases and functions
+  echo -e "${GREENCOLOR}Setting up bash dotfiles.....${ENDCOLOR}"
+  [[ $(grep -c "\. ~/.bashrc" ~/.bash_profile) -ne 1 ]] && cat >> ~/.bash_profile << _EOF
+# Use my all-powerful bashrc file (remove this to deactivate)
 if [ -f ~/.bashrc ]; then
   . ~/.bashrc
 fi
 _EOF
-  cp .bashrc ~/.bashrc
-  cp .bash_local_aliases ~/.bash_local_aliases
+
+  dotfiles.link .bashrc ~/.bashrc
+  dotfiles.link .bash_local_aliases ~/.bash_local_aliases
   . ~/.bash_profile
 }
 
 setup.postgres() {
   echo -e "${GREENCOLOR}Setting up some PostgreSQL defaults.....${ENDCOLOR}"
-  cp .psqlrc ~/.psqlrc
+  dotfiles.link .psqlrc ~/.psqlrc
 }
 
 setup.configs() {
@@ -63,7 +87,7 @@ setup.configs() {
     "dev-server")
       ;;
     "local")
-      ln -sf $PWD/.config/terminator/config $HOME/.config/terminator/config
+    dotfiles.link .config/terminator/config $HOME/.config/terminator/config
       ;;
   esac
 }
@@ -76,12 +100,12 @@ setup.env() {
   if [ -z "$ENV_TYPE" ] ; then
     ENV_TYPE="local" # not using a bash default above, so the message is more explicit
     echo -e "${GREENCOLOR}No environment specified, defaulting to: ${ENDCOLOR}${BLUECOLOR_BOLD}${ENV_TYPE}${ENDCOLOR}"
-  else 
+  else
     case "$ENV_TYPE" in
       prod|dev-server|local)
         ;;
       *)
-        error "Invalid environment selected '${REDCOLOR_BOLD}$ENV_TYPE${ENDCOLOR}'"
+        dotfiles.error "Invalid environment selected '${REDCOLOR_BOLD}$ENV_TYPE${ENDCOLOR}'"
     esac
     echo -e "${GREENCOLOR}Environment set to: ${ENDCOLOR}${BLUECOLOR_BOLD}${ENV_TYPE}${ENDCOLOR}"
   fi
