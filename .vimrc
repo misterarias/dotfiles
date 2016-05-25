@@ -140,15 +140,13 @@ else
 	colorscheme koehler
 endif
 
-" Delete trailing white space on save, useful for Python and CoffeeScript ;)
+" Delete trailing white space on save, useful ALWAYS
 func! DeleteTrailingWS()
   exe "normal mz"
   %s/\s\+$//ge
   exe "normal `z"
 endfunc
-autocmd BufWrite *.py :call DeleteTrailingWS()
-autocmd BufWrite *.coffee :call DeleteTrailingWS()
-autocmd BufWrite *.rb :call DeleteTrailingWS()
+autocmd BufWrite * :call DeleteTrailingWS()
 
 " Remove the Windows ^M - when the encodings gets messed up
 noremap <Leader>m mmHmt:%s/<C-V><cr>//ge<cr>'tzt'm
