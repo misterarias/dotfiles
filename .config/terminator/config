@@ -21,12 +21,11 @@
 [profiles]
   [[default]]
     background_image = None
-    copy_on_selection = True
+    font = Monospace 10
     background_darkness = 0.92
-    background_type = transparent
     scrollbar_position = hidden
     foreground_color = "#ffffff"
-    font = Monospace 10
+    copy_on_selection = True
     background_color = "#300a24"
 [layouts]
   [[default]]
