@@ -171,6 +171,7 @@ set statusline+=%*
 
 let g:syntastic_yaml_checkers = ['yamllint'] " installed using pip
 let g:syntastic_javascript_checkers = ['jshint']
+let g:syntastic_sh_checkers = ['checkbashisms']
 let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_aggregate_errors = 1
 let g:syntastic_auto_loc_list = 1
