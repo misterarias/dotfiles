@@ -3,6 +3,7 @@
   handle_size = 1
   title_hide_sizetext = True
   focus = system
+  close_button_on_tab = False
   enabled_plugins = InactivityWatch, ActivityWatch, LaunchpadCodeURLHandler, APTURLHandler, LaunchpadBugURLHandler
   suppress_multiple_term_dialog = True
   borderless = True
@@ -22,9 +23,24 @@
   [[default]]
     background_image = None
     font = Monospace 10
-    background_darkness = 0.92
+    background_darkness = 0.72
     scrollbar_position = hidden
     foreground_color = "#ffffff"
+    show_titlebar = False
+    copy_on_selection = True
+  [[En Blanco]]
+    background_image = None
+    copy_on_selection = True
+    background_color = "#ffffff"
+    show_titlebar = False
+    foreground_color = "#000000"
+  [[Medium]]
+    palette = "#000000:#aa0000:#00aa00:#aa5500:#0000aa:#aa00aa:#00aaaa:#aaaaaa:#555555:#ff5555:#55ff55:#ffff55:#5555ff:#ff55ff:#55ffff:#ffffff"
+    background_darkness = 0.92
+    background_type = transparent
+    background_image = /home/juanito/Pictures/DesktopRoller/gray-owl-mouse_65519_990x742.jpg
+    foreground_color = "#ffffff"
+    show_titlebar = False
     copy_on_selection = True
     background_color = "#300a24"
 [layouts]
