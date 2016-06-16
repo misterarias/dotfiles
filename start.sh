@@ -74,6 +74,12 @@ _EOF
   . ~/.bash_profile
 }
 
+setup_ruby() {
+  echo "${GREENCOLOR}Setting up some Ruby defaults.....${ENDCOLOR}"
+  ! grep -q 'irb/completion' ~/.irbrc && \
+    echo "require 'irb/completion'" >> ~/.irbrc
+}
+
 setup_postgres() {
   echo "${GREENCOLOR}Setting up some PostgreSQL defaults.....${ENDCOLOR}"
   dotfiles_link .psqlrc ~/.psqlrc
@@ -117,6 +123,7 @@ setup_vim
 setup_dotfiles
 setup_git
 setup_postgres
+setup_ruby
 setup_configs
 
 echo "${GREENCOLOR_BOLD}Everything is done, enjoy!${ENDCOLOR}"
