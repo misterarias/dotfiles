@@ -98,8 +98,8 @@ PROMPT_COMMAND='echo -en "\033]0;$(whoami)$(__jobs)@$PWD\a"'
 # I want cores
 ulimit -c unlimited
 
-# Careful with messages
-mesg n
+# Careful with messages (David Hasselhoff bombing is real)
+[ ! -z $(which mesg) ] && mesg n
 
 # Useful fore everything: bash, git, postgres...
 EDITOR=vim
