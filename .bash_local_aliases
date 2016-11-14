@@ -52,9 +52,9 @@ get_rand_lines() {
   local in=$1
   local N=$2
 
-  if [ -z "$in" -o ! -f "$in" ] ; then 
+  if [ -z "$in" -o ! -f "$in" ] ; then
     echo "[ERROR ] Invalid input file: Syntax is $0 <input_file> [<percentage of lines (Default: 10%)>]"
-  else 
+  else
     [ -z "$N" -o $N -lt 0 -o $N -gt 100 ] && N=10
 
     while read line ; do
@@ -63,14 +63,26 @@ get_rand_lines() {
   fi
 }
 
+# Retruns true iff the current dir (or argument) is a git repository
+is_repo() {
+  local dir=${1:-.}
+  [ -f ${dir}/.git/config ]
+}
+
+# Fantastic when you are leaving the company and want to get all your job in one go
+alias pull_all='for dir in $(find . -type d) ; do is_repo $dir && (cd $dir && git pull) ; done'
+alias clean_all='for dir in $(find . -type d) ; do is_repo $dir && (cd $dir && git clean -f) ; done'
+
 alias cd..='cd ..'
 alias myip='dig +short myip.opendns.com @resolver1.opendns.com'
 alias gitowners='for branch in `git branch -r | grep -v HEAD`;do echo -e `git show --format="%an ---> %ai %ar" $branch | head -n 1` \\t$branch; done | sort -r'
-alias pyspark_notebook='PYSPARK_DRIVER_PYTHON=ipython PYSPARK_DRIVER_PYTHON_OPTS="notebook --no-browser --port=7777" pyspark --packages com.databricks:spark-csv_2.10:1.1.0 --executor-memory 6400M --driver-memory 6400M'
 alias sagi='sudo apt-get install'
 alias ls='ls --color'
 alias grep='grep --color'
 alias iso_to_utf='iconv --from-code=iso-8859-1 --to-code=utf-8'
 alias utf_to_iso='iconv --to-code=iso-8859-1 --from-code=utf-8'
-alias spawn_server='sudo http-server -p 443 --cors --ssl -a dev.customerscience.net --cert ~/ssl/certificates/dev.customerscience.net.crt --key ~/ssl/private/dev.customerscience.net.key'
 alias ccp='xclip -selection clipboard'
+alias super.push='git push origin prod  && git push --tags && git push origin develop'
+
+# Spawns a node.js HTTPS server using valid self-signed certificates
+alias spawn_server='sudo http-server -p 443 --cors --ssl -a dev.customerscience.net --cert ~/ssl/certificates/dev.customerscience.net.crt --key ~/ssl/private/dev.customerscience.net.key'
