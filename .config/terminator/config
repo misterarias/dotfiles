@@ -1,56 +1,61 @@
 [global_config]
-  window_state = maximise
-  handle_size = 1
-  title_hide_sizetext = True
-  focus = system
+  always_split_with_profile = True
+  borderless = True
   close_button_on_tab = False
   enabled_plugins = InactivityWatch, ActivityWatch, LaunchpadCodeURLHandler, APTURLHandler, LaunchpadBugURLHandler
+  focus = system
+  handle_size = 1
+  inactive_color_offset = 0.61
   suppress_multiple_term_dialog = True
-  borderless = True
+  tab_position = hidden
+  title_hide_sizetext = True
   title_receive_bg_color = "#c95e00"
   title_transmit_bg_color = "#0061c8"
+  window_state = maximise
 [keybindings]
-  switch_to_tab_6 = <Alt>6
-  new_window = <Primary><Shift>n
   broadcast_all = <Primary><Shift>i
-  switch_to_tab_4 = <Alt>4
-  switch_to_tab_5 = <Alt>5
+  broadcast_off = <Primary><Shift><Alt>i
+  new_window = <Primary><Shift>n
+  switch_to_tab_1 = <Alt>1
   switch_to_tab_2 = <Alt>2
   switch_to_tab_3 = <Alt>3
-  broadcast_off = <Primary><Shift><Alt>i
-  switch_to_tab_1 = <Alt>1
-[profiles]
-  [[default]]
-    background_image = None
-    font = Monospace 10
-    background_darkness = 0.72
-    scrollbar_position = hidden
-    foreground_color = "#ffffff"
-    show_titlebar = False
-    copy_on_selection = True
-  [[En Blanco]]
-    background_image = None
-    copy_on_selection = True
-    background_color = "#ffffff"
-    show_titlebar = False
-    foreground_color = "#000000"
-  [[Medium]]
-    palette = "#000000:#aa0000:#00aa00:#aa5500:#0000aa:#aa00aa:#00aaaa:#aaaaaa:#555555:#ff5555:#55ff55:#ffff55:#5555ff:#ff55ff:#55ffff:#ffffff"
-    background_darkness = 0.92
-    background_type = transparent
-    background_image = /home/juanito/Pictures/DesktopRoller/gray-owl-mouse_65519_990x742.jpg
-    foreground_color = "#ffffff"
-    show_titlebar = False
-    copy_on_selection = True
-    background_color = "#300a24"
+  switch_to_tab_4 = <Alt>4
+  switch_to_tab_5 = <Alt>5
+  switch_to_tab_6 = <Alt>6
 [layouts]
   [[default]]
     [[[child1]]]
-      type = Terminal
       parent = window0
-      size = [112, 55]
       profile = default
+      size = [112, 55]
+      type = Terminal
     [[[window0]]]
-      type = Window
       parent = ""
+      type = Window
 [plugins]
+[profiles]
+  [[default]]
+    background_darkness = 0.72
+    background_image = None
+    copy_on_selection = True
+    font = Monospace 11
+    foreground_color = "#ffffff"
+    palette = "#000000:#cc0000:#4e9a06:#c4a000:#3465a4:#75507b:#06989a:#d3d7cf:#555753:#ef2929:#8ae234:#fce94f:#729fcf:#ad7fa8:#34e2e2:#eeeeec"
+    scrollbar_position = hidden
+    show_titlebar = False
+    use_system_font = False
+  [[En Blanco]]
+    background_color = "#ffffff"
+    background_image = None
+    copy_on_selection = True
+    foreground_color = "#000000"
+    show_titlebar = False
+  [[Medium]]
+    background_color = "#300a24"
+    background_darkness = 0.92
+    background_image = /home/juanito/Pictures/DesktopRoller/gray-owl-mouse_65519_990x742.jpg
+    background_type = transparent
+    copy_on_selection = True
+    foreground_color = "#ffffff"
+    palette = "#000000:#aa0000:#00aa00:#aa5500:#0000aa:#aa00aa:#00aaaa:#aaaaaa:#555555:#ff5555:#55ff55:#ffff55:#5555ff:#ff55ff:#55ffff:#ffffff"
+    show_titlebar = False

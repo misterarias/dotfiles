@@ -111,8 +111,10 @@ autocmd Filetype yaml setlocal ts=4 sts=4 sw=4
 set ai "Auto indent
 set si "Smart indent
 
+"Some buffer facilities
 map <C-n> :bnext<CR>
 map <C-b> :bp<CR>
+map <C-m> :bw<CR>
 
 " Testing: change workspace to current file's location
 "set autochdir
@@ -137,7 +139,7 @@ set hidden
 if &diff
 	colorscheme monokai "too cool :)
 else
-	colorscheme koehler
+	colorscheme monokai "koehler
 endif
 
 " Delete trailing white space on save, useful ALWAYS
@@ -153,6 +155,7 @@ noremap <Leader>m mmHmt:%s/<C-V><cr>//ge<cr>'tzt'm
 
 " Toggle paste mode on and off
 map <leader>pp :setlocal paste!<cr>
+map <leader>np :setlocal nopaste!<cr>
 
 " Return to last edit position when opening files (You want this!)
 autocmd BufReadPost *
@@ -169,9 +172,10 @@ set statusline+=%#warningmsg#
 set statusline+=%{SyntasticStatuslineFlag()}
 set statusline+=%*
 
-let g:syntastic_yaml_checkers = ['yamllint'] " installed using pip
+let g:syntastic_yaml_checkers = ['yamllint'] " PIP
 let g:syntastic_javascript_checkers = ['jshint']
-let g:syntastic_sh_checkers = ['checkbashisms']
+let g:syntastic_sh_checkers = ['bashate'] " PIP
+let g:syntastic_sql_checkers = ['sqlint'] " Ruby gem
 let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_aggregate_errors = 1
 let g:syntastic_auto_loc_list = 1
