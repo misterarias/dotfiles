@@ -1,8 +1,4 @@
 # vi: ft=sh ts=2 sw=2
-# User specific aliases and functions
-alias grep='grep --color'
-alias borracaca='rm `find . | grep -e \.*~ -e *\.rej -e *\.orig` 2>/dev/null'
-alias xtidy='tidy -xml -i -c'
 
 # remove duplicates from input file into stdout
 duprm() {
@@ -11,20 +7,6 @@ duprm() {
     return 1
   fi
   awk '!x[$0]++' $1
-}
-
-lsd() {
-  ls -l | awk '/^d/ {print $9}'
-}
-
-# git grep is faster than grep itself, it seems....
-gg() {
-  if [ "$#" -eq 1 ]; then
-    git grep -niI "$1" . | grep -iI "$1" --color
-  fi
-  if [ "$#" -eq 2 ]; then
-    git grep -niI "$1" "$2" | grep -iI "$1" --color
-  fi
 }
 
 # Chorrada
@@ -37,12 +19,15 @@ git() {
   esac
 }
 
+# Runs all the shell commands written in the given file
 # Thanks: http://stackoverflow.com/questions/10683349/forcing-bash-to-expand-variables-in-a-string-loaded-from-a-file
 apply_shell_expansion() {
-  declare file="$1"
-  declare data=$(< "$file")
-  declare delimiter="__apply_shell_expansion_delimiter__"
-  declare command="cat <<$delimiter"$'\n'"$data"$'\n'"$delimiter"
+  local file="$1"
+  [ ! -f $file ] && echo "Not a file: $file." && exit 1
+
+  local data=$(< "$file")
+  local delimiter="__apply_shell_expansion_delimiter__"
+  local command="cat <<$delimiter"$'\n'"$data"$'\n'"$delimiter"
   eval "$command"
 }
 
@@ -63,26 +48,47 @@ get_rand_lines() {
   fi
 }
 
-# Retruns true iff the current dir (or argument) is a git repository
-is_repo() {
-  local dir=${1:-.}
-  [ -f ${dir}/.git/config ]
+# git grep is faster than grep itself, it seems....
+gg() {
+  git grep -iI $* | sed -e 's#^\([^:]*\):\(.*\)$#\1 -> \2#g' | grep -iI "$1" --color
 }
 
-# Fantastic when you are leaving the company and want to get all your job in one go
-alias pull_all='for dir in $(find . -type d) ; do is_repo $dir && (cd $dir && git pull) ; done'
-alias clean_all='for dir in $(find . -type d) ; do is_repo $dir && (cd $dir && git clean -f) ; done'
+# Returns true iff the current dir (or argument) is a git repository
+is_repo() {
+  [ -f ${1:-.}/.git/config ]
+}
 
-alias cd..='cd ..'
-alias myip='dig +short myip.opendns.com @resolver1.opendns.com'
-alias gitowners='for branch in `git branch -r | grep -v HEAD`;do echo -e `git show --format="%an ---> %ai %ar" $branch | head -n 1` \\t$branch; done | sort -r'
-alias sagi='sudo apt-get install'
+# Typical shortcuts
+alias grep='grep --color'
 alias ls='ls --color'
 alias grep='grep --color'
+
+# Fantastic when you are leaving the company and want to get all your job in one go
+alias pull_all='for dir in $(find . -type d) ; do is_repo $dir && (cd $dir && git pull) ; done || true'
+alias clean_all='for dir in $(find . -type d) ; do is_repo $dir && (cd $dir && git clean -f) ; done || true'
+alias leaving_today='clean_all && pull_all && tar -cjvf /tmp/leaving_new_york_never_easy.tgz . && mv /tmp/leaving_new_york_never_easy.tgz . && printf "\n\nDone\nCopy \"leaving_new_york_never_easy.bz2\" somewhere and RUN. FAST\n\n"'
+
+# so sweet
+alias cd..='cd ..'
+
+# Get you external IP fast
+alias myip='dig +short myip.opendns.com @resolver1.opendns.com'
+
+# Get the owner of each branch, last commit and branch name
+alias gitowners='is_repo && for branch in `git branch -r | grep -v HEAD`;do echo -e `git show --format="%an ---> %ai %ar" $branch | head -n 1` \\t$branch; done | sort -r'
+
+# converters for files
 alias iso_to_utf='iconv --from-code=iso-8859-1 --to-code=utf-8'
 alias utf_to_iso='iconv --to-code=iso-8859-1 --from-code=utf-8'
+
+# with X only, paste output of command into clipboard: echo 'AAA' | ccp
 alias ccp='xclip -selection clipboard'
+
+# Pushes production, develop, and all tags in one go
 alias super.push='git push origin prod  && git push --tags && git push origin develop'
 
 # Spawns a node.js HTTPS server using valid self-signed certificates
-alias spawn_server='sudo http-server -p 443 --cors --ssl -a dev.customerscience.net --cert ~/ssl/certificates/dev.customerscience.net.crt --key ~/ssl/private/dev.customerscience.net.key'
+alias spawn_server='sudo http-server -p 443 --cors --ssl -a dev.localhost.net --cert ~/ssl/certificates/dev.localhost.net.crt --key ~/ssl/private/dev.localhost.net.key'
+
+# list only directories
+alias lsd="ls -l | awk '/^d/ {print $9}'"
