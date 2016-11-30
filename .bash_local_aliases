@@ -1,6 +1,10 @@
 # vi: ft=sh ts=2 sw=2
 
-# remove duplicates from input file into stdout
+# Local functions and aliases, loaded on session start.
+# By using meaningful one-line comments to functions, they'll get nicely printed
+# by means of the 'my_commands' help function (defined in ~/.bashrc)
+
+# Remove duplicated lines from input file into stdout
 duprm() {
   if [ "$#" -ne 1 ] ; then
     echo -e "Missing input file"
@@ -9,7 +13,7 @@ duprm() {
   awk '!x[$0]++' $1
 }
 
-# Chorrada
+# Allows overriding of GIT commands (try 'git blame ...')
 git() {
   case $* in
     blame*)
@@ -19,8 +23,8 @@ git() {
   esac
 }
 
-# Runs all the shell commands written in the given file
 # Thanks: http://stackoverflow.com/questions/10683349/forcing-bash-to-expand-variables-in-a-string-loaded-from-a-file
+# Runs all the shell commands written in the given file
 apply_shell_expansion() {
   local file="$1"
   [ ! -f $file ] && echo "Not a file: $file." && exit 1
@@ -48,25 +52,24 @@ get_rand_lines() {
   fi
 }
 
-# git grep is faster than grep itself, it seems....
+# Perform a faster, recursive and case-ignoring 'grep' search on a GIT repo.
 gg() {
-  git grep -iI $* | sed -e 's#^\([^:]*\):\(.*\)$#\1 -> \2#g' | grep -iI "$1" --color
+  git grep -iI "$*" | sed -e 's#^\([^:]*\):\(.*\)$#\1 -> \2#g' | grep -iI "$1" --color
 }
 
-# Returns true iff the current dir (or argument) is a git repository
+# Returns true if the current dir (or argument) is a git repository
 is_repo() {
   [ -f ${1:-.}/.git/config ]
 }
 
 # Typical shortcuts
-alias grep='grep --color'
 alias ls='ls --color'
 alias grep='grep --color'
 
 # Fantastic when you are leaving the company and want to get all your job in one go
 alias pull_all='for dir in $(find . -type d) ; do is_repo $dir && (cd $dir && git pull) ; done || true'
 alias clean_all='for dir in $(find . -type d) ; do is_repo $dir && (cd $dir && git clean -f) ; done || true'
-alias leaving_today='clean_all && pull_all && tar -cjvf /tmp/leaving_new_york_never_easy.tgz . && mv /tmp/leaving_new_york_never_easy.tgz . && printf "\n\nDone\nCopy \"leaving_new_york_never_easy.bz2\" somewhere and RUN. FAST\n\n"'
+alias leaving_today='clean_all && pull_all && tar -cjvf /tmp/leaving_new_york_never_easy.bz2 . && mv /tmp/leaving_new_york_never_easy.bz2 . && printf "\n\nDone\nCopy \"leaving_new_york_never_easy.bz2\" somewhere and RUN. FAST\n\n"'
 
 # so sweet
 alias cd..='cd ..'

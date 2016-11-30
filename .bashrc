@@ -106,6 +106,18 @@ EDITOR=vim
 export EDITOR
 export PSQL_EDITOR='vim -c"set syntax=sql"'
 
+# show help on custom commands
+my_commands() {
+  local me="$HOME/.bash_local_aliases"
+
+  printf  "\n${GREENCOLOR_BOLD}Custom aliases:${ENDCOLOR}\n\n"
+  grep alias "$me" | sed -e "s@^alias \([^=]\+\)='\(.*\)'@\1:\n\t\2\n@g"
+
+  printf  "\n${GREENCOLOR_BOLD}Local functions:${ENDCOLOR}\n\n"
+  grep -B1 -e '^[a-z_]\+()' "$me" | sed -e 's/^-\+//g' | sed -e 's/()\s\+{//g'
+
+}
+
 # Bash Aliases
 if [ -f ~/.bash_local_aliases ]; then
 	. ~/.bash_local_aliases

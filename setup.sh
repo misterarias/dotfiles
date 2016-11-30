@@ -126,4 +126,5 @@ setup_postgres
 setup_ruby
 setup_configs
 
-echo "${GREENCOLOR_BOLD}Everything is done, enjoy!${ENDCOLOR}"
+echo "New functions and aliases installed, type '${BLUECOLOR_BOLD}my_commands'${ENDCOLOR} to check them out"
+printf "\n${GREENCOLOR_BOLD}Everything is done, enjoy!${ENDCOLOR}\n"
