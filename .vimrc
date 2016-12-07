@@ -16,7 +16,15 @@ Plugin 'vim-scripts/dbext.vim'
 "Plugin 'derekwyatt/vim-scala'
 "Plugin 'git://git.code.sf.net/p/vim-latex/vim-latex'
 Plugin 'othree/html5.vim'
-Plugin 'scrooloose/nerdtree' " again!!
+Plugin 'scrooloose/nerdtree'
+
+" To enable code snippets
+Plugin 'MarcWeber/vim-addon-mw-utils'
+Plugin 'tomtom/tlib_vim'
+Plugin 'garbas/vim-snipmate'
+
+" Optional:
+Plugin 'honza/vim-snippets'
 
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
