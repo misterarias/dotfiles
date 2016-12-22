@@ -115,7 +115,6 @@ my_commands() {
 
   printf  "\n${GREENCOLOR_BOLD}Local functions:${ENDCOLOR}\n\n"
   grep -B1 -e '^[a-z_]\+()' "$me" | sed -e 's/^-\+//g' | sed -e 's/()\s\+{//g'
-
 }
 
 # Bash Aliases

@@ -63,12 +63,7 @@ setup_vim() {
 setup_dotfiles() {
   echo "${GREENCOLOR}Setting up bash dotfiles_....${ENDCOLOR}"
   touch ~/.bash_profile # in case it does not exist..
-  [ $(grep -c "\. ~/.bashrc" ~/.bash_profile) -ne 1 ] && cat >> ~/.bash_profile << _EOF
-  # Use my all-powerful bashrc file (remove this to deactivate)
-  if [ -f ~/.bashrc ]; then
-    . ~/.bashrc
-  fi
-_EOF
+  [ $(grep -c "\. ~/.bashrc" ~/.bash_profile) -ne 1 ] && cat .bash_profile  >> ~/.bash_profile
 
   dotfiles_link .bashrc ~/.bashrc
   dotfiles_link .bash_local_aliases ~/.bash_local_aliases
@@ -122,6 +117,28 @@ setup_env() {
   export ENV_TYPE
 }
 
+setup-gnome-extensions() {
+  # If not in Gnome, just get out:
+  [ -z $(which gsettings) ] && return
+
+  # Download magnificent and already-created script for shell extension's management
+  if [ ! -f $HOME/bin/gnome-shell-extension-installer ] ; then
+    mkdir -p $HOME/bin
+    curl -qsS https://raw.githubusercontent.com/brunelli/gnome-shell-extension-installer/master/gnome-shell-extension-installer > $HOME/bin/gnome-shell-extension-installer
+    chmod +x $HOME/bin/gnome-shell-extension-installer
+  fi
+
+  # Install my main extensions
+  gnome-shell-extension-installer 307 3.18 # Dash to dock
+  gnome-shell-extension-installer 112 3.18 # remove accesibility
+  gnome-shell-extension-installer 613 3.14 # Weather
+  gnome-shell-extension-installer 545  # Hide top bar
+  gnome-shell-extension-installer 442 3.20 # Dropdown terminal
+
+  # restart shell - the ampersand is mandatory
+  gnome-shell --replace &
+}
+
 setup_env $@
 setup_vim
 setup_dotfiles
@@ -129,6 +146,7 @@ setup_git
 setup_postgres
 setup_ruby
 setup_configs
+setup-gnome-extensions
 
 echo "New functions and aliases installed, type '${BLUECOLOR_BOLD}my_commands'${ENDCOLOR} to check them out"
 printf "\n${GREENCOLOR_BOLD}Everything is done, enjoy!${ENDCOLOR}\n"
