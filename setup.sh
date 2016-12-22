@@ -62,11 +62,12 @@ setup_vim() {
 
 setup_dotfiles() {
   echo "${GREENCOLOR}Setting up bash dotfiles_....${ENDCOLOR}"
+  touch ~/.bash_profile # in case it does not exist..
   [ $(grep -c "\. ~/.bashrc" ~/.bash_profile) -ne 1 ] && cat >> ~/.bash_profile << _EOF
-# Use my all-powerful bashrc file (remove this to deactivate)
-if [ -f ~/.bashrc ]; then
-  . ~/.bashrc
-fi
+  # Use my all-powerful bashrc file (remove this to deactivate)
+  if [ -f ~/.bashrc ]; then
+    . ~/.bashrc
+  fi
 _EOF
 
   dotfiles_link .bashrc ~/.bashrc
@@ -75,12 +76,14 @@ _EOF
 }
 
 setup_ruby() {
+  [ ! -f ~/.irbrc ] && return
   echo "${GREENCOLOR}Setting up some Ruby defaults.....${ENDCOLOR}"
   ! grep -q 'irb/completion' ~/.irbrc && \
     echo "require 'irb/completion'" >> ~/.irbrc
 }
 
 setup_postgres() {
+  [ ! -f ~/.psqlrc ] && return
   echo "${GREENCOLOR}Setting up some PostgreSQL defaults.....${ENDCOLOR}"
   dotfiles_link .psqlrc ~/.psqlrc
 }
@@ -93,7 +96,8 @@ setup_configs() {
     "dev-server")
       ;;
     "local")
-    dotfiles_link .config/terminator/config $HOME/.config/terminator/config
+      mkdir -p $HOME/.config/terminator
+      dotfiles_link .config/terminator/config $HOME/.config/terminator/config
       ;;
   esac
 }
