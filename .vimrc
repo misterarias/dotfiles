@@ -183,6 +183,7 @@ set statusline+=%{SyntasticStatuslineFlag()}
 set statusline+=%*
 
 let g:syntastic_yaml_checkers = ['yamllint'] " PIP
+let g:syntastic_py_checkers = ['flake8'] " PIP
 let g:syntastic_javascript_checkers = ['jshint']
 let g:syntastic_sh_checkers = ['shellcheck'] " Package manager
 let g:syntastic_sql_checkers = ['sqlint'] " Ruby gem
@@ -194,6 +195,8 @@ let g:syntastic_check_on_wq = 0
 let g:syntastic_auto_jump = 1
 let g:syntastic_error_symbol = "🔥 "
 let g:syntastic_warning_symbol = "🌧 "
+let g:syntastic_style_error_symbol = "🔥 "
+let g:syntastic_style_warning_symbol = "🌧 "
 
 " Completion stuff
 let g:neocomplcache_enable_at_startup=1
@@ -239,7 +242,10 @@ autocmd BufEnter *.hbs :set ft=html
 
 " Command to yank into clipboard (needs vim-gtk)
 if has('clipboard')==1
-  set clipboard=unnamedplus
+  " for Linux
+  "set clipboard=unnamedplus
+  " for OSX
+  set clipboard=unnamed
 endif
 
 " Nerdtree starts OFF by default
