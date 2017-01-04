@@ -1,7 +1,9 @@
 # .bashrc
 
 # 'Darwin' for Mac, 'Linux' or similar elsewhere
-ARCH=$(uname -s)
+is_mac() {
+  [ $(uname -s) == "Darwin" ]
+}
 
 # Bash completion
 if [ -f /etc/bash_completion ] ; then
@@ -17,9 +19,8 @@ fi
 . ~/.git-completion
 
 #sets up some colors
-if [ $ARCH == "Darwin" ] ; then
-	export CLICOLOR=1
-fi
+is_mac && export CLICOLOR=1
+
 export LSCOLORS=gxfxcxdxbxegedabagacad
 
 #enables color for iTerm

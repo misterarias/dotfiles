@@ -7,15 +7,15 @@
 # Remove duplicated lines from input file into stdout
 duprm() {
   if [ "$#" -ne 1 ] ; then
-    echo -e "Missing input file"
+    echo "Missing input file"
     return 1
   fi
-  awk '!x[$0]++' $1
+  awk '!x[$0]++' "$1"
 }
 
 # Allows overriding of GIT commands (try 'git blame ...')
 git() {
-  case $* in
+  case "$@" in
     blame*)
       command echo "Probablemente tu, así que mejor no preguntes" ;;
     * )
@@ -37,14 +37,13 @@ apply_shell_expansion() {
 
 # Get the N% of the files of the input file
 get_rand_lines() {
-
   local in=$1
   local N=$2
 
-  if [ -z "$in" -o ! -f "$in" ] ; then
+  if [ -z "$in"  ] || [ ! -f "$in" ] ; then
     echo "[ERROR ] Invalid input file: Syntax is $0 <input_file> [<percentage of lines (Default: 10%)>]"
   else
-    [ -z "$N" -o $N -lt 0 -o $N -gt 100 ] && N=10
+    [ -z "$N" -o "$N" -lt 0 -o "$N" -gt 100 ] && N=10
 
     while read line ; do
       [ $((RANDOM % 100)) -le $N ] && echo "$line"
@@ -63,7 +62,7 @@ is_repo() {
 }
 
 # Typical shortcuts
-alias ls='ls --color'
+#alias ls='ls --color'
 alias grep='grep --color'
 
 # Fantastic when you are leaving the company and want to get all your job in one go
@@ -85,7 +84,11 @@ alias iso_to_utf='iconv --from-code=iso-8859-1 --to-code=utf-8'
 alias utf_to_iso='iconv --to-code=iso-8859-1 --from-code=utf-8'
 
 # with X only, paste output of command into clipboard: echo 'AAA' | ccp
-alias ccp='xclip -selection clipboard'
+if is_mac ; then
+  alias ccp='pbcopy'
+else
+  alias ccp='xclip -selection clipboard'
+fi
 
 # Pushes production, develop, and all tags in one go
 alias super.push='git push origin prod  && git push --tags && git push origin develop'
