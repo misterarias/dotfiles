@@ -182,6 +182,12 @@ set statusline+=%#warningmsg#
 set statusline+=%{SyntasticStatuslineFlag()}
 set statusline+=%*
 
+" Toggle Syntastic status
+noremap <leader>st :SyntasticToggle<cr>
+
+" Force Check
+noremap <leader>sc :SyntasticCheck<cr>
+
 let g:syntastic_yaml_checkers = ['yamllint'] " PIP
 let g:syntastic_py_checkers = ['flake8'] " PIP
 let g:syntastic_javascript_checkers = ['jshint']
@@ -190,12 +196,12 @@ let g:syntastic_sql_checkers = ['sqlint'] " Ruby gem
 let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_aggregate_errors = 1
 let g:syntastic_auto_loc_list = 1
-let g:syntastic_check_on_open = 1
+let g:syntastic_check_on_open = 0
 let g:syntastic_check_on_wq = 0
-let g:syntastic_auto_jump = 1
-let g:syntastic_error_symbol = "🔥 "
+let g:syntastic_auto_jump = 0
+let g:syntastic_error_symbol = "🔥"
 let g:syntastic_warning_symbol = "🌧 "
-let g:syntastic_style_error_symbol = "🔥 "
+let g:syntastic_style_error_symbol = "🔥"
 let g:syntastic_style_warning_symbol = "🌧 "
 
 " Completion stuff
