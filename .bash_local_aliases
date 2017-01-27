@@ -1,6 +1,6 @@
 # vi: ft=sh ts=2 sw=2
 
-# Local functions and aliases, loaded on session start.
+# functions and aliases, loaded on session start.
 # By using meaningful one-line comments to functions, they'll get nicely printed
 # by means of the 'my_commands' help function (defined in ~/.bashrc)
 
@@ -26,43 +26,46 @@ git() {
 # Thanks: http://stackoverflow.com/questions/10683349/forcing-bash-to-expand-variables-in-a-string-loaded-from-a-file
 # Runs all the shell commands written in the given file
 apply_shell_expansion() {
-  local file="$1"
-  [ ! -f $file ] && echo "Not a file: $file." && exit 1
+  file="$1"
+  [ ! -f "$file" ] && echo "Not a file: $file." && exit 1
 
-  local data=$(< "$file")
-  local delimiter="__apply_shell_expansion_delimiter__"
-  local command="cat <<$delimiter"$'\n'"$data"$'\n'"$delimiter"
+  data=$(< "$file")
+  delimiter="__apply_shell_expansion_delimiter__"
+  command="cat <<$delimiter"$'\n'"$data"$'\n'"$delimiter"
   eval "$command"
 }
 
 # Get the N% of the files of the input file
 get_rand_lines() {
-  local in=$1
-  local N=$2
+  in=$1
+  N=$2
 
   if [ -z "$in"  ] || [ ! -f "$in" ] ; then
     echo "[ERROR ] Invalid input file: Syntax is $0 <input_file> [<percentage of lines (Default: 10%)>]"
   else
     [ -z "$N" -o "$N" -lt 0 -o "$N" -gt 100 ] && N=10
 
-    while read line ; do
+    while read -r line ; do
       [ $((RANDOM % 100)) -le $N ] && echo "$line"
-    done < $in
+    done < "$in"
   fi
 }
 
 # Perform a faster, recursive and case-ignoring 'grep' search on a GIT repo.
 gg() {
-  git grep -iI "$*" | sed -e 's#^\([^:]*\):\(.*\)$#\1 -> \2#g' | grep -iI "$1" --color
+  pattern=$1
+  shift
+  path="$*"
+  git grep -iI "$pattern" "$path" | sed -e 's#^\([^:]*\):\(.*\)$#\1 -> \2#g' | grep -iI "$pattern" --color
 }
 
 # Returns true if the current dir (or argument) is a git repository
 is_repo() {
-  [ -f ${1:-.}/.git/config ]
+  [ -d "${1:-.}/.git" ]
 }
 
-# Typical shortcuts
-#alias ls='ls --color'
+# Colors!!
+! is_mac && alias ls='ls --color'
 alias grep='grep --color'
 
 # Fantastic when you are leaving the company and want to get all your job in one go
@@ -90,6 +93,11 @@ else
   alias ccp='xclip -selection clipboard'
 fi
 
+# OSX override of AWK, if installed
+if is_mac && [ ! -z "$(which gawk)" ] ; then
+  alias awk='gawk'
+fi
+
 # Pushes production, develop, and all tags in one go
 alias super.push='git push origin prod  && git push --tags && git push origin develop'
 
@@ -98,3 +106,6 @@ alias spawn_server='sudo http-server -p 443 --cors --ssl -a dev.localhost.net --
 
 # list only directories
 alias lsd="ls -l | awk '/^d/ {print $9}'"
+
+# DO NOT VERSION THESE THANKS
+[ -f ~/.bash_private_aliases ] && source ~/.bash_private_aliases
