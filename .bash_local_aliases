@@ -54,8 +54,11 @@ get_rand_lines() {
 # Perform a faster, recursive and case-ignoring 'grep' search on a GIT repo.
 gg() {
   pattern=$1
-  shift
-  path="$*"
+  path="."
+  if [ $# -gt 1 ] ; then
+    shift
+    path="$*"
+  fi
   git grep -iI "$pattern" "$path" | sed -e 's#^\([^:]*\):\(.*\)$#\1 -> \2#g' | grep -iI "$pattern" --color
 }
 
