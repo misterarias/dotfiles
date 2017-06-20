@@ -62,7 +62,7 @@ is_repo() {
 }
 
 # Typical shortcuts
-#alias ls='ls --color'
+! is_mac && alias ls='ls --color'
 alias grep='grep --color'
 
 # Fantastic when you are leaving the company and want to get all your job in one go
