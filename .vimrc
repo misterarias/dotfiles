@@ -1,4 +1,8 @@
 set nocompatible              " be iMproved, required
+
+" clear all weird mappings before loading
+mapclear
+
 filetype off                  " required
 
 " set the runtime path to include Vundle and initialize
@@ -12,19 +16,19 @@ Plugin 'scrooloose/syntastic'
 Plugin 'Shougo/neocomplcache.vim'
 Plugin 'kien/ctrlp.vim'
 Plugin 'vim-scripts/bufkill.vim'
-Plugin 'vim-scripts/dbext.vim'
-"Plugin 'derekwyatt/vim-scala'
+"Plugin 'vim-scripts/dbext.vim'
+Plugin 'derekwyatt/vim-scala'
 "Plugin 'git://git.code.sf.net/p/vim-latex/vim-latex'
-Plugin 'othree/html5.vim'
+"Plugin 'othree/html5.vim'
 Plugin 'scrooloose/nerdtree'
 
 " To enable code snippets
-Plugin 'MarcWeber/vim-addon-mw-utils'
-Plugin 'tomtom/tlib_vim'
-Plugin 'garbas/vim-snipmate'
+"Plugin 'MarcWeber/vim-addon-mw-utils'
+"Plugin 'tomtom/tlib_vim'
+"Plugin 'garbas/vim-snipmate'
 
 " Optional:
-Plugin 'honza/vim-snippets'
+"Plugin 'honza/vim-snippets'
 
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
@@ -124,7 +128,6 @@ set si "Smart indent
 "Some buffer facilities
 map <C-n> :bnext<CR>
 map <C-b> :bp<CR>
-map <C-m> :bw<CR>
 
 " Testing: change workspace to current file's location
 "set autochdir
@@ -189,10 +192,11 @@ noremap <leader>st :SyntasticToggle<cr>
 noremap <leader>sc :SyntasticCheck<cr>
 
 let g:syntastic_yaml_checkers = ['yamllint'] " PIP
-let g:syntastic_py_checkers = ['flake8'] " PIP
+let g:syntastic_py_checkers = ['pylint'] " PIP
 let g:syntastic_javascript_checkers = ['jshint']
 let g:syntastic_sh_checkers = ['shellcheck'] " Package manager
 let g:syntastic_sql_checkers = ['sqlint'] " Ruby gem
+let g:syntastic_scala_checkers = ['scalac']
 let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_aggregate_errors = 1
 let g:syntastic_auto_loc_list = 1
@@ -246,6 +250,9 @@ nmap z- [s
 " hbs: Handlebars template
 autocmd BufEnter *.hbs :set ft=html
 
+" More space in JSON files
+autocmd BufEnter *.json :set ts=4 sts=4 sts=4
+
 " Command to yank into clipboard (needs vim-gtk)
 if has('clipboard')==1
   " for Linux
@@ -262,3 +269,6 @@ autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isT
 "nmap <silent> <F2> :NERDTreeToggle<CR>
 map <leader>nt :NERDTreeToggle<cr>
 map <leader>ff :NERDTreeFind<cr>
+
+" Scala-vim
+let g:scala_scaladoc_indent = 1
