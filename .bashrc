@@ -18,6 +18,18 @@ fi
 # shellcheck source=/dev/null
 . ~/.git-completion
 
+# show help on custom commands
+my_commands() {
+  for aliases in ${HOME}/.bash_local_aliases $HOME/.bash_private_aliases ; do
+    [ ! -f "${aliases}" ] && continue
+    printf  "\n%s%s%s (%s)\n\n" "${GREENCOLOR_BOLD}" "Custom aliases:" "${ENDCOLOR}" "${aliases}"
+    grep 'alias ' "$aliases" | sed -e "s@^alias \([^=]\+\)='\(.*\)'@\1:\n\t\2\n@g"
+
+    printf  "\n%s%s%s (%s)\n\n" "${GREENCOLOR_BOLD}" "Local functions:" "${ENDCOLOR}" "${aliases}"
+    grep -B1 -e '^[a-z_]\+()' "$aliases" | sed -e 's/^-\+//g' | sed -e 's/()\s\+{//g'
+  done
+}
+
 #sets up some colors
 is_mac && export CLICOLOR=1
 
@@ -28,21 +40,16 @@ export TERM=xterm-color
 
 export GREP_COLOR="01;34"
 
-export LANG=en_US.UTF8
-export LC_ALL=en_US.UTF8
-export LC_CTYPE=en_US.UTF8
-export LANGUAGE=en_US.UTF8
-
 # don't put duplicate lines in the history
 # don't save commands which start with a space
-HISTCONTROL=ignoredups:erasedups:ignorespace
+export HISTCONTROL=ignoredups:erasedups:ignorespace
 
 # append to the history file, don't overwrite it
 shopt -s histappend
 
 # for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
-HISTSIZE=10000
-HISTFILESIZE=100000
+export HISTSIZE=10000
+export HISTFILESIZE=100000
 
 # make less more friendly for non-text input files, see lesspipe(1)
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
@@ -50,7 +57,7 @@ export LESS="--RAW-CONTROL-CHARS"
 
 function __jobs() {
     job_number=$(jobs | wc -l | tr -d '' )
-    echo "$PROMPT_COMMAND" | grep -q -o __git_ps1 && \
+    is_repo && echo "$PROMPT_COMMAND" | grep -q -o __git_ps1 && \
       job_number=$((job_number - 3))
     if [ ${job_number} -gt 0 ] ; then
       printf "(%d) " "${job_number}"
@@ -85,12 +92,6 @@ function __battery_state() {
   fi
 }
 
-
-#WHO="\[${BLUECOLOR_BOLD}\][\h]\[${ENDCOLOR}\]"
-WHEN="\[${BLUECOLOR_BOLD}\]\t\[${ENDCOLOR}\]"
-WHERE="\[${WHITECOLOR_BOLD}\]\w\[${ENDCOLOR}\]"
-JOBS="\[${REDCOLOR_BOLD}\]\$(__jobs)\[${ENDCOLOR}\]"
-BATT="\$(__battery_state)"
 BOLD=$(tput bold)
 REDCOLOR=$(tput setaf 1)
 GREENCOLOR=$(tput setaf 2)
@@ -103,6 +104,13 @@ GREENCOLOR_BOLD=${GREENCOLOR}${BOLD}
 WHITECOLOR_BOLD=${WHITECOLOR}${BOLD}
 YELLOWCOLOR_BOLD=${YELLOWCOLOR}${BOLD}
 ENDCOLOR=$(tput sgr0)
+
+DISPLAY_BATTERY_LEVEL=1
+[ ! -z "${DISPLAY_BATTERY_LEVEL}" ] && BATT="\$(__battery_state)"
+#WHO="\[${BLUECOLOR_BOLD}\][\h]\[${ENDCOLOR}\]"
+WHEN="\[${BLUECOLOR_BOLD}\]\t\[${ENDCOLOR}\]"
+WHERE="\[${WHITECOLOR_BOLD}\]\w\[${ENDCOLOR}\]"
+JOBS="\[${REDCOLOR_BOLD}\]\$(__jobs)\[${ENDCOLOR}\]"
 SEPARATOR=" "
 PS2='> '
 
@@ -123,11 +131,11 @@ if [ ${USE_GIT_PROMPT} -eq 1 ] ; then
   export GIT_PS1_SHOWUNTRACKEDFILES=1
   export GIT_PS1_SHOWUPSTREAM="auto verbose"
   export GIT_PS1_SHOWCOLORHINTS=true
-  export GIT_PS1="\[${BLUECOLOR}\]\$(__git_ps1)\[${ENDCOLOR}\]"
+  #export GIT_PS1="\[${BLUECOLOR}\]\$(__git_ps1)\[${ENDCOLOR}\]"
   #PS1=${BATT}${JOBS}${WHEN}${SEPARATOR}${WHERE}${SEPARATOR}${GIT_PS1}\\n${PROMPT_SYMBOL}
-  PROMPT_COMMAND='__git_ps1 "${BATT}${JOBS}${WHEN}${SEPARATOR}${WHERE}" "\\n${PROMPT_SYMBOL}" " [%s]"'
+  export PROMPT_COMMAND='__git_ps1 "${BATT}${JOBS}${WHEN}${SEPARATOR}${WHERE}" "\\n${PROMPT_SYMBOL}" " [%s]"'
 else
-  PROMPT_COMMAND='echo -en "\033]0;$(whoami)$(__jobs)@${PWD}\a"'
+  export PROMPT_COMMAND='echo -en "\033]0;$(whoami)$(__jobs)@${PWD}\a"'
 fi
 
 
@@ -160,23 +168,4 @@ if [ -f ~/.bash_local_aliases ]; then
   # shellcheck source=/dev/null
 	. ~/.bash_local_aliases
 fi
-
-# Add profile info (beware of redirections)
-if [ -z "$loaded_bash_profile" ] && [ -f ~/.bash_profile ] ; then
-  export loaded_bash_profile=1
-  # shellcheck source=/dev/null
-	. ~/.bash_profile
-fi
-unset loaded_bash_profile
-
-# show help on custom commands
-my_commands() {
-  local me="${HOME}/.bash_local_aliases"
-
-  printf  "\n%s%s%s\n\n" "${GREENCOLOR_BOLD}" "Custom aliases:" "${ENDCOLOR}"
-  grep 'alias ' "$me" | sed -e "s@^alias \([^=]\+\)='\(.*\)'@\1:\n\t\2\n@g"
-
-  printf  "\n%s%s%s\n\n" "${GREENCOLOR_BOLD}" "Local functions:" "${ENDCOLOR}"
-  grep -B1 -e '^[a-z_]\+()' "$me" | sed -e 's/^-\+//g' | sed -e 's/()\s\+{//g'
-}
 #ft=sh; ts=2; sw=2

@@ -4,6 +4,43 @@
 # By using meaningful one-line comments to functions, they'll get nicely printed
 # by means of the 'my_commands' help function (defined in ~/.bashrc)
 
+# export AWS credentials for given profile
+load_aws_credentials() {
+  profiles=$(grep -o '\[.*\]' ~/.aws/credentials | tr -d "][")
+  [ $# -ne 1 ] && \
+    echo "You need to specify one AWS profile among:"  && echo "${profiles}" && \
+    return 1
+
+  [ "$1" != "$(echo "${profiles}" | grep "${1}")" ] && \
+    echo "Profile '$1' not found. Valid profiles are:" && echo "${profiles}" && \
+    return 1
+
+  export AWS_PROFILE=$1
+  AWS_ACCESS_KEY_ID=$(aws --profile "${AWS_PROFILE}" configure get aws_access_key_id)
+  AWS_SECRET_ACCESS_KEY=$(aws --profile "${AWS_PROFILE}" configure get aws_secret_access_key)
+
+  # export & Dump
+  export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+  echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}"
+
+  export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+  echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}"
+
+  echo "AWS_PROFILE=${AWS_PROFILE}"
+}
+
+# Remove given line from file
+delete_line() {
+  [ $# -ne 2 ] && echo "Usage: delete_line <line_to_delete> <file_name>" && return 1
+  line_no=$1
+  file=$2
+  [ ! -f "${file}" ] && echo "File does not exist" && return 1
+  [ ${line_no} -gt $(wc -l $2| awk '{print $1}') ] && echo "Line ${line_no} not found in file ${file}" && return 1
+
+  sed -i -e "${line_no}d" ${file}
+}
+
+
 # Remove duplicated lines from input file into stdout
 duprm() {
   if [ "$#" -ne 1 ] ; then
@@ -62,9 +99,12 @@ gg() {
   git grep -iI "$pattern" "$path" | sed -e 's#^\([^:]*\):\(.*\)$#\1 -> \2#g' | grep -iI "$pattern" --color
 }
 
-# Returns true if the current dir (or argument) is a git repository
+# Returns true if the current dir is a git repository
 is_repo() {
-  [ -d "${1:-.}/.git" ]
+  repo_info="$(git rev-parse --git-dir --is-inside-git-dir \
+    --is-bare-repository --is-inside-work-tree \
+    --short HEAD 2>/dev/null)"
+  [ ! -z "$repo_info" ]
 }
 
 # Colors!!
@@ -109,6 +149,12 @@ alias spawn_server='sudo http-server -p 443 --cors --ssl -a dev.localhost.net --
 
 # list only directories
 alias lsd="ls -l | awk '/^d/ {print $9}'"
+
+# Starts a local Jupyter instance, mounting your current folder as Notebook source
+alias start_notebook='docker run -it --rm -v $(pwd):/home/jovyan/work -p 8888:8888 jupyter/all-spark-notebook'
+
+# Spawns a memcached local server
+alias start_memcached='docker run -d -p 11211:11211 memcached'
 
 # DO NOT VERSION THESE THANKS
 [ -f ~/.bash_private_aliases ] && source ~/.bash_private_aliases
