@@ -4,6 +4,45 @@
 # By using meaningful one-line comments to functions, they'll get nicely printed
 # by means of the 'my_commands' help function (defined in ~/.bashrc)
 
+
+_despawn() {
+  service=$1
+  service_name="spawned_${service//\//_}"
+  ids=$(docker ps -a | grep "${service_name}" | awk '{print $1}')
+  [ ! -z "$ids" ] && \
+    printf "Killing old '%s': %s\n" "$1" "$(docker rm -f "${ids}")"
+}
+
+_spawn() {
+  # Service name MUST match image name
+  service=$1
+  service_name="spawned_${service//\//_}"
+  shift
+
+  # ports and stuff
+  args=$*
+
+  # first kill old one, if any
+  _despawn "${service}" || true
+
+  # And spawn a new service
+  printf "Spawning new '%s': %s'\n" "${service}" "$(docker run -d --rm  --name "${service_name}" ${args} "$service")"
+}
+
+
+# Free some Docker disk space
+free_docker_space() {
+  exited_ps_before=$(docker ps -a -q  -f 'status=exited' | wc -l | tr -d ' ')
+  [ ${exited_ps_before} -gt 0 ] && \
+    echo "Deleting ${exited_ps_before}  containers with status 'Exited'..." && \
+    docker rm -f $(docker ps -a -q -f 'status=exited')
+
+  dangling_images_before=$(docker images -q -a -f "dangling=true" | wc -l | tr -d ' ')
+  [ ${dangling_images_before} -gt 0 ] && \
+    echo "Deleting ${dangling_images_before} dangling images..." && \
+    docker rmi -f $(docker images -a -q -f "dangling=true")
+}
+
 # export AWS credentials for given profile
 load_aws_credentials() {
   profiles=$(grep -o '\[.*\]' ~/.aws/credentials | tr -d "][")
@@ -130,34 +169,39 @@ alias iso_to_utf='iconv --from-code=iso-8859-1 --to-code=utf-8'
 alias utf_to_iso='iconv --to-code=iso-8859-1 --from-code=utf-8'
 
 # with X only, paste output of command into clipboard: echo 'AAA' | ccp
-if is_mac ; then
-  alias ccp='pbcopy'
-else
-  alias ccp='xclip -selection clipboard'
-fi
+if is_mac ; then alias ccp='pbcopy' ; else alias ccp='xclip -selection clipboard' ; fi
 
 # OSX override of AWK, if installed
-if is_mac && [ ! -z "$(which gawk)" ] ; then
-  alias awk='gawk'
-fi
+is_mac && [ ! -z "$(which gawk)" ] && alias awk='gawk'
 
 # Pushes production, develop, and all tags in one go
 alias super.push='git push origin prod  && git push --tags && git push origin develop'
 
-# Spawns a node.js HTTPS server using valid self-signed certificates
-alias spawn_server='sudo http-server -p 443 --cors --ssl -a dev.localhost.net --cert ~/ssl/certificates/dev.localhost.net.crt --key ~/ssl/private/dev.localhost.net.key'
-
-# list only directories
 alias lsd="ls -l | awk '/^d/ {print $9}'"
 
-# Starts a local Jupyter instance, mounting your current folder as Notebook source
-alias start_notebook='docker run -it --rm -v $(pwd):/home/jovyan/work -p 8888:8888 jupyter/all-spark-notebook'
+# Stops a Jupyter notebook being run
+alias stop.notebook='_despawn jupyter/all-spark-notebook'
 
-# Spawns a memcached local server
-alias start_memcached='docker run -d -p 11211:11211 memcached'
+# Starts a local Jupyter instance, mounting your current folder as Notebook source
+alias spawn.notebook='_spawn jupyter/all-spark-notebook  -v $(pwd):/home/jovyan/work -p 8888:8888'
+
+# stops a redis instance
+alias despawn.redis='_despawn redis'
+
+# Starts a local redis instance
+alias spawn.redis='_spawn redis -p 6379:6379'
+
+# stops a memcached instance
+alias despawn.memcached='_despawn memcached'
+
+# Starts a local memcached instance
+alias spawn.memcached='_spawn memcached -p 11211:11211'
 
 # Makes fun of you
 alias bim="echo 'LOL eres un mamón, es ''vi'' o ''vim'', no va con B... te lo paso por esta' && read && vim $*"
+
+# Random 32-char string
+alias rand.str="cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1"
 
 # DO NOT VERSION THESE THANKS
 [ -f ~/.bash_private_aliases ] && source ~/.bash_private_aliases
