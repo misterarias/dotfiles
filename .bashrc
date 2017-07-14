@@ -23,10 +23,10 @@ my_commands() {
   for aliases in ${HOME}/.bash_local_aliases $HOME/.bash_private_aliases ; do
     [ ! -f "${aliases}" ] && continue
     printf  "\n%s%s%s (%s)\n\n" "${GREENCOLOR_BOLD}" "Custom aliases:" "${ENDCOLOR}" "${aliases}"
-    grep 'alias ' "$aliases" | sed -e "s@^alias \([^=]\+\)='\(.*\)'@\1:\n\t\2\n@g"
+    grep -B1 -e 'alias ' "$aliases" |  sed -e 's@.*alias \(.*\)=.*@\1@g'
 
-    printf  "\n%s%s%s (%s)\n\n" "${GREENCOLOR_BOLD}" "Local functions:" "${ENDCOLOR}" "${aliases}"
-    grep -B1 -e '^[a-z_]\+()' "$aliases" | sed -e 's/^-\+//g' | sed -e 's/()\s\+{//g'
+    printf "\n%s%s%s (%s)\n\n" "${GREENCOLOR_BOLD}" "Local functions:" "${ENDCOLOR}" "${aliases}"
+    grep -B1 -e '^[a-z_]\+()' "$aliases" | grep -v '^_' | sed -e 's#\(.*\)(.*#\1#g'
   done
 }
 
