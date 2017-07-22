@@ -3,11 +3,9 @@ BOLD=$(tput bold)
 BLUECOLOR=$(tput setaf 4)
 REDCOLOR=$(tput setaf 1)
 GREENCOLOR=$(tput setaf 2)
-WHITECOLOR=$(tput setaf 7)
 BLUECOLOR_BOLD=$BLUECOLOR$BOLD
 REDCOLOR_BOLD=$REDCOLOR$BOLD
 GREENCOLOR_BOLD=$GREENCOLOR$BOLD
-WHITECOLOR_BOLD=$WHITECOLOR$BOLD
 ENDCOLOR=$(tput sgr0)
 
 # Copies of system files will be kept here
@@ -16,34 +14,35 @@ BACKUP_FOLDER="${HOME}/backup"
 # return the absolute path of a local file
 dotfiles_absolute() {
   local file=$1
-  echo "$(cd $(dirname $file) && pwd)/$(basename $file)"
+  echo "$(cd "$(dirname "$file")" && pwd)/$(basename "$file")"
 }
 
 # Easily choose the link method between a symbolic link or a copy
 dotfiles_link() {
-  local local_dotfile=$(dotfiles_absolute "$1")
-  local system_dotfile="$2"
+  local local_dotfile system_dotfile
+  local_dotfile=$(dotfiles_absolute "$1")
+  system_dotfile="$2"
 
-  [ ! -d $BACKUP_FOLDER ] && mkdir -p $BACKUP_FOLDER
+  [ ! -d "$BACKUP_FOLDER" ] && mkdir -p "$BACKUP_FOLDER"
 
   # save a copy of the system file, if it is not a link already
-  readlink $system_dotfile >/dev/null && \
-    mv $system_dotfile $BACKUP_FOLDER 2>&1 >/dev/null
-  ln -sf $local_dotfile $system_dotfile
+  readlink "$system_dotfile" >/dev/null && \
+    mv "$system_dotfile" "$BACKUP_FOLDER" > /dev/null 2>&1
+  ln -sf "$local_dotfile" "$system_dotfile"
 }
 
 dotfiles_error() {
-  echo "[ERROR] $@"
+  echo "[ERROR] $*"
   exit 1
 }
 
 setup_git() {
   echo "${GREENCOLOR}Setting up some git defaults.....${ENDCOLOR}"
-  while read line ; do
+  while read -r line ; do
 
     echo "${BLUECOLOR}${line}${ENDCOLOR}"
-    section=$(echo $line | cut -d" " -f1)
-    value=$(echo $line | cut -d" " -f2-)
+    section=$(echo "$line" | cut -d" " -f1)
+    value=$(echo "$line" | cut -d" " -f2-)
 
     git config --global "$section" "$value"
   done < .gitconfig
@@ -52,9 +51,9 @@ setup_git() {
 setup_vim() {
   VIMDIR=~/.vim
   echo "${GREENCOLOR}Setting up VIM in ${VIMDIR} ...${ENDCOLOR}"
-  rm -rf ${VIMDIR}/bundle
-  mkdir -p ${VIMDIR}/tmp ${VIMDIR}/backup ${VIMDIR}/colors > /dev/null 2>&1
-  cp .vim/colors/monokai.vim ${VIMDIR}/colors/
+  rm -rf "${VIMDIR}/bundle"
+  mkdir -p "${VIMDIR}/tmp" "${VIMDIR}/backup" "${VIMDIR}/colors" > /dev/null 2>&1
+  cp .vim/colors/monokai.vim "${VIMDIR}/colors/"
   git clone https://github.com/gmarik/Vundle.vim ${VIMDIR}/bundle/Vundle.vim
   dotfiles_link .vimrc ~/.vimrc
   vim +PluginInstall +qall
@@ -63,10 +62,12 @@ setup_vim() {
 setup_dotfiles() {
   echo "${GREENCOLOR}Setting up bash dotfiles_....${ENDCOLOR}"
   touch ~/.bash_profile # in case it does not exist..
-  [ $(grep -c "\. ~/.bashrc" ~/.bash_profile) -ne 1 ] && cat .bash_profile  >> ~/.bash_profile
+  [ "$(grep -c "\. ~/.bashrc" ~/.bash_profile)" -ne 1 ] && cat .bash_profile  >> ~/.bash_profile
 
   dotfiles_link .bashrc ~/.bashrc
   dotfiles_link .bash_local_aliases ~/.bash_local_aliases
+
+  # shellcheck source=/dev/null
   . ~/.bash_profile
 }
 
@@ -91,8 +92,8 @@ setup_configs() {
     "dev-server")
       ;;
     "local")
-      mkdir -p $HOME/.config/terminator
-      dotfiles_link .config/terminator/config $HOME/.config/terminator/config
+      mkdir -p "$HOME/.config/terminator"
+      dotfiles_link .config/terminator/config "$HOME/.config/terminator/config"
       ;;
   esac
 }
@@ -119,13 +120,13 @@ setup_env() {
 
 setup-gnome-extensions() {
   # If not in Gnome, just get out:
-  [ -z $(which gsettings) ] && return
+  [ -z "$(which gsettings)" ] && return
 
   # Download magnificent and already-created script for shell extension's management
-  if [ ! -f $HOME/bin/gnome-shell-extension-installer ] ; then
-    mkdir -p $HOME/bin
-    curl -qsS https://raw.githubusercontent.com/brunelli/gnome-shell-extension-installer/master/gnome-shell-extension-installer > $HOME/bin/gnome-shell-extension-installer
-    chmod +x $HOME/bin/gnome-shell-extension-installer
+  if [ ! -f "$HOME/bin/gnome-shell-extension-installer" ] ; then
+    mkdir -p "$HOME/bin"
+    curl -qsS https://raw.githubusercontent.com/brunelli/gnome-shell-extension-installer/master/gnome-shell-extension-installer -o "$HOME/bin/gnome-shell-extension-installer"
+    chmod +x "$HOME/bin/gnome-shell-extension-installer"
   fi
 
   # Install my main extensions
@@ -139,7 +140,7 @@ setup-gnome-extensions() {
   gnome-shell --replace &
 }
 
-setup_env $@
+setup_env "$@"
 setup_vim
 setup_dotfiles
 setup_git
@@ -149,4 +150,4 @@ setup_configs
 setup-gnome-extensions
 
 echo "New functions and aliases installed, type '${BLUECOLOR_BOLD}my_commands'${ENDCOLOR} to check them out"
-printf "\n${GREENCOLOR_BOLD}Everything is done, enjoy!${ENDCOLOR}\n"
+printf "\n%s\n" "${GREENCOLOR_BOLD}Everything is done, enjoy!${ENDCOLOR}"
