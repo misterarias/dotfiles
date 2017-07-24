@@ -4,6 +4,39 @@
 # By using meaningful one-line comments to functions, they'll get nicely printed
 # by means of the 'my_commands' help function (defined in ~/.bashrc)
 
+# 'Darwin' for Mac, 'Linux' or similar elsewhere
+is_mac() {
+  [ "$(uname -s)" == "Darwin" ]
+}
+
+_get_bash_completion() {
+  is_mac && echo "/usr/local/etc/bash_completion"
+}
+
+_repo() {
+  autocomplete_file="$(_get_bash_completion).d/repo"
+  base_dir="$(grep base_dir='.*' "${autocomplete_file}" | cut -d'=' -f2 | tr -d '"' )"
+  if [ ! -d "${base_dir}" ] ; then
+    read -r -e -p "Base repo dir is not set, or is not a directory. Enter path to repositories base dir: " input
+    base_dir="${input/#\~/$HOME}"
+    [ ! -d "${base_dir}" ] && \
+      echo "Invalid directory: ${base_dir}" && return
+
+    # Update automcomplete file:
+    sed -i.bk -e "s#base_dir=.*#base_dir=\"${base_dir}\"#g" "${autocomplete_file}" && \
+      rm -rf "${autocomplete_file}.bk"
+    echo "Now create a new shell and start using the command" && return
+  fi
+
+  orgs_dir="$1"
+  repo_name=$2
+  fulldir="${base_dir}/${orgs_dir}/${repo_name}"
+  if [ ! -d "${fulldir}" ] ; then
+    echo "'${fulldir}' is not a directory"
+  else
+    cd "${fulldir}" || return
+  fi
+}
 
 _despawn() {
   service=$1
@@ -20,27 +53,27 @@ _spawn() {
   shift
 
   # ports and stuff
-  args=$*
+  #args=$*
 
   # first kill old one, if any
   _despawn "${service}" || true
 
   # And spawn a new service
-  printf "Spawning new '%s': %s'\n" "${service}" "$(docker run -d --rm  --name "${service_name}" ${args} "$service")"
+  printf "Spawning new '%s': %s'\n" "${service}" "$(docker run -d --rm  --name "${service_name}" "$@" "$service")"
 }
 
 
 # Free some Docker disk space
 free_docker_space() {
   exited_ps_before=$(docker ps -a -q  -f 'status=exited' | wc -l | tr -d ' ')
-  [ ${exited_ps_before} -gt 0 ] && \
+  [ "${exited_ps_before}" -gt 0 ] && \
     echo "Deleting ${exited_ps_before}  containers with status 'Exited'..." && \
-    docker rm -f $(docker ps -a -q -f 'status=exited')
+    docker rm -f "$(docker ps -a -q -f 'status=exited')"
 
   dangling_images_before=$(docker images -q -a -f "dangling=true" | wc -l | tr -d ' ')
-  [ ${dangling_images_before} -gt 0 ] && \
+  [ "${dangling_images_before}" -gt 0 ] && \
     echo "Deleting ${dangling_images_before} dangling images..." && \
-    docker rmi -f $(docker images -a -q -f "dangling=true")
+    docker rmi -f "$(docker images -a -q -f "dangling=true")"
 }
 
 # export AWS credentials for given profile
@@ -177,8 +210,6 @@ is_mac && [ ! -z "$(which gawk)" ] && alias awk='gawk'
 # Pushes production, develop, and all tags in one go
 alias super.push='git push origin prod  && git push --tags && git push origin develop'
 
-alias lsd="ls -l | awk '/^d/ {print $9}'"
-
 # Stops a Jupyter notebook being run
 alias stop.notebook='_despawn jupyter/all-spark-notebook'
 
@@ -202,6 +233,9 @@ alias bim="echo 'LOL eres un mamón, es ''vi'' o ''vim'', no va con B... te lo p
 
 # Random 32-char string
 alias rand.str="cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1"
+
+# Automagically autocomplete repo names and 'cd' into them. Needs a proper base repo dir. Depends on bash_completion. Use an alias to enable _repo to work in current shell
+alias repo='_repo'
 
 # DO NOT VERSION THESE THANKS
 [ -f ~/.bash_private_aliases ] && source ~/.bash_private_aliases

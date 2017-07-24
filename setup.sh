@@ -68,7 +68,9 @@ setup_dotfiles() {
   dotfiles_link .bash_local_aliases ~/.bash_local_aliases
 
   # shellcheck source=/dev/null
-  . ~/.bash_profile
+  . ~/.bash_profile 2>&1 > /dev/null
+
+  printf "\nNew functions and aliases installed, type '%s' tp check them out!\n" "${BLUECOLOR_BOLD}my_commands${ENDCOLOR}"
 }
 
 setup_ruby() {
@@ -119,8 +121,8 @@ setup_env() {
 }
 
 setup-gnome-extensions() {
-  # If not in Gnome, just get out:
-  [ -z "$(which gsettings)" ] && return
+  # If not in Linux, just get out:
+  is_mac && return
 
   # Download magnificent and already-created script for shell extension's management
   if [ ! -f "$HOME/bin/gnome-shell-extension-installer" ] ; then
@@ -140,6 +142,22 @@ setup-gnome-extensions() {
   gnome-shell --replace &
 }
 
+setup-repo-change-script() {
+  autocomplete_route="$(_get_bash_completion)"
+  [ ! -f "${autocomplete_route}" ] && \
+    echo "Bash auto-completion not installed, or not found in '${autocomplete_route}', refusing to install repo autocomplete" && return
+
+  # I instead of symlinking because I want to keep the original file versioned
+  cp -f ./files/repo "${autocomplete_route}.d/"
+
+  printf "\nAutocompletion for the %s command has been installed.\nRun it once to configure it, and then %s.\n" \
+    "${BLUECOLOR_BOLD}repo${ENDCOLOR}" "${REDCOLOR_BOLD}START A NEW SHELL${ENDCOLOR}"
+}
+
+# Lots of fancy functions here:
+# shellcheck source=/dev/null
+source .bash_local_aliases
+
 setup_env "$@"
 setup_vim
 setup_dotfiles
@@ -148,6 +166,6 @@ setup_postgres
 setup_ruby
 setup_configs
 setup-gnome-extensions
+setup-repo-change-script
 
-echo "New functions and aliases installed, type '${BLUECOLOR_BOLD}my_commands'${ENDCOLOR} to check them out"
 printf "\n%s\n" "${GREENCOLOR_BOLD}Everything is done, enjoy!${ENDCOLOR}"

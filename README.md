@@ -17,3 +17,9 @@ Just exec `$ setup.sh` and magic happens.
 
 I now use the Gnome shell extension installer from [here](https://github.com/brunelli/gnome-shell-extension-installer) to automate
 the installation of some of my most-used extensions
+
+# Bash completion scripts
+
+I have added a bash-completion script for the new `repo` command, installable with setup.
+Upon installation and first use, it allows to automatically navigate a certain _repo dir_ with
+autocomplete

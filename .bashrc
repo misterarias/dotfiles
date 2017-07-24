@@ -1,15 +1,15 @@
 # .bashrc
+#ft=sh; ts=2; sw=2
 
-# 'Darwin' for Mac, 'Linux' or similar elsewhere
-is_mac() {
-  [ "$(uname -s)" == "Darwin" ]
-}
+# Bash Aliases
+if [ -f ~/.bash_local_aliases ]; then
+  # shellcheck source=/dev/null
+	. ~/.bash_local_aliases
+fi
 
-# Bash completion
+# Bash completion location depends on OS
 # shellcheck source=/dev/null
-is_mac && [ -f /usr/local/etc/bash_completion ] && . /usr/local/etc/bash_completion
-# shellcheck source=/dev/null
-! is_mac && [ -f /etc/bash_completion ] && . /etc/bash_completion
+[ -f "$(_get_bash_completion)" ] && . "$(_get_bash_completion)"
 
 # git completion
 if [ ! -f ~/.git-completion ]; then
@@ -141,8 +141,7 @@ else
   export PROMPT_COMMAND='echo -en "\033]0;$(whoami)$(__jobs)@${PWD}\a"'
 fi
 
-
-if [ "x" = "x${USE_RIGHT_COLUMN} " ] ; then
+if [ -z "${USE_RIGHT_COLUMN}" ] ; then
   function __rightprompt() {
     printf "%*s" ${COLUMNS} "$(date +"%D %T")";
   }
@@ -165,10 +164,3 @@ ulimit -c unlimited
 EDITOR=vim
 export EDITOR
 export PSQL_EDITOR='vim -c"set syntax=sql"'
-
-# Bash Aliases
-if [ -f ~/.bash_local_aliases ]; then
-  # shellcheck source=/dev/null
-	. ~/.bash_local_aliases
-fi
-#ft=sh; ts=2; sw=2

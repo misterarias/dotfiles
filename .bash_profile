@@ -6,8 +6,6 @@ fi
 
 export PATH=$HOME/bin:$PATH
 
-export LANG=en_US.UTF8
-export LC_ALL=en_US.UTF8
-export LC_CTYPE=en_US.UTF8
-export LANGUAGE=en_US.UTF8
+LANG="en_US.UTF-8"
+LC_ALL=$LANG
 echo -e "Setting LANG=$GREENCOLOR_BOLD$LANG$ENDCOLOR"
