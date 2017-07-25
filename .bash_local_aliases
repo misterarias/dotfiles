@@ -13,6 +13,15 @@ _get_bash_completion() {
   is_mac && echo "/usr/local/etc/bash_completion"
 }
 
+_activate() {
+  CURRENT_DIR=$(basename "$PWD")
+  VENV_DIR="$(cd "${HOME}/.venvs/" && pwd)/${CURRENT_DIR}"
+  VENV_ACTIVATE="${VENV_DIR}/bin/activate"
+
+  [ ! -f "${VENV_ACTIVATE}" ] && echo "No virtualenv called '$VENV_DIR'" && exit 1
+  source ${VENV_ACTIVATE}
+}
+
 _repo() {
   autocomplete_file="$(_get_bash_completion).d/repo"
   base_dir="$(grep base_dir='.*' "${autocomplete_file}" | cut -d'=' -f2 | tr -d '"' )"
@@ -236,6 +245,9 @@ alias rand.str="cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1"
 
 # Automagically autocomplete repo names and 'cd' into them. Needs a proper base repo dir. Depends on bash_completion. Use an alias to enable _repo to work in current shell
 alias repo='_repo'
+
+# Activate an existing virtualenv in current directory
+alias activate='_activate'
 
 # DO NOT VERSION THESE THANKS
 [ -f ~/.bash_private_aliases ] && source ~/.bash_private_aliases
