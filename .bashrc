@@ -12,23 +12,26 @@ fi
 [ -f "$(_get_bash_completion)" ] && . "$(_get_bash_completion)"
 
 # git completion
-if [ ! -f ~/.git-completion ]; then
+[ ! -f ~/.git-completion ] && \
     curl http://git.kernel.org/cgit/git/git.git/plain/contrib/completion/git-completion.bash?id=HEAD > ~/.git-completion
-fi
+
 # shellcheck source=/dev/null
 . ~/.git-completion
 
 # show help on custom commands
 my_commands() {
+  local alias_filter="alias .*"
+  local function_filter='^[a-z][a-z._]\+()'
   for aliases in ${HOME}/.bash_local_aliases $HOME/.bash_private_aliases ; do
     [ ! -f "${aliases}" ] && continue
-    printf  "\n%s%s%s (%s)\n\n" "${GREENCOLOR_BOLD}" "Custom aliases:" "${ENDCOLOR}" "${aliases}"
-    grep -B1 -e 'alias ' "$aliases" | sed -e 's#=.*##' -e 's#.*alias ##'  -e 's#--##g' \
+    printf  "\n%s%s%s:\n\n" "${GREENCOLOR_BOLD}" "${aliases}" "${ENDCOLOR}"
+    grep -B1 -e "${alias_filter}" "$aliases" | sed -e 's#=.*##' -e 's#.*alias ##'  -e 's#--##g' \
       -e "s/^\([a-z._]*\)$/${REDCOLOR_BOLD}\1${ENDCOLOR}/g"
 
+    printf "\n"
+
     # Do not show functions starting with '_'
-    printf "\n%s%s%s (%s)\n\n" "${GREENCOLOR_BOLD}" "Local functions:" "${ENDCOLOR}" "${aliases}"
-    grep -B1 -e '^[a-z][a-z._]\+()' "$aliases" | sed -e 's#().*##g' -e 's#--##g' \
+    grep -B1 -e "${function_filter}" "$aliases" | sed -e 's#().*##g' -e 's#--##g' \
         -e "s/^\([a-z._]*\)$/${REDCOLOR_BOLD}\1${ENDCOLOR}/g"
   done
 }
@@ -60,7 +63,7 @@ export LESS="--RAW-CONTROL-CHARS"
 
 function __jobs() {
     job_number=$(jobs | wc -l | tr -d '' )
-    is_repo && echo "$PROMPT_COMMAND" | grep -q -o __git_ps1 && \
+    is.repo && echo "$PROMPT_COMMAND" | grep -q -o __git_ps1 && \
       job_number=$((job_number - 3))
     if [ ${job_number} -gt 0 ] ; then
       printf "(%d) " "${job_number}"
@@ -71,8 +74,8 @@ function __jobs() {
 
 # For MacOSX only :(
 function __battery_state() {
-  LOW_THRESHOLD=25
-  HIGH_THRESHOLD=65
+  local LOW_THRESHOLD=25
+  local HIGH_THRESHOLD=65
   if is_mac ; then
     state=$(pmset -g batt)
     discharging=$(echo "$state" | grep discharging)
@@ -95,6 +98,7 @@ function __battery_state() {
   fi
 }
 
+# Some color codes
 BOLD=$(tput bold)
 REDCOLOR=$(tput setaf 1)
 GREENCOLOR=$(tput setaf 2)
@@ -108,51 +112,63 @@ WHITECOLOR_BOLD=${WHITECOLOR}${BOLD}
 YELLOWCOLOR_BOLD=${YELLOWCOLOR}${BOLD}
 ENDCOLOR=$(tput sgr0)
 
-DISPLAY_BATTERY_LEVEL=1
-[ ! -z "${DISPLAY_BATTERY_LEVEL}" ] && BATT="\$(__battery_state)"
-#WHO="\[${BLUECOLOR_BOLD}\][\h]\[${ENDCOLOR}\]"
-WHEN="\[${BLUECOLOR_BOLD}\]\t\[${ENDCOLOR}\]"
-WHERE="\[${WHITECOLOR_BOLD}\]\w\[${ENDCOLOR}\]"
-JOBS="\[${REDCOLOR_BOLD}\]\$(__jobs)\[${ENDCOLOR}\]"
-SEPARATOR=" "
-PS2='> '
+function __manage_prompt() {
 
-PROMPT_SYMBOL='$(if [ ! -z "$VIRTUAL_ENV" ] ; then echo "(venv: $(basename $VIRTUAL_ENV)) $ " ; else echo "$ " ; fi)'
+  local DISPLAY_BATTERY_LEVEL=1
+  [ ! -z "${DISPLAY_BATTERY_LEVEL}" ] && \
+    local BATT="\$(__battery_state)"
+  # local WHO="\[${BLUECOLOR_BOLD}\][\h]\[${ENDCOLOR}\]"
+  local WHEN="\[${BLUECOLOR_BOLD}\]\t\[${ENDCOLOR}\]"
+  local WHERE="\[${WHITECOLOR_BOLD}\]\w\[${ENDCOLOR}\]"
+  local JOBS="\[${REDCOLOR}\]\$(__jobs)\[${ENDCOLOR}\]"
+  local SEPARATOR=" "
+  local PS2='> '
 
-# For git prompt (download with: curl https://raw.github.com/git/git/master/contrib/completion/git-prompt.sh -o ~/.   git-prompt.sh)
-USE_GIT_PROMPT=1
-if [ ${USE_GIT_PROMPT} -eq 1 ] ; then
-  if [ ! -f ~/.git-prompt.sh ]; then
-    curl https://raw.githubusercontent.com/git/git/master/contrib/completion/git-prompt.sh -o ~/.git-prompt.sh
+  local AWS_PROFILE_SHOW='$([ ! -z "$AWS_PROFILE" ] && echo "\[${GREENCOLOR_BOLD}\]aws: $AWS_PROFILE \[${ENDCOLOR}\]")'
+  local VENV_SHOW='$([ ! -z "$VIRTUAL_ENV" ] && echo "(venv: $(basename $VIRTUAL_ENV)) ")'
+  local PROMPT_SYMBOL='$ '
+
+  # For git prompt (download with: curl https://raw.github.com/git/git/master/contrib/completion/git-prompt.sh -o ~/.   git-prompt.sh)
+  local USE_GIT_PROMPT=1
+  if [ ${USE_GIT_PROMPT} -eq 1 ] ; then
+    if [ ! -f ~/.git-prompt.sh ]; then
+      curl https://raw.githubusercontent.com/git/git/master/contrib/completion/git-prompt.sh -o ~/.git-prompt.sh
+    fi
+
+    # shellcheck source=/dev/null
+    source  ~/.git-prompt.sh
+
+    # Enable for small repos or local (non NFS mounted) connections
+    export GIT_PS1_SHOWDIRTYSTATE=1
+    export GIT_PS1_SHOWUNTRACKEDFILES=1
+    export GIT_PS1_SHOWUPSTREAM="auto verbose"
+    export GIT_PS1_SHOWCOLORHINTS=true
+    export GIT_PS1_DESCRIBE_STYLE=branch
+    #export GIT_PS1="\[${BLUECOLOR}\]\$(__git_ps1)\[${ENDCOLOR}\]"
+    #PS1=${BATT}${JOBS}${WHEN}${SEPARATOR}${WHERE}${SEPARATOR}${GIT_PS1}\\n${PROMPT_SYMBOL}
+    PROMPT_INFO=${JOBS}${AWS_PROFILE_SHOW}${BATT}${WHEN}${SEPARATOR}${WHERE}
+    SYMBOL="\\n${VENV_SHOW}${PROMPT_SYMBOL}"
+    GIT=' [%s]'
+
+    export PROMPT_COMMAND='__git_ps1 "${PROMPT_INFO}" "${SYMBOL}" "${GIT}"'
+  else
+    export PROMPT_COMMAND='echo -en "\033]0;$(whoami)$(__jobs)@${PWD}\a"'
   fi
 
-  # shellcheck source=/dev/null
-  source  ~/.git-prompt.sh
+  if [ -z "${USE_RIGHT_COLUMN}" ] ; then
+    function __rightprompt() {
+      printf "%*s" ${COLUMNS} "$(date +"%D %T")";
+    }
 
-  # Enable for small repos or local (non NFS mounted) connections
-  export GIT_PS1_SHOWDIRTYSTATE=1
-  export GIT_PS1_SHOWUNTRACKEDFILES=1
-  export GIT_PS1_SHOWUPSTREAM="auto verbose"
-  export GIT_PS1_SHOWCOLORHINTS=true
-  #export GIT_PS1="\[${BLUECOLOR}\]\$(__git_ps1)\[${ENDCOLOR}\]"
-  #PS1=${BATT}${JOBS}${WHEN}${SEPARATOR}${WHERE}${SEPARATOR}${GIT_PS1}\\n${PROMPT_SYMBOL}
-  export PROMPT_COMMAND='__git_ps1 "${BATT}${JOBS}${WHEN}${SEPARATOR}${WHERE}" "\\n${PROMPT_SYMBOL}" " [%s]"'
-else
-  export PROMPT_COMMAND='echo -en "\033]0;$(whoami)$(__jobs)@${PWD}\a"'
-fi
+    START_RIGHT_COLUMN=$(tput sc)
+    END_RIGHT_COLUMN=$(tput rc)
+    RIGHTPROMPT="${START_RIGHT_COLUMN}${GREENCOLOR}\$(__rightprompt)${ENDCOLOR}${END_RIGHT_COLUMN}"
+    PS1=${RIGHTPROMPT}${PS1}
+  fi
 
-if [ -z "${USE_RIGHT_COLUMN}" ] ; then
-  function __rightprompt() {
-    printf "%*s" ${COLUMNS} "$(date +"%D %T")";
-  }
-
-  START_RIGHT_COLUMN=$(tput sc)
-  END_RIGHT_COLUMN=$(tput rc)
-  RIGHTPROMPT="${START_RIGHT_COLUMN}${GREENCOLOR}\$(__rightprompt)${ENDCOLOR}${END_RIGHT_COLUMN}"
-  PS1=${RIGHTPROMPT}${PS1}
-fi
-
-[ ! -z "${PS1}" ] && export PS1
+  [ ! -z "${PS1}" ] && export PS1
+}
+__manage_prompt
 
 # I want cores
 ulimit -c unlimited
@@ -161,6 +177,5 @@ ulimit -c unlimited
 [ ! -z "$(which mesg)" ] && mesg n
 
 # Useful fore everything: bash, git, postgres...
-EDITOR=vim
-export EDITOR
+export EDITOR=vim
 export PSQL_EDITOR='vim -c"set syntax=sql"'
