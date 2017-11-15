@@ -21,6 +21,10 @@ Plugin 'derekwyatt/vim-scala'
 "Plugin 'git://git.code.sf.net/p/vim-latex/vim-latex'
 "Plugin 'othree/html5.vim'
 Plugin 'scrooloose/nerdtree'
+Plugin 'Rykka/riv.vim'
+" TO work with React this two are useful
+Plugin 'pangloss/vim-javascript'
+Plugin 'mxw/vim-jsx'
 
 " To enable code snippets
 "Plugin 'MarcWeber/vim-addon-mw-utils'
@@ -33,6 +37,9 @@ Plugin 'scrooloose/nerdtree'
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
 filetype plugin indent on    " required
+
+" test stuff
+"setl foldmethod=syntax
 
 set encoding=utf8
 
@@ -115,12 +122,14 @@ endif
 " Use Unix as the standard file type
 set ffs=unix,dos,mac
 
-" 1 tab == 2 spaces
+" 1 tab == X spaces
 set shiftwidth=2
 set tabstop=2
 set sts=2
 set expandtab
-autocmd Filetype yaml setlocal ts=4 sts=4 sw=4
+
+" More space in JSON files
+autocmd BufEnter *.json :set ts=4 sts=4 sts=4
 
 set ai "Auto indent
 set si "Smart indent
@@ -197,6 +206,7 @@ let g:syntastic_javascript_checkers = ['jshint']
 let g:syntastic_sh_checkers = ['shellcheck'] " Package manager
 let g:syntastic_sql_checkers = ['sqlint'] " Ruby gem
 let g:syntastic_scala_checkers = ['scalac']
+let g:syntastic_rst_checkers = ['sphinx'] " PIP
 let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_aggregate_errors = 1
 let g:syntastic_auto_loc_list = 1
@@ -250,9 +260,6 @@ nmap z- [s
 " hbs: Handlebars template
 autocmd BufEnter *.hbs :set ft=html
 
-" More space in JSON files
-autocmd BufEnter *.json :set ts=4 sts=4 sts=4
-
 " Command to yank into clipboard (needs vim-gtk)
 if has('clipboard')==1
   " for Linux
@@ -264,6 +271,9 @@ endif
 " Nerdtree starts OFF by default
 "autocmd vimenter * NERDTree
 
+" Filter out some files
+let NERDTreeIgnore = ['\.pyc$', '\.o$[[file]]']
+
 " CLose vim if the only window left open is nerdtree
 autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
 "nmap <silent> <F2> :NERDTreeToggle<CR>
@@ -272,3 +282,7 @@ map <leader>ff :NERDTreeFind<cr>
 
 " Scala-vim
 let g:scala_scaladoc_indent = 1
+
+" JSX-enabled for 'js' files
+let g:jsx_ext_required = 0
+
