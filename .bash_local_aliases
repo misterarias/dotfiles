@@ -13,6 +13,12 @@ sys.disk_usage() {
   done
 }
 
+# Show a pretty error message that actually exits
+error() {
+  echo "[ERROR] $*"
+  exit 1
+}
+
 # 'Darwin' for Mac, 'Linux' or similar elsewhere
 is_mac() {
   [ "$(uname -s)" == "Darwin" ]
@@ -20,6 +26,31 @@ is_mac() {
 
 _get_bash_completion() {
   is_mac && echo "/usr/local/etc/bash_completion"
+}
+
+_virtualenver() {
+  local venv_name venv_dir venv_binaries
+  venv_name=$(basename "$PWD")
+  venv_dir="$(cd "${HOME}/.venvs/" && pwd)/${venv_name}"
+  venv_binaries="${venv_dir}/bin"
+  venv_pip="${venv_binaries}/pip"
+  venv_activate="${venv_binaries}/activate"
+
+  # Virtualenv at a global level is a must
+  [ -z "$(which virtualenv)" ] && pip install virtualenv
+
+  # PIP is a hard requirement, make sure it exists
+  [ ! -f "${venv_pip}" ] && virtualenv "${venv_dir}"
+
+  # Use pip syntax to install requirements
+  local PARAMS=${*:-.}
+  "${venv_pip}" install ${PARAMS}
+
+  # I use this with Syntastic :-)
+  "${venv_pip}" install pylint
+
+  # Auto activate
+  source "${venv_activate}"
 }
 
 _activate() {
@@ -84,7 +115,6 @@ _spawn() {
 
 # Free some Docker disk space
 docker.free_space() {
-  set -x
   exited_ps_before=$(docker ps -a -q  -f 'status=exited')
   exited_ps_before_count=$(echo "${exited_ps_before}" | grep -v ^$ | wc -l | tr -d ' ')
   [ ${exited_ps_before_count} -gt 0 ] && \
@@ -96,7 +126,9 @@ docker.free_space() {
   [ ${dangling_images_before_count} -gt 0 ] && \
     echo "Deleting ${dangling_images_before_count} dangling images..." && \
     docker rmi -f $(echo ${dangling_images_before} | xargs)
-  set +x
+
+  # Delete volumes
+  docker volume rm $(docker volume ls -q)
 }
 
 # export AWS credentials for given profile
@@ -182,7 +214,7 @@ rand.lines() {
   N=$2
 
   if [ -z "$in"  ] || [ ! -f "$in" ] ; then
-    echo "[ERROR ] Invalid input file: Syntax is $0 <input_file> [<percentage of lines (Default: 10%)>]"
+    error "Invalid input file: Syntax is $0 <input_file> [<percentage of lines (Default: 10%)>]"
   else
     [ -z "$N" -o "$N" -lt 0 -o "$N" -gt 100 ] && N=10
 
@@ -272,8 +304,11 @@ alias spawn.yack='docker run -d --rm --name yack-tw -p 8000:8000  -v $(pwd):/yac
 # Stops a running typewriter
 alias despawn.yack='docker kill yack-tw'
 
-# Makes fun of you
+# VIM aliases, for great justice
 alias bim="echo 'LOL eres un mamón, es ''vi'' o ''vim'', no va con B... te lo paso por esta' && read && vim $*"
+
+# VIM aliases, for even greater justice
+alias vin="echo 'VIN?? 'Vin' qué, Diesel??? Madre mía, que paciencia...' && read && vim $*"
 
 # Random 32-char string
 alias rand.str="cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1"
@@ -283,6 +318,15 @@ alias repo='_repo'
 
 # Activate an existing virtualenv in current directory
 alias activate='_activate'
+
+# Install and activate a Virtualenv in current location
+alias virtualenver='_virtualenver'
+
+# Copy current path to clipboard - needs 'ccp'
+alias ccpath="printf '%s' '$(pwd)' | ccp && echo '$(pwd) copied to Clipboard'"
+
+# test if current path is a GIT repo
+alias is_repo='git rev-parse > /dev/null 2>&1'
 
 # DO NOT VERSION THESE THANKS
 [ -f ~/.bash_private_aliases ] && source ~/.bash_private_aliases

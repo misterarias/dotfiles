@@ -11,6 +11,9 @@ fi
 # shellcheck source=/dev/null
 [ -f "$(_get_bash_completion)" ] && . "$(_get_bash_completion)"
 
+# Debian-like completion for MacOSX
+# is_mac && bind '"\t":menu-complete'
+
 # git completion
 [ ! -f ~/.git-completion ] && \
     curl http://git.kernel.org/cgit/git/git.git/plain/contrib/completion/git-completion.bash?id=HEAD > ~/.git-completion
@@ -74,28 +77,26 @@ function __jobs() {
 
 # For MacOSX only :(
 function __battery_state() {
-  local LOW_THRESHOLD=25
-  local HIGH_THRESHOLD=65
-  if is_mac ; then
-    state=$(pmset -g batt)
-    discharging=$(echo "$state" | grep discharging)
-    percentage=$(echo "$state" | grep -o "[0-9]*%" | tr -d '%')
-    if [ ! -z "$discharging" ] ; then
-      if [ "${percentage}" -gt ${HIGH_THRESHOLD} ] ; then
-        batt="${GREENCOLOR}${percentage}%${ENDCOLOR}"
-      elif [ "${percentage}" -gt ${LOW_THRESHOLD} ] ; then
-        batt="${YELLOWCOLOR}${percentage}%${ENDCOLOR}"
-      else
-        batt="${REDCOLOR_BOLD}${percentage}%${ENDCOLOR}"
-      fi
+  if ! is_mac ; then return ; fi
+  local LOW_THRESHOLD=25 HIGH_THRESHOLD=65 state discharging percentage batt
+  state=$(pmset -g batt)
+  discharging=$(echo "$state" | grep discharging)
+  percentage=$(echo "$state" | grep -o "[0-9]*%" | tr -d '%')
+  if [ ! -z "$discharging" ] ; then
+    if [ "${percentage}" -gt ${HIGH_THRESHOLD} ] ; then
+      batt="${GREENCOLOR}${percentage}%${ENDCOLOR}"
+    elif [ "${percentage}" -gt ${LOW_THRESHOLD} ] ; then
+      batt="${YELLOWCOLOR}${percentage}%${ENDCOLOR}"
     else
-      # while charging, only show while it's kind of low
-      if [ "${percentage}" -lt ${HIGH_THRESHOLD} ] ; then
-        batt="${YELLOWCOLOR_BOLD}${percentage}%${ENDCOLOR}"
-      fi
+      batt="${REDCOLOR_BOLD}${percentage}%${ENDCOLOR}"
     fi
-    [ ! -z "${batt}" ] && echo "${batt} "
+  else
+    # while charging, only show while it's kind of low
+    if [ "${percentage}" -lt ${HIGH_THRESHOLD} ] ; then
+      batt="${YELLOWCOLOR_BOLD}${percentage}%${ENDCOLOR}"
+    fi
   fi
+  [ ! -z "${batt}" ] && echo "${batt} "
 }
 
 # Some color codes
