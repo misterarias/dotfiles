@@ -13,6 +13,25 @@ sys.disk_usage() {
   done
 }
 
+# Find something similar to argument, from here downwards
+sys.find() {
+  local arg=$1
+  shift
+  [ ! -z "$*" ] && \
+    echo "[WARNING] Ignoring extra input parameters: $*"
+  find . -iname "*${arg}*"
+}
+
+# Rename a bunch of files
+sys.renamer() {
+  local where=${1:-.}
+  for file in $(find "${where}" -type f -depth 1) ; do
+    echo "Type in new name for ${file}? [Empty to ignore]" && read new_name
+    [ -z "${new_name}" ] && continue
+    mv "${file}" "${new_name}"
+  done
+}
+
 # Show a pretty error message that actually exits
 error() {
   echo "[ERROR] $*"
@@ -28,19 +47,46 @@ _get_bash_completion() {
   is_mac && echo "/usr/local/etc/bash_completion"
 }
 
+_virtualenver3() {
+  local venv_name venv_dir venv_binaries venv_pip venv_activate venv_global_binary
+  venv_name="$(basename "$PWD")_p3.6"
+  venv_dir="$(cd "${HOME}/.venvs/" && pwd)/${venv_name}"
+  venv_binaries="${venv_dir}/bin"
+  venv_pip="${venv_binaries}/pip"
+  venv_activate="${venv_binaries}/activate"
+  venv_global_binary="virtualenv --python=python3.6"
+
+  # Virtualenv at a global level is a must
+  [ -z "$(which virtualenv)" ] && pip install -q virtualenv
+
+  # PIP is a hard requirement, make sure it exists
+  [ ! -f "${venv_pip}" ] && ${venv_global_binary} "${venv_dir}"
+
+  # Use pip syntax to install requirements
+  local PARAMS=${*:-.}
+  "${venv_pip}" install ${PARAMS}
+
+  # I use this with Syntastic :-)
+  "${venv_pip}" install pylint
+
+  # Auto activate
+  source "${venv_activate}"
+}
+
 _virtualenver() {
-  local venv_name venv_dir venv_binaries
+  local venv_name venv_dir venv_binaries venv_pip venv_activate venv_global_binary
   venv_name=$(basename "$PWD")
   venv_dir="$(cd "${HOME}/.venvs/" && pwd)/${venv_name}"
   venv_binaries="${venv_dir}/bin"
   venv_pip="${venv_binaries}/pip"
   venv_activate="${venv_binaries}/activate"
+  venv_global_binary="virtualenv --python=python2.7"
 
   # Virtualenv at a global level is a must
-  [ -z "$(which virtualenv)" ] && pip install virtualenv
+  [ -z "$(which virtualenv)" ] && pip install -q virtualenv
 
   # PIP is a hard requirement, make sure it exists
-  [ ! -f "${venv_pip}" ] && virtualenv "${venv_dir}"
+  [ ! -f "${venv_pip}" ] && ${venv_global_binary} "${venv_dir}"
 
   # Use pip syntax to install requirements
   local PARAMS=${*:-.}
@@ -214,7 +260,7 @@ rand.lines() {
   N=$2
 
   if [ -z "$in"  ] || [ ! -f "$in" ] ; then
-    error "Invalid input file: Syntax is $0 <input_file> [<percentage of lines (Default: 10%)>]"
+    echo "[ERROR] Invalid input file: Syntax is $0 <input_file> [<percentage of lines (Default: 10%)>]"
   else
     [ -z "$N" -o "$N" -lt 0 -o "$N" -gt 100 ] && N=10
 
@@ -319,8 +365,11 @@ alias repo='_repo'
 # Activate an existing virtualenv in current directory
 alias activate='_activate'
 
-# Install and activate a Virtualenv in current location
+# Install and activate a Python 2.7 Virtualenv in current location
 alias virtualenver='_virtualenver'
+
+# Install and activate a Python 3.6 Virtualenv in current location
+alias virtualenver3='_virtualenver3'
 
 # Copy current path to clipboard - needs 'ccp'
 alias ccpath="printf '%s' '$(pwd)' | ccp && echo '$(pwd) copied to Clipboard'"
