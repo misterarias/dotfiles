@@ -1,0 +1,23 @@
+# repo(1) completion
+
+_repo_names() {
+  local  current previous opts base_dir
+  base_dir="#CHANGEME#"
+  [ ! -d "${base_dir}" ] && return
+
+  current="${COMP_WORDS[COMP_CWORD]}"
+  previous="${COMP_WORDS[COMP_CWORD-1]}"
+  COMPREPLY=()
+
+  # If previous word is set, check if it represents a valid directory
+  subdir="${base_dir}/${previous}"
+  if [ -d "${subdir}" ] ; then
+    opts="$(ls "${subdir}" | xargs)"
+    COMPREPLY=( $( compgen -W "$opts" -- "$current" ) )
+  else
+    opts=$(ls "${base_dir}" | xargs)
+  fi
+
+  COMPREPLY=( $( compgen -W "$opts" -- "$current" ) )
+}
+complete -F _repo_names repo
