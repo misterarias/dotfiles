@@ -12,7 +12,7 @@ fi
 [ -f "$(_get_bash_completion)" ] && . "$(_get_bash_completion)"
 
 # Debian-like completion for MacOSX
-# is_mac && bind '"\t":menu-complete'
+# is.mac && bind '"\t":menu-complete'
 
 # git completion
 [ ! -f ~/.git-completion ] && \
@@ -40,7 +40,7 @@ my_commands() {
 }
 
 #sets up some colors
-is_mac && export CLICOLOR=1
+is.mac && export CLICOLOR=1
 
 export LSCOLORS=gxfxcxdxbxegedabagacad
 
@@ -77,7 +77,7 @@ function __jobs() {
 
 # For MacOSX only :(
 function __battery_state() {
-  if ! is_mac ; then return ; fi
+  if ! is.mac ; then return ; fi
   local LOW_THRESHOLD=25 HIGH_THRESHOLD=65 state discharging percentage batt
   state=$(pmset -g batt)
   discharging=$(echo "$state" | grep discharging)
@@ -172,7 +172,7 @@ function __manage_prompt() {
 __manage_prompt
 
 # I want cores
-ulimit -c unlimited
+#ulimit -c unlimited
 
 # Careful with messages (David Hasselhoff bombing is real)
 [ ! -z "$(which mesg)" ] && mesg n
@@ -180,3 +180,10 @@ ulimit -c unlimited
 # Useful fore everything: bash, git, postgres...
 export EDITOR=vim
 export PSQL_EDITOR='vim -c"set syntax=sql"'
+
+# tabtab source for serverless package
+# uninstall by removing these lines or running `tabtab uninstall serverless`
+[ -f /usr/local/lib/node_modules/serverless/node_modules/tabtab/.completions/serverless.bash ] && . /usr/local/lib/node_modules/serverless/node_modules/tabtab/.completions/serverless.bash
+# tabtab source for sls package
+# uninstall by removing these lines or running `tabtab uninstall sls`
+[ -f /usr/local/lib/node_modules/serverless/node_modules/tabtab/.completions/sls.bash ] && . /usr/local/lib/node_modules/serverless/node_modules/tabtab/.completions/sls.bash

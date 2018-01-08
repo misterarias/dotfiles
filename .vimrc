@@ -43,6 +43,13 @@ filetype plugin indent on    " required
 
 set encoding=utf8
 
+" Color first, so I can customize later
+if &diff
+	colorscheme monokai "too cool :)
+else
+	colorscheme monokai "koehler
+endif
+
 "Autoreload self
 autocmd! bufwritepost ~/.vimrc source %
 
@@ -90,7 +97,7 @@ set showmatch
 set mat=2
 
 " My editor my rules
-set textwidth=240
+set textwidth=120
 set wrapmargin=2
 "set wrap "Wrap lines
 "set linebreak
@@ -127,6 +134,7 @@ set shiftwidth=2
 set tabstop=2
 set sts=2
 set expandtab
+autocmd Filetype python setlocal ts=4 sts=4 sw=4
 
 " More space in JSON files
 autocmd BufEnter *.json :set ts=4 sts=4 sts=4
@@ -157,12 +165,6 @@ set statusline+=\ [POS=%.4l/%.4L\ (%p%%)]
 
 " So it doesn't ask to save evertytime you move out of buffers
 set hidden
-
-if &diff
-	colorscheme monokai "too cool :)
-else
-	colorscheme monokai "koehler
-endif
 
 " Delete trailing white space on save, useful ALWAYS
 func! DeleteTrailingWS()
@@ -202,7 +204,7 @@ noremap <leader>sc :SyntasticCheck<cr>
 
 let g:syntastic_yaml_checkers = ['yamllint'] " PIP
 let g:syntastic_py_checkers = ['pylint'] " PIP
-let g:syntastic_javascript_checkers = ['jshint']
+let g:syntastic_javascript_checkers = ['eslint'] " npm
 let g:syntastic_sh_checkers = ['shellcheck'] " Package manager
 let g:syntastic_sql_checkers = ['sqlint'] " Ruby gem
 let g:syntastic_scala_checkers = ['scalac']
@@ -286,3 +288,5 @@ let g:scala_scaladoc_indent = 1
 " JSX-enabled for 'js' files
 let g:jsx_ext_required = 0
 
+" Search highlighting
+hi Search ctermbg=Yellow ctermfg=DarkYellow

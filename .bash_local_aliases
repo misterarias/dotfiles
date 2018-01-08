@@ -5,10 +5,52 @@
 # By using meaningful one-line comments to functions, they'll get nicely printed
 # by means of the 'my_commands' help function (defined in ~/.bashrc)
 
+PYTHON_3_SUFFIX="_p3.6"
+
+# re-source all aliases
+alias.source() {
+  source "${HOME}/.bash_local_aliases"
+}
+
+# Edit aliases fast
+alias.edit() {
+  vim "${HOME}/.bash_local_aliases" "${HOME}/.bash_private_aliases"
+}
+
+# kills anything similar to argument passed
+sys.kill() {
+  regex=$1
+  while [ ! -z "${regex}" ] ; do
+    ps aux | grep -i ${regex} | awk '{print $2}' | xargs kill -9 > /dev/null 2>&1
+    shift
+    regex=$1
+  done
+}
+
+# Returns true if the current dir is a git repository
+is.repo() {
+  [ ! -z "$(git rev-parse \
+    --git-dir --is-inside-git-dir \
+    --is-bare-repository --is-inside-work-tree \
+    --short HEAD 2>/dev/null)" ]
+}
+
+# Convert a file from RST to Markdown
+rst2md() {
+  [ -z "$(which pandoc)" ] && error "pandoc is not installed"
+
+  local input="$1"
+  [ -z "${input}" -o "${input}" = "${input//.rst/}" ] && \
+    error "Need a rst file as input"
+
+  local output="${input//.rst/.md}"
+  pandoc "${input}" -f rst -t markdown -o "${output}"
+}
+
 # Report of disk space usage in current path
 sys.disk_usage() {
   for dir in $(ls -h .) ; do
-    total=$(du -ch $dir | grep total | egrep -o "[0-9]+[GM]")
+    total=$(du -ch "$dir" | grep total | grep -E -o "[0-9]+[GM]")
     [ ! -z "${total}" ] && echo "Disk usage in $dir: $total"
   done
 }
@@ -24,89 +66,91 @@ sys.find() {
 
 # Rename a bunch of files
 sys.renamer() {
-  local where=${1:-.}
+  local where file_name file_dir
+  where=${1:-.}
   for file in $(find "${where}" -type f -depth 1) ; do
-    echo "Type in new name for ${file}? [Empty to ignore]" && read new_name
+    file_name="$(basename "$file")"
+    file_dir="$(dirname "$file")"
+    echo "Type in new name for ${file_name}? [Empty to ignore, \$ matches all]" && read new_name
     [ -z "${new_name}" ] && continue
-    mv "${file}" "${new_name}"
+    new_name="${new_name//\$/$file_name}"
+    mv "${file_dir}/${file_name}" "${file_dir}/${new_name}"
   done
 }
 
 # Show a pretty error message that actually exits
 error() {
-  echo "[ERROR] $*"
-  exit 1
+  echo "[ERROR] $*" ;
+  return 1
 }
 
 # 'Darwin' for Mac, 'Linux' or similar elsewhere
-is_mac() {
+is.mac() {
   [ "$(uname -s)" == "Darwin" ]
 }
 
 _get_bash_completion() {
-  is_mac && echo "/usr/local/etc/bash_completion"
+  is.mac && echo "/usr/local/etc/bash_completion"
+}
+
+_virtualenver.core() {
+  local venv_name venv_dir venv_binaries venv_pip venv_activate venv_global_binary
+  venv_name="$1" && shift
+  venv_global_binary="$1" && shift
+  venv_dir="$(cd "${HOME}/.venvs/" && pwd)/${venv_name}"
+  venv_binaries="${venv_dir}/bin"
+  venv_pip="${venv_binaries}/pip"
+  venv_activate="${venv_binaries}/activate"
+
+  # Virtualenv at a global level is a must
+  [ -z "$(which virtualenv)" ] && pip install -q virtualenv
+
+  # PIP is a hard requirement, make sure it exists
+  [ ! -f "${venv_pip}" ] && ${venv_global_binary} "${venv_dir}"
+
+  # Use pip syntax to install requirements
+  local PARAMS=${*:-.}
+  "${venv_pip}" install ${PARAMS}
+
+  # I use this with Syntastic :-)
+  "${venv_pip}" install pylint
+
+  # Auto activate
+  source "${venv_activate}"
 }
 
 _virtualenver3() {
-  local venv_name venv_dir venv_binaries venv_pip venv_activate venv_global_binary
-  venv_name="$(basename "$PWD")_p3.6"
-  venv_dir="$(cd "${HOME}/.venvs/" && pwd)/${venv_name}"
-  venv_binaries="${venv_dir}/bin"
-  venv_pip="${venv_binaries}/pip"
-  venv_activate="${venv_binaries}/activate"
+  local venv_name venv_global_binary
+  venv_name="$(basename "$PWD")$PYTHON_3_SUFFIX"
   venv_global_binary="virtualenv --python=python3.6"
 
-  # Virtualenv at a global level is a must
-  [ -z "$(which virtualenv)" ] && pip install -q virtualenv
-
-  # PIP is a hard requirement, make sure it exists
-  [ ! -f "${venv_pip}" ] && ${venv_global_binary} "${venv_dir}"
-
-  # Use pip syntax to install requirements
-  local PARAMS=${*:-.}
-  "${venv_pip}" install ${PARAMS}
-
-  # I use this with Syntastic :-)
-  "${venv_pip}" install pylint
-
-  # Auto activate
-  source "${venv_activate}"
+  _virtualenver.core "${venv_name}" "${venv_global_binary}" "$@"
 }
 
 _virtualenver() {
-  local venv_name venv_dir venv_binaries venv_pip venv_activate venv_global_binary
-  venv_name=$(basename "$PWD")
-  venv_dir="$(cd "${HOME}/.venvs/" && pwd)/${venv_name}"
-  venv_binaries="${venv_dir}/bin"
-  venv_pip="${venv_binaries}/pip"
-  venv_activate="${venv_binaries}/activate"
+  local venv_name venv_global_binary
+  venv_name="$(basename "$PWD")$PYTHON_2_SUFFIX"
   venv_global_binary="virtualenv --python=python2.7"
 
-  # Virtualenv at a global level is a must
-  [ -z "$(which virtualenv)" ] && pip install -q virtualenv
-
-  # PIP is a hard requirement, make sure it exists
-  [ ! -f "${venv_pip}" ] && ${venv_global_binary} "${venv_dir}"
-
-  # Use pip syntax to install requirements
-  local PARAMS=${*:-.}
-  "${venv_pip}" install ${PARAMS}
-
-  # I use this with Syntastic :-)
-  "${venv_pip}" install pylint
-
-  # Auto activate
-  source "${venv_activate}"
+  _virtualenver.core "${venv_name}" "${venv_global_binary}" "$@"
 }
 
-_activate() {
+_activate.core() {
   local venv_name venv_dir venv_activate
-  venv_name=$(basename "$PWD")
+  venv_name="$1"
   venv_dir="$(cd "${HOME}/.venvs/" && pwd)/${venv_name}"
   venv_activate="${venv_dir}/bin/activate"
 
   [ ! -f "${venv_activate}" ] && echo "No virtualenv called '$venv_name'" && return 1
   source ${venv_activate}
+}
+
+_activate3() {
+  _activate.core "$(basename "$PWD")$PYTHON_3_SUFFIX"
+}
+
+_activate() {
+  _activate.core "$(basename "$PWD")"
 }
 
 _repo() {
@@ -179,8 +223,18 @@ docker.free_space() {
 
 # export AWS credentials for given profile
 aws.load_credentials() {
-  local profiles=$(grep -o '\[.*\]' ~/.aws/credentials | tr -d "][" | sort -u | xargs )
-  local chosen_profile=$1
+
+  local profiles more_profiles aws_access_key_id aws_secret_access_key chosen_profile
+
+  _unset() {
+    unset AWS_PROFILE AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
+  }
+
+  profiles=$(grep -o '\[.*\]' ~/.aws/credentials | tr -d "][" )
+  more_profiles=$(grep -o '\[.*\]' ~/.aws/config | tr -d "][" | cut -d' ' -f2)
+  profiles="$(echo $profiles $more_profiles | tr ' ' '\n' | sort -u | xargs)"
+
+  chosen_profile=$1
   if [ -z "${chosen_profile}" ] ; then
     echo "You need to specify one AWS profile in this list:"  && echo "${profiles}"
     echo "Use '-1' to unload session"
@@ -188,27 +242,28 @@ aws.load_credentials() {
   fi
 
   if [ "${chosen_profile}" = "-1" ] ; then
-    unset AWS_PROFILE AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
+    _unset
     echo "AWS information unloaded from session"
     return 0
-  elif ! grep -q "\[${chosen_profile}\]" ~/.aws/credentials ; then
+  elif [ "${profiles}" = "${profiles//${chosen_profile}}" ] ; then
     echo "Profile '${chosen_profile}' not found. Valid profiles are:" && echo "${profiles}"
     echo "Use '-1' to unload session"
     return 2
   fi
 
+  _unset
   export AWS_PROFILE=${chosen_profile}
-  AWS_ACCESS_KEY_ID=$(aws --profile "${AWS_PROFILE}" configure get aws_access_key_id)
-  AWS_SECRET_ACCESS_KEY=$(aws --profile "${AWS_PROFILE}" configure get aws_secret_access_key)
-
-  # export & Dump
-  export AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-  echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}"
-
-  export AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-  echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}"
-
   echo "AWS_PROFILE=${AWS_PROFILE}"
+
+  aws_access_key_id=$(aws --profile "${AWS_PROFILE}" configure get aws_access_key_id)
+  [ ! -z "${aws_access_key_id}" ] && \
+    export AWS_ACCESS_KEY_ID=${aws_access_key_id} && \
+    echo "AWS_ACCESS_KEY_ID=${aws_access_key_id}"
+
+  aws_secret_access_key=$(aws --profile "${AWS_PROFILE}" configure get aws_secret_access_key)
+  [ ! -z "${aws_secret_access_key}" ] && \
+    export AWS_SECRET_ACCESS_KEY=${aws_secret_access_key} && \
+    echo "AWS_SECRET_ACCESS_KEY=${aws_secret_access_key}"
 }
 
 # Remove given line from file
@@ -230,6 +285,19 @@ sys.duprm() {
     return 1
   fi
   awk '!x[$0]++' "$1"
+}
+
+# Allows overriding of VIM commands
+vim() {
+  first_param=$1
+  case "${first_param}" in
+    checkout|commit|pull|push)
+      command echo "Lo que tu quieres es el 'git', negro.... en fin... que el día que me muera...." && read
+      command git "$@"
+      ;;
+    *)
+      command vim "$@" ;;
+  esac
 }
 
 # Allows overriding of GIT commands (try 'git blame ...')
@@ -281,21 +349,13 @@ gg() {
   git grep -iI "$pattern" "$path" | sed -e 's#^\([^:]*\):\(.*\)$#\1 -> \2#g' | grep -iI "$pattern" --color
 }
 
-# Returns true if the current dir is a git repository
-is.repo() {
-  repo_info="$(git rev-parse --git-dir --is-inside-git-dir \
-    --is-bare-repository --is-inside-work-tree \
-    --short HEAD 2>/dev/null)"
-  [ ! -z "$repo_info" ]
-}
-
 # Typical shortcuts
-! is_mac && alias ls='ls --color'
+! is.mac && alias ls='ls --color'
 alias grep='grep --color'
 
 # Fantastic when you are leaving the company and want to get all your job in one go
-alias git.pull_all='for dir in $(find . -type d) ; do is.repo $dir && (cd $dir && git pull) ; done || true'
-alias git.clean_all='for dir in $(find . -type d) ; do is.repo $dir && (cd $dir && git clean -dfx) ; done || true'
+alias git.pull_all='for dir in $(find . -type d -depth 1) ; do (cd $dir && is.repo && git pull) ; done || true'
+alias git.clean_all='for dir in $(find . -type d -depth 1) ; do (cd $dir && is.repo && git clean -dfx) ; done || true'
 alias git.leaving_today='git.clean_all && git.pull_all && tar -cjvf /tmp/leaving_new_york_never_easy.bz2 . && mv /tmp/leaving_new_york_never_easy.bz2 . && printf "\n\nDone\nCopy \"leaving_new_york_never_easy.bz2\" somewhere and RUN. FAST\n\n"'
 
 # so sweet
@@ -312,48 +372,32 @@ alias sys.iso_to_utf='iconv --from-code=iso-8859-1 --to-code=utf-8'
 alias sys.utf_to_iso='iconv --to-code=iso-8859-1 --from-code=utf-8'
 
 # with X only, paste output of command into clipboard: echo 'AAA' | ccp
-if is_mac ; then alias ccp='pbcopy' ; else alias ccp='xclip -selection clipboard' ; fi
+if is.mac ; then alias ccp='pbcopy' ; else alias ccp='xclip -selection clipboard' ; fi
 
 # OSX override of AWK, if installed
-is_mac && [ ! -z "$(which gawk)" ] && alias awk='gawk'
+is.mac && [ ! -z "$(which gawk)" ] && alias awk='gawk'
 
 # Pushes production, develop, and all tags in one go
 alias super.push='git push origin prod  && git push --tags && git push origin develop'
 
-# Stops a Jupyter notebook being run
+# Starts/stops a local Datascience notebook:  https://github.com/jupyter/docker-stacks/tree/master/datascience-notebook
+alias spawn.ds-notebook='_spawn jupyter/datascience-notebook  -v $(pwd):/home/jovyan/work -p 8888:8888'
 alias despawn.ds-notebook='_despawn jupyter/datascience-notebook'
 
-# Starts a local Datascience notebook:  https://github.com/jupyter/docker-stacks/tree/master/datascience-notebook
-alias spawn.ds-notebook='_spawn jupyter/datascience-notebook  -v $(pwd):/home/jovyan/work -p 8888:8888'
-
-# Stops a Jupyter notebook being run
+# Starts/stops a Jupyter notebook being run
+alias spawn.notebook='_spawn jupyter/all-spark-notebook  -v $(pwd):/home/jovyan/work -p 8888:8888'
 alias despawn.notebook='_despawn jupyter/all-spark-notebook'
 
-# Starts a local Jupyter instance, mounting your current folder as Notebook source
-alias spawn.notebook='_spawn jupyter/all-spark-notebook  -v $(pwd):/home/jovyan/work -p 8888:8888'
-
-# stops a redis instance
+# Starts/stops a local redis instance
+alias spawn.redis='_spawn redis -p 6379:6379'
 alias despawn.redis='_despawn redis'
 
-# Starts a local redis instance
-alias spawn.redis='_spawn redis -p 6379:6379'
-
-# stops a memcached instance
-alias despawn.memcached='_despawn memcached'
-
-# Starts a local memcached instance
+# Starts/stops a memcached instance
 alias spawn.memcached='_spawn memcached -p 11211:11211'
-
-# Starts a Yack Typewriter off PWD's 'docs' directory
-alias spawn.yack='docker run -d --rm --name yack-tw -p 8000:8000  -v $(pwd):/yack/repo -v $(pwd)/_docs_build:/yack/_docs_build containers.schibsted.io/devrel/yack-typewriter make serve'
-
-# Stops a running typewriter
-alias despawn.yack='docker kill yack-tw'
+alias despawn.memcached='_despawn memcached'
 
 # VIM aliases, for great justice
 alias bim="echo 'LOL eres un mamón, es ''vi'' o ''vim'', no va con B... te lo paso por esta' && read && vim $*"
-
-# VIM aliases, for even greater justice
 alias vin="echo 'VIN?? 'Vin' qué, Diesel??? Madre mía, que paciencia...' && read && vim $*"
 
 # Random 32-char string
@@ -362,20 +406,16 @@ alias rand.str="cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1"
 # Automagically autocomplete repo names and 'cd' into them. Needs a proper base repo dir. Depends on bash_completion.
 alias repo='_repo'
 
-# Activate an existing virtualenv in current directory
+# Activate an existing Python 2/3 virtualenv in current directory
 alias activate='_activate'
+alias activate3='_activate3'
 
-# Install and activate a Python 2.7 Virtualenv in current location
+# Install and activate a Python 2/3 Virtualenv in current location
 alias virtualenver='_virtualenver'
-
-# Install and activate a Python 3.6 Virtualenv in current location
 alias virtualenver3='_virtualenver3'
 
 # Copy current path to clipboard - needs 'ccp'
 alias ccpath="printf '%s' '$(pwd)' | ccp && echo '$(pwd) copied to Clipboard'"
-
-# test if current path is a GIT repo
-alias is_repo='git rev-parse > /dev/null 2>&1'
 
 # DO NOT VERSION THESE THANKS
 [ -f ~/.bash_private_aliases ] && source ~/.bash_private_aliases
