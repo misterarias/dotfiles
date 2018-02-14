@@ -17,11 +17,12 @@ Plugin 'Shougo/neocomplcache.vim'
 Plugin 'kien/ctrlp.vim'
 Plugin 'vim-scripts/bufkill.vim'
 "Plugin 'vim-scripts/dbext.vim'
-Plugin 'derekwyatt/vim-scala'
+"Plugin 'derekwyatt/vim-scala'
 "Plugin 'git://git.code.sf.net/p/vim-latex/vim-latex'
 "Plugin 'othree/html5.vim'
 Plugin 'scrooloose/nerdtree'
-Plugin 'Rykka/riv.vim'
+" RST plugin
+"Plugin 'Rykka/riv.vim'
 " TO work with React this two are useful
 Plugin 'pangloss/vim-javascript'
 Plugin 'mxw/vim-jsx'
@@ -42,6 +43,8 @@ filetype plugin indent on    " required
 "setl foldmethod=syntax
 
 set encoding=utf8
+
+set termguicolors " True colors
 
 " Color first, so I can customize later
 if &diff
@@ -117,23 +120,33 @@ set ruler
 " display incomplete commands
 set showcmd
 
-" Switch syntax highlighting on, when the terminal has colors
+" Switch syntax highlighting on
 syntax on
-if has("gui_running")
-    set guioptions-=T
-    set guioptions+=e
-    set t_Co=256
-    set guitablabel=%M\ %t
-endif
+
+set guioptions-=T
+set guioptions+=e
+set t_Co=65536
+set guitablabel=%M\ %t
 
 " Use Unix as the standard file type
 set ffs=unix,dos,mac
+
+" Cursor highlighting
+highlight Cursor guifg=blue guibg=white
+" highlight iCursor guifg=white guibg=steelblue
+" Disabled for Neovim set guicursor=n-v-c:block-Cursor
+" set guicursor+=i:ver100-iCursor
+" set guicursor+=i:ver100-iCursor
+set guicursor+=n-v-c:blinkon0
+set guicursor+=i:blinkwait10
 
 " 1 tab == X spaces
 set shiftwidth=2
 set tabstop=2
 set sts=2
 set expandtab
+
+" Python settings
 autocmd Filetype python setlocal ts=4 sts=4 sw=4
 
 " More space in JSON files
@@ -202,13 +215,14 @@ noremap <leader>st :SyntasticToggle<cr>
 " Force Check
 noremap <leader>sc :SyntasticCheck<cr>
 
-let g:syntastic_yaml_checkers = ['yamllint'] " PIP
-let g:syntastic_py_checkers = ['pylint'] " PIP
 let g:syntastic_javascript_checkers = ['eslint'] " npm
+let g:syntastic_go_checkers = ['gometalinter']
+let g:syntastic_py_checkers = ['pylint'] " PIP
+let g:syntastic_rst_checkers = ['sphinx'] " PIP
+let g:syntastic_scala_checkers = ['scalac']
 let g:syntastic_sh_checkers = ['shellcheck'] " Package manager
 let g:syntastic_sql_checkers = ['sqlint'] " Ruby gem
-let g:syntastic_scala_checkers = ['scalac']
-let g:syntastic_rst_checkers = ['sphinx'] " PIP
+let g:syntastic_yaml_checkers = ['yamllint'] " PIP
 let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_aggregate_errors = 1
 let g:syntastic_auto_loc_list = 1
@@ -289,4 +303,4 @@ let g:scala_scaladoc_indent = 1
 let g:jsx_ext_required = 0
 
 " Search highlighting
-hi Search ctermbg=Yellow ctermfg=DarkYellow
+hi Search ctermbg=DarkYellow ctermfg=Yellow
