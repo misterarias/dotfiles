@@ -295,6 +295,8 @@ vim() {
       command echo "Lo que tu quieres es el 'git', negro.... en fin... que el día que me muera...." && read
       command git "$@"
       ;;
+    vim*)
+      shift ; vim "$@" ;;
     *)
       command vim "$@" ;;
   esac
@@ -302,11 +304,19 @@ vim() {
 
 # Allows overriding of GIT commands (try 'git blame ...')
 git() {
-  case "$@" in
+  case "$1" in
     blame*)
       command echo "Probablemente tu, así que mejor no preguntes" ;;
+    pushete*)
+      # pushes current branch and opens browser in repo webpage
+      branch_name=$(git rev-parse --abbrev-ref HEAD)
+      [ ! -z "${branch_name}" ] && \
+        git push -u origin "${branch_name}" && sch.open
+      ;;
+    git*)
+      shift ; git "$@" ;;
     * )
-      command git "$@"
+      command git "$@" ;;
   esac
 }
 
