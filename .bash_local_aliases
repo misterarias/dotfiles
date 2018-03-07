@@ -313,8 +313,15 @@ git() {
       [ ! -z "${branch_name}" ] && \
         git push -u origin "${branch_name}" && sch.open
       ;;
+    checkete*)
+      # like checkout -b but parsing incoming text into a proper branch name
+      shift; [ "${1}" == "-b" ] && shift;
+      branch_name=$(echo "${@}" | sed -Ee 's/[[:space:]:_]+/-/g' )
+      command git checkout -b $branch_name
+      ;;
     git*)
       shift ; git "$@" ;;
+
     * )
       command git "$@" ;;
   esac
