@@ -7,6 +7,17 @@
 
 PYTHON_3_SUFFIX="_p3.6"
 
+# Get current repository name
+get_repo_base() {
+  ! is.repo && error "Not a git repository"
+
+  local repo_base
+  repo_base=$(git remote show origin | grep 'Fetch URL' | cut -d':' -f2- | sed -e 's#.*/\(.*\)/\(.*\)\.git$#\1/\2#g')
+  [ -z "${repo_base}" ] && error "Unable to find Repository URL"
+
+  echo "${repo_base}"
+}
+
 # re-source all aliases
 alias.source() {
   source "${HOME}/.bash_local_aliases"
@@ -316,12 +327,17 @@ git() {
     checkete*)
       # like checkout -b but parsing incoming text into a proper branch name
       shift; [ "${1}" == "-b" ] && shift;
-      branch_name=$(echo "${@}" | sed -Ee 's/[[:space:]:_]+/-/g' )
+      branch_name=$(echo "${@}" | sed -Ee 's/[[:space:]:-]+/_/g' )
       command git checkout -b $branch_name
       ;;
     git*)
       shift ; git "$@" ;;
-
+    klone*)
+      shift; repo=$(echo "$1" | sed -e 's#.*\.com[/:]##g' -e 's#/$##g')
+      target_dir="$HOME/Stuff/${repo//\.git/}"
+      git clone "git@github.com:${repo}" "${target_dir}"
+      cd "${target_dir}" || return
+      ;;
     * )
       command git "$@" ;;
   esac
