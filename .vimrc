@@ -100,7 +100,7 @@ set showmatch
 set mat=2
 
 " My editor my rules
-set textwidth=120
+" set textwidth=120
 set wrapmargin=2
 "set wrap "Wrap lines
 "set linebreak
@@ -132,13 +132,11 @@ set guitablabel=%M\ %t
 set ffs=unix,dos,mac
 
 " Cursor highlighting
-highlight Cursor guifg=blue guibg=white
+" highlight Cursor guifg=blue guibg=white
+" Different cursor in markdown files
+autocmd Filetype markdown highlight Cursor guifg=Yellow guibg=DarkBlue
+hi Search ctermbg=DarkYellow ctermfg=Yellow
 " highlight iCursor guifg=white guibg=steelblue
-" Disabled for Neovim set guicursor=n-v-c:block-Cursor
-" set guicursor+=i:ver100-iCursor
-" set guicursor+=i:ver100-iCursor
-set guicursor+=n-v-c:blinkon0
-set guicursor+=i:blinkwait10
 
 " 1 tab == X spaces
 set shiftwidth=2
@@ -150,7 +148,10 @@ set expandtab
 autocmd Filetype python setlocal ts=4 sts=4 sw=4
 
 " More space in JSON files
-autocmd BufEnter *.json :set ts=4 sts=4 sts=4
+autocmd FileType json :set ts=4 sts=4 sts=4
+
+" Shallot files are yaml files
+autocmd BufEnter *.shallot :set filetype=yaml
 
 set ai "Auto indent
 set si "Smart indent
@@ -158,6 +159,7 @@ set si "Smart indent
 "Some buffer facilities
 map <C-n> :bnext<CR>
 map <C-b> :bp<CR>
+map <C-c> :BW<CR>
 
 " Testing: change workspace to current file's location
 "set autochdir
@@ -216,7 +218,7 @@ noremap <leader>st :SyntasticToggle<cr>
 noremap <leader>sc :SyntasticCheck<cr>
 
 let g:syntastic_javascript_checkers = ['eslint'] " npm
-let g:syntastic_go_checkers = ['gometalinter']
+let g:syntastic_go_checkers = ['go']
 let g:syntastic_py_checkers = ['pylint'] " PIP
 let g:syntastic_rst_checkers = ['sphinx'] " PIP
 let g:syntastic_scala_checkers = ['scalac']
@@ -289,6 +291,9 @@ endif
 
 " Filter out some files
 let NERDTreeIgnore = ['\.pyc$', '\.o$[[file]]']
+
+" Show hidden images by default
+let NERDTreeShowHidden=1
 
 " CLose vim if the only window left open is nerdtree
 autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTree") && b:NERDTree.isTabTree()) | q | endif
