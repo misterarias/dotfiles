@@ -12,10 +12,14 @@ get_repo_base() {
   ! is.repo && error "Not a git repository"
 
   local repo_base
-  repo_base=$(git remote show origin | grep 'Fetch URL' | cut -d':' -f2- | sed -e 's#.*/\(.*\)/\(.*\)\.git$#\1/\2#g')
+  repo_base=$(git remote show origin | grep 'Fetch URL' | cut -d':' -f2- | tr -d ' ')
   [ -z "${repo_base}" ] && error "Unable to find Repository URL"
 
-  echo "${repo_base}"
+  if [ "${repo_base}" != "${repo_base//git@}" ] ; then
+    echo "${repo_base//*:}"
+  else
+    echo "${repo_base}" | sed -e 's#.*/\(.*\)/\(.*\)$#\1/\2#g'
+  fi
 }
 
 # re-source all aliases
@@ -414,11 +418,11 @@ is.mac && [ ! -z "$(which gawk)" ] && alias awk='gawk'
 alias super.push='git push origin prod  && git push --tags && git push origin develop'
 
 # Starts/stops a local Datascience notebook:  https://github.com/jupyter/docker-stacks/tree/master/datascience-notebook
-alias spawn.ds-notebook='_spawn jupyter/datascience-notebook  -v $(pwd):/home/jovyan/work -p 8888:8888'
+alias spawn.ds-notebook='_spawn jupyter/datascience-notebook  -v "$(pwd):/home/jovyan/work" -p 8888:8888'
 alias despawn.ds-notebook='_despawn jupyter/datascience-notebook'
 
 # Starts/stops a Jupyter notebook being run
-alias spawn.notebook='_spawn jupyter/all-spark-notebook  -v $(pwd):/home/jovyan/work -p 8888:8888'
+alias spawn.notebook='_spawn jupyter/all-spark-notebook  -v "$(pwd):/home/jovyan/work" -p 8888:8888'
 alias despawn.notebook='_despawn jupyter/all-spark-notebook'
 
 # Starts/stops a local redis instance
@@ -434,7 +438,7 @@ alias bim="echo 'LOL eres un mamón, es ''vi'' o ''vim'', no va con B... te lo p
 alias vin="echo 'VIN?? 'Vin' qué, Diesel??? Madre mía, que paciencia...' && read && vim $*"
 
 # Random 32-char string
-alias rand.str="cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1"
+alias rand.str="cat /dev/urandom | base64 | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1"
 
 # Automagically autocomplete repo names and 'cd' into them. Needs a proper base repo dir. Depends on bash_completion.
 alias repo='_repo'
