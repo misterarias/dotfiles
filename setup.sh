@@ -46,10 +46,12 @@ setup_git() {
 
     git config --global "$section" "$value"
   done < .gitconfig
+
+  printf "\n%s\n" "Remember to execute: ${GREENCOLOR_BOLD}git config --global user.email <YOUR_EMAIL>${ENDCOLOR}"
 }
 
 setup_vim() {
-  [ ! -x vim ] && \
+  [ -z $(which vim) ] && \
     echo "You don't have VIM installed.... you suck" && return
 
   VIMDIR=~/.vim
@@ -128,8 +130,8 @@ setup-gnome-extensions() {
   is.mac && return
 
   # Maybe gnome stuff is not set up correctly
-  [ ! -x gnome-shell-extension-installer ] && return
-  [ ! -x gnome-shell ] && return
+  [ -z $(which gnome-shell-extension-installer) ] && return
+  [ -z $(which gnome-shell) ] && return
 
   # Download magnificent and already-created script for shell extension's management
   if [ ! -f "$HOME/bin/gnome-shell-extension-installer" ] ; then

@@ -105,7 +105,7 @@ is.mac() {
 }
 
 _get_bash_completion() {
-  is.mac && echo "/usr/local/etc/bash_completion"
+  is.mac && echo "/usr/local/etc/bash_completion" || echo "/etc/bash_completion"
 }
 
 _virtualenver.core() {
