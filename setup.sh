@@ -49,6 +49,9 @@ setup_git() {
 }
 
 setup_vim() {
+  [ ! -x vim ] && \
+    echo "You don't have VIM installed.... you suck" && return
+
   VIMDIR=~/.vim
   echo "${GREENCOLOR}Setting up VIM in ${VIMDIR} ...${ENDCOLOR}"
   rm -rf "${VIMDIR}/bundle"
@@ -122,7 +125,11 @@ setup_env() {
 
 setup-gnome-extensions() {
   # If not in Linux, just get out:
-  is_mac && return
+  is.mac && return
+
+  # Maybe gnome stuff is not set up correctly
+  [ ! -x gnome-shell-extension-installer ] && return
+  [ ! -x gnome-shell ] && return
 
   # Download magnificent and already-created script for shell extension's management
   if [ ! -f "$HOME/bin/gnome-shell-extension-installer" ] ; then
