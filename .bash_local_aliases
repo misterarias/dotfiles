@@ -64,7 +64,7 @@ rst2md() {
 
 # Report of disk space usage in current path
 sys.disk_usage() {
-  for dir in $(ls -h .) ; do
+  for dir in $(\ls  -h .) ; do
     total=$(du -ch "$dir" | grep total | grep -E -o "[0-9]+[GM]")
     [ ! -z "${total}" ] && echo "Disk usage in $dir: $total"
   done
