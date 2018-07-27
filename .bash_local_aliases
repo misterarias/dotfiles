@@ -178,11 +178,9 @@ _repo() {
       echo "Invalid directory: ${base_dir}" && return
 
     # Update automcomplete file:
-    sed -i.bk -e "s#base_dir=.*#base_dir=\"${base_dir}\"#g" "${autocomplete_file}" && \
-      rm -rf "${autocomplete_file}.bk"
+    sed  -e "s/#CHANGEME#/${base_dir}/g" "${autocomplete_file}" > /tmp/tmp && cp /tmp/tmp "${autocomplete_file}"
     echo "Now create a new shell and start using the command" && return
   fi
-
   local orgs_dir="$1"
   local repo_name=$2
   local fulldir="${base_dir}/${orgs_dir}/${repo_name}"

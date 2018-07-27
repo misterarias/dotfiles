@@ -124,8 +124,14 @@ setup_repo_change_script() {
   [ ! -f "${autocomplete_route}" ] && \
     echo "Bash auto-completion not installed, or not found in '${autocomplete_route}', refusing to install repo autocomplete" && return
 
-  # I instead of symlinking because I want to keep the original file versioned
-  cp -f ./files/repo "${autocomplete_route}.d/"
+  # In Linux this route is most probably not writable
+  if is_mac ; then
+    echo "${REDCOLOR_BOLD}I need superpowers to copy to
+    '${autocomplete_route}.d}'${ENDCOLOR}"
+    sudo cp -f ./files/repo "${autocomplete_route}.d/"
+  else
+    cp -f ./files/repo "${autocomplete_route}.d/"
+  fi
 
   printf "\nAutocompletion for the %s command has been installed.\nRun it once to configure it, and then %s.\n" \
     "${BLUECOLOR_BOLD}repo${ENDCOLOR}" "${REDCOLOR_BOLD}START A NEW SHELL${ENDCOLOR}"
