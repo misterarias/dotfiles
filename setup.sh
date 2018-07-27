@@ -92,40 +92,13 @@ setup_postgres() {
 }
 
 setup_configs() {
-  echo "${GREENCOLOR}Setting up some environment-specific configs.....${ENDCOLOR}"
-  case "$ENV_TYPE" in
-    "prod")
-      ;;
-    "dev-server")
-      ;;
-    "local")
-      mkdir -p "$HOME/.config/terminator"
-      dotfiles_link .config/terminator/config "$HOME/.config/terminator/config"
-      ;;
-  esac
+  [ ! -z $(which terminator) ] && \
+    echo "${GREENCOLOR}Setting my terminator config...${ENDCOLOR}" && \
+    mkdir -p "$HOME/.config/terminator" && \
+    dotfiles_link .config/terminator/config "$HOME/.config/terminator/config"
 }
 
-# local       -> one of my computers, where I'd like to use Terminator, pretty nice colors, and the likes [DEFAULT]
-# dev-server  -> a remote development computer, no local configs are needed (such as terminator)
-# prod        -> a production environment, where I most probably don't need fancy colors, just some basics
-setup_env() {
-  ENV_TYPE="$1"
-  if [ -z "$ENV_TYPE" ] ; then
-    ENV_TYPE="local" # not using a bash default above, so the message is more explicit
-    echo "${GREENCOLOR}No environment specified, defaulting to: ${ENDCOLOR}${BLUECOLOR_BOLD}${ENV_TYPE}${ENDCOLOR}"
-  else
-    case "$ENV_TYPE" in
-      prod|dev-server|local)
-        ;;
-      *)
-        dotfiles_error "Invalid environment selected '${REDCOLOR_BOLD}$ENV_TYPE${ENDCOLOR}'"
-    esac
-    echo "${GREENCOLOR}Environment set to: ${ENDCOLOR}${BLUECOLOR_BOLD}${ENV_TYPE}${ENDCOLOR}"
-  fi
-  export ENV_TYPE
-}
-
-setup-gnome-extensions() {
+setup_gnome_extensions() {
   # If not in Linux, just get out:
   is.mac && return
 
@@ -151,7 +124,7 @@ setup-gnome-extensions() {
   gnome-shell --replace &
 }
 
-setup-repo-change-script() {
+setup_repo_change_script() {
   autocomplete_route="$(_get_bash_completion)"
   [ ! -f "${autocomplete_route}" ] && \
     echo "Bash auto-completion not installed, or not found in '${autocomplete_route}', refusing to install repo autocomplete" && return
@@ -167,14 +140,13 @@ setup-repo-change-script() {
 # shellcheck source=/dev/null
 source .bash_local_aliases
 
-setup_env "$@"
 setup_vim
 setup_dotfiles
 setup_git
 setup_postgres
 setup_ruby
 setup_configs
-setup-gnome-extensions
-setup-repo-change-script
+setup_gnome_extensions
+setup_repo_change_script
 
 printf "\n%s\n" "${GREENCOLOR_BOLD}Everything is done, enjoy!${ENDCOLOR}"
