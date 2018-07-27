@@ -31,13 +31,8 @@ dotfiles_link() {
   ln -sf "$local_dotfile" "$system_dotfile"
 }
 
-dotfiles_error() {
-  echo "[ERROR] $*"
-  exit 1
-}
-
 setup_git() {
-  echo "${GREENCOLOR}Setting up some git defaults.....${ENDCOLOR}"
+  echo && echo "${GREENCOLOR}Setting up some git defaults.....${ENDCOLOR}"
   while read -r line ; do
 
     echo "${BLUECOLOR}${line}${ENDCOLOR}"
@@ -55,7 +50,7 @@ setup_vim() {
     echo "You don't have VIM installed.... you suck" && return
 
   VIMDIR=~/.vim
-  echo "${GREENCOLOR}Setting up VIM in ${VIMDIR} ...${ENDCOLOR}"
+  echo && echo "${GREENCOLOR}Setting up VIM in ${VIMDIR} ...${ENDCOLOR}"
   rm -rf "${VIMDIR}/bundle"
   mkdir -p "${VIMDIR}/tmp" "${VIMDIR}/backup" "${VIMDIR}/colors" > /dev/null 2>&1
   cp .vim/colors/monokai.vim "${VIMDIR}/colors/"
@@ -65,7 +60,7 @@ setup_vim() {
 }
 
 setup_dotfiles() {
-  echo "${GREENCOLOR}Setting up bash dotfiles_....${ENDCOLOR}"
+  echo && echo "${GREENCOLOR}Setting up bash dotfiles_....${ENDCOLOR}"
   touch ~/.bash_profile # in case it does not exist..
   [ "$(grep -c "\. ~/.bashrc" ~/.bash_profile)" -ne 1 ] && cat .bash_profile  >> ~/.bash_profile
 
@@ -80,7 +75,7 @@ setup_dotfiles() {
 
 setup_ruby() {
   [ ! -f ~/.irbrc ] && return
-  echo "${GREENCOLOR}Setting up some Ruby defaults.....${ENDCOLOR}"
+  echo && echo "${GREENCOLOR}Setting up some Ruby defaults.....${ENDCOLOR}"
   ! grep -q 'irb/completion' ~/.irbrc && \
     echo "require 'irb/completion'" >> ~/.irbrc
 }
@@ -93,7 +88,7 @@ setup_postgres() {
 
 setup_configs() {
   [ ! -z $(which terminator) ] && \
-    echo "${GREENCOLOR}Setting my terminator config...${ENDCOLOR}" && \
+    echo && echo "${GREENCOLOR}Setting my terminator config...${ENDCOLOR}" && \
     mkdir -p "$HOME/.config/terminator" && \
     dotfiles_link .config/terminator/config "$HOME/.config/terminator/config"
 }
@@ -140,13 +135,44 @@ setup_repo_change_script() {
 # shellcheck source=/dev/null
 source .bash_local_aliases
 
-setup_vim
-setup_dotfiles
-setup_git
-setup_postgres
-setup_ruby
-setup_configs
-setup_gnome_extensions
-setup_repo_change_script
+setup_all() {
+  setup_vim
+  setup_dotfiles
+  setup_git
+  setup_postgres
+  setup_ruby
+  setup_configs
+  setup_gnome_extensions
+  setup_repo_change_script
+}
+
+mode=${1:-all}
+case "${mode}" in
+  all)      setup_all ;;
+  vim)      setup_vim ;;
+  dotfiles) setup_dotfiles ;;
+  git)      setup_git ;;
+  postgres) setup_postgres ;;
+  ruby)     setup_ruby ;;
+  configs)  setup_configs ;;
+  gnome)    setup_gnome_extensions ;;
+  repo)     setup_repo_change_script ;;
+  help|*)
+    echo && echo "${GREENCOLOR_BOLD}setup.sh${ENDCOLOR}"
+    echo "One-time, not-interactive setup for optimal CLI - by Juan Arias"
+    echo ; echo "Args:"
+    echo "* [no args] - Default option, installs everything in one go"
+    echo "* vim - installs my .vimrc file and most useful Plugins using Vundle (requires vim)"
+    echo "* dotfiles - installs my .bash* files, including Prompt and Aliases"
+    echo "* git - Some useful git aliases"
+    echo "* postgres - Basically a simple .psqlrc file"
+    echo "* ruby - Small improvement over default irb config"
+    echo "* configs - For now, only some terminator tweaks (requires Linux && terminator)"
+    echo "* gnome - Installs some really useful Gnome addons (requires Gnome 3.x)"
+    echo "* repo - If you have a lot of repos, you'll love this"
+    echo "* help - this message"
+    echo && exit 0
+    ;;
+esac
 
 printf "\n%s\n" "${GREENCOLOR_BOLD}Everything is done, enjoy!${ENDCOLOR}"
