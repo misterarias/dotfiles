@@ -26,6 +26,7 @@ Plugin 'scrooloose/nerdtree'
 " TO work with React this two are useful
 Plugin 'pangloss/vim-javascript'
 Plugin 'mxw/vim-jsx'
+Plugin 'sheerun/vim-polyglot'
 
 " To enable code snippets
 "Plugin 'MarcWeber/vim-addon-mw-utils'
@@ -100,7 +101,8 @@ set showmatch
 set mat=2
 
 " My editor my rules
-" set textwidth=120
+set textwidth=150
+
 set wrapmargin=2
 "set wrap "Wrap lines
 "set linebreak
@@ -108,8 +110,8 @@ set wrapmargin=2
 " Keep all backups in one place, needs to be aligned with the system (VIM does
 " not create directories)
 set backup
-set backupdir=~/.vim/backup
-set directory=~/.vim/tmp
+set backupdir=~/.vim/backup//
+set directory=~/.vim/tmp//
 
 " keep 100 lines of command line history
 set history=100

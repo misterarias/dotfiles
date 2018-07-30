@@ -125,9 +125,8 @@ setup_repo_change_script() {
     echo "Bash auto-completion not installed, or not found in '${autocomplete_route}', refusing to install repo autocomplete" && return
 
   # In Linux this route is most probably not writable
-  if is_mac ; then
-    echo "${REDCOLOR_BOLD}I need superpowers to copy to
-    '${autocomplete_route}.d}'${ENDCOLOR}"
+  if ! is.mac ; then
+    echo "${REDCOLOR_BOLD}I need superpowers to copy to '${autocomplete_route}.d'${ENDCOLOR}"
     sudo cp -f ./files/repo "${autocomplete_route}.d/"
   else
     cp -f ./files/repo "${autocomplete_route}.d/"

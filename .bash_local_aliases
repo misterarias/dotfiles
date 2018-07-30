@@ -93,10 +93,9 @@ sys.renamer() {
   done
 }
 
-# Show a pretty error message that actually exits
+# Show a pretty error message
 error() {
-  echo "[ERROR] $*" ;
-  return 1
+  echo "$(date -Iseconds) [ERROR] $*" ;
 }
 
 # 'Darwin' for Mac, 'Linux' or similar elsewhere
@@ -165,7 +164,7 @@ _activate3() {
 }
 
 _activate() {
-  _activate.core "$(basename "$PWD")"
+  _activate.core "$(basename "$PWD")$PYTHON_2_SUFFIX"
 }
 
 _repo() {
@@ -178,7 +177,7 @@ _repo() {
       echo "Invalid directory: ${base_dir}" && return
 
     # Update automcomplete file:
-    sed  -e "s/#CHANGEME#/${base_dir}/g" "${autocomplete_file}" > /tmp/tmp && cp /tmp/tmp "${autocomplete_file}"
+    sed  -e "s|#CHANGEME#|${base_dir}|g" "${autocomplete_file}" > /tmp/tmp && sudo cp /tmp/tmp "${autocomplete_file}"
     echo "Now create a new shell and start using the command" && return
   fi
   local orgs_dir="$1"
@@ -236,47 +235,67 @@ docker.free_space() {
 
 # export AWS credentials for given profile
 aws.load_credentials() {
+  _unset() { unset AWS_PROFILE AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY ; }
+  _hint() { echo && echo "[HINT] Use '-1' to unload current session" ; }
 
+  # 'default' is not a profile we want to use
   local profiles more_profiles aws_access_key_id aws_secret_access_key chosen_profile
-
-  _unset() {
-    unset AWS_PROFILE AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY
-  }
-
   profiles=$(grep -o '\[.*\]' ~/.aws/credentials | tr -d "][" )
   more_profiles=$(grep -o '\[.*\]' ~/.aws/config | tr -d "][" | cut -d' ' -f2)
-  profiles="$(echo $profiles $more_profiles | tr ' ' '\n' | sort -u | xargs)"
-
+  profiles="$(echo $profiles $more_profiles | tr ' ' '\n' | grep -v 'default' | sort -u | xargs)"
   chosen_profile=$1
   if [ -z "${chosen_profile}" ] ; then
-    echo "You need to specify one AWS profile in this list:"  && echo "${profiles}"
-    echo "Use '-1' to unload session"
+    echo "You need to choose one AWS profile from this list:"  && echo "${profiles}"
+    _hint
     return 1
-  fi
-
-  if [ "${chosen_profile}" = "-1" ] ; then
+  elif [ "${chosen_profile}" = "-1" ] ; then
     _unset
     echo "AWS information unloaded from session"
     return 0
   elif [ "${profiles}" = "${profiles//${chosen_profile}}" ] ; then
     echo "Profile '${chosen_profile}' not found. Valid profiles are:" && echo "${profiles}"
-    echo "Use '-1' to unload session"
+    _hint
     return 2
   fi
 
   _unset
-  export AWS_PROFILE=${chosen_profile}
-  echo "AWS_PROFILE=${AWS_PROFILE}"
+  mfa_token=$2
+  if [ -z "${mfa_token}" ] ; then
+    echo "MFA token is missing, loading previous session..."
+    _hint
 
-  aws_access_key_id=$(aws --profile "${AWS_PROFILE}" configure get aws_access_key_id)
-  [ ! -z "${aws_access_key_id}" ] && \
-    export AWS_ACCESS_KEY_ID=${aws_access_key_id} && \
-    echo "AWS_ACCESS_KEY_ID=${aws_access_key_id}"
+    aws_access_key_id=$(aws configure get aws_access_key_id --profile ${chosen_profile})
+    [ -z "${aws_access_key_id}" ] && \
+      echo && error "No credentials found, you need to authenticate again" && \
+      return 3
 
-  aws_secret_access_key=$(aws --profile "${AWS_PROFILE}" configure get aws_secret_access_key)
-  [ ! -z "${aws_secret_access_key}" ] && \
-    export AWS_SECRET_ACCESS_KEY=${aws_secret_access_key} && \
-    echo "AWS_SECRET_ACCESS_KEY=${aws_secret_access_key}"
+    export AWS_PROFILE=${chosen_profile}
+  else
+    echo "Creating new temporary session with MFA token..."
+    cross_account_role=$(aws configure get x_role_arn --profile $chosen_profile)
+    [ -z "${cross_account_role}" ] && \
+      error "you need to configure chosen role ARN as 'x_role_arn' in ~/.aws/config, under [profile ${chosen_profile}" && \
+      return 4
+
+    mfa_iam=$(aws configure get x_mfa_serial --profile $chosen_profile)
+    [ -z "${cross_account_role}" ] && \
+      error "you need to configure your MFA ARN as 'x_mfa_arn' in ~/.aws/config, under [profile ${chosen_profile}" && \
+      return 5
+
+    temp_keys=($(aws sts assume-role --role-arn $cross_account_role --role-session-name session-$1 --serial-number $mfa_iam --token-code $mfa_token --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' --output text))
+    [ $? -ne 0 ] && return 6
+
+    export AWS_PROFILE=${chosen_profile}
+
+    aws_access_key_id=${temp_keys[0]}
+    aws configure set aws_access_key_id ${aws_access_key_id}
+
+    aws_secret_access_key=${temp_keys[1]}
+    aws configure set aws_secret_access_key ${aws_secret_access_key}
+
+    aws_session_token=${temp_keys[2]}
+    aws configure set aws_session_token ${aws_session_token}
+  fi
 }
 
 # Remove given line from file
@@ -315,34 +334,68 @@ vim() {
   esac
 }
 
+web.escape() {
+  [ -z $(which perl) ] && error "PERL is not installed in your system" && return 1
+  perl -MURI::Escape -e 'print uri_escape($ARGV[0]);' "${1}"
+}
+
 # Allows overriding of GIT commands (try 'git blame ...')
 git() {
   case "$1" in
     blame*)
-      command echo "Probablemente tu, así que mejor no preguntes" ;;
+      echo "Probablemente tu, así que mejor no preguntes" ;;
+    perrete*)
+      repo_and_project=($( _get_repo_and_project ))
+      project_url=$(printf "${BITBUCKET_REPO}/projects/%s/repos/%s/pull-requests" "${repo_and_project[0]}" "${repo_and_project[1]}")
+
+      branch_name=$(git rev-parse --abbrev-ref HEAD)
+      url_params=$(printf "create&targetBranch=refs/heads/develop&sourceBranch=refs/heads/%s" "${branch_name}")
+      escaped_params=${url_params//\//%2F}
+
+      final_url="${project_url}?${escaped_params}"
+      sys.open "${final_url}"
+      ;;
     pushete*)
       # pushes current branch and opens browser in repo webpage
       branch_name=$(git rev-parse --abbrev-ref HEAD)
       [ ! -z "${branch_name}" ] && \
-        git push -u origin "${branch_name}" && sch.open
+        command git push -u origin "${branch_name}" && git open
       ;;
     checkete*)
       # like checkout -b but parsing incoming text into a proper branch name
       shift; [ "${1}" == "-b" ] && shift;
-      branch_name=$(echo "${@}" | sed -Ee 's/[[:space:]:-]+/_/g' )
-      command git checkout -b $branch_name
+      branch_name=$(echo "${@}" | sed -Ee 's/[[:space:]:_]+/-/g' )
+      command git checkout -b "${branch_name}"
       ;;
     git*)
       shift ; git "$@" ;;
-    klone*)
-      shift; repo=$(echo "$1" | sed -e 's#.*\.com[/:]##g' -e 's#/$##g')
-      target_dir="$HOME/Stuff/${repo//\.git/}"
-      git clone "git@github.com:${repo}" "${target_dir}"
-      cd "${target_dir}" || return
+    open*)
+      repo_and_project=($( _get_repo_and_project ))
+      project_url=$(printf "${BITBUCKET_REPO}/projects/%s/repos/%s" "${repo_and_project[0]}" "${repo_and_project[1]}")
+      sys.open ${project_url}
       ;;
-    * )
+    klone*)
+      shift; repo=$1 ; [ -z "${repo}" ] && return $(git clone "$@")
+      parts=($(echo "${repo}" | sed -E 's#^.*[:\/]([a-z-]+)\/([a-z_-]+)(.git)?$#\1 \2#g'))
+      target_dir="$HOME/Stuff/${parts[0]}/${parts[1]}"
+      command git clone "${repo}" "${target_dir}" && cd "${target_dir}"
+      ;;
+    *)
       command git "$@" ;;
   esac
+}
+
+# Open AWS console for given tool, using currently logged-in profile
+aws.open() {
+  region="$(aws configure get region)"
+  [ -z "${region}" ] && region="eu-west-1"
+  sys.open "https://${region}.console.aws.amazon.com/${1}"
+}
+
+# Opens something - an URL, a file.... (OS-independent)
+sys.open() {
+  open_command=xdg-open ; is.mac && open_command=open
+  "${open_command}" "$@"
 }
 
 # Thanks: http://stackoverflow.com/questions/10683349/forcing-bash-to-expand-variables-in-a-string-loaded-from-a-file
@@ -357,13 +410,26 @@ shell.expansion() {
   eval "$command"
 }
 
+# Search for something from the commmand line
+web.search() {
+  engine="Duck Duck GO"
+  base_url="https://duckduckgo.com/?q="
+  search_string="$*"
+  [ -z "${search_string}" ] && \
+    error "I need something to search...." && return 1
+
+  escaped_search_string=$( web.escape "${search_string}" )
+  echo "Let's search for '${search_string}' using '${engine}'...."
+  sys.open "${base_url}${escaped_search_string}"
+}
+
 # Get the N% of the files of the input file
 rand.lines() {
   in=$1
   N=$2
 
   if [ -z "$in"  ] || [ ! -f "$in" ] ; then
-    echo "[ERROR] Invalid input file: Syntax is $0 <input_file> [<percentage of lines (Default: 10%)>]"
+    error "Invalid input file: Syntax is $0 <input_file> [<percentage of lines (Default: 10%)>]"
   else
     [ -z "$N" -o "$N" -lt 0 -o "$N" -gt 100 ] && N=10
 
@@ -389,8 +455,8 @@ gg() {
 alias grep='grep --color'
 
 # Fantastic when you are leaving the company and want to get all your job in one go
-alias git.pull_all='for dir in $(find . -type d -depth 1) ; do (cd $dir && is.repo && git pull) ; done || true'
-alias git.clean_all='for dir in $(find . -type d -depth 1) ; do (cd $dir && is.repo && git clean -dfx) ; done || true'
+alias git.pull_all='for dir in $(find . -type d -maxdepth 1) ; do (cd $dir && is.repo && git pull) ; done || true'
+alias git.clean_all='for dir in $(find . -type d -maxdepth 1) ; do (cd $dir && is.repo && git clean -dfx) ; done || true'
 alias git.leaving_today='git.clean_all && git.pull_all && tar -cjvf /tmp/leaving_new_york_never_easy.bz2 . && mv /tmp/leaving_new_york_never_easy.bz2 . && printf "\n\nDone\nCopy \"leaving_new_york_never_easy.bz2\" somewhere and RUN. FAST\n\n"'
 
 # so sweet
@@ -453,4 +519,4 @@ alias virtualenver3='_virtualenver3'
 alias ccpath="printf '%s' '$(pwd)' | ccp && echo '$(pwd) copied to Clipboard'"
 
 # DO NOT VERSION THESE THANKS
-[ -f ~/.bash_private_aliases ] && source ~/.bash_private_aliases
+[ -f ~/.bash_private_vars ] && source ~/.bash_private_vars
