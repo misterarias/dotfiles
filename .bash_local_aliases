@@ -334,13 +334,22 @@ vim() {
   esac
 }
 
+# URL Escape a string
 web.escape() {
   [ -z $(which perl) ] && error "PERL is not installed in your system" && return 1
   perl -MURI::Escape -e 'print uri_escape($ARGV[0]);' "${1}"
 }
 
-# Allows overriding of GIT commands (try 'git blame ...')
+# Allows overriding GIT commands
 git() {
+
+  _get_repo_and_project() {
+    # Returns a two-item array!!
+    repo_ssh="$1" ; [ -z "${repo_ssh}" ] && \
+      repo_ssh=$(git remote show origin -n | grep 'Fetch URL' | cut -d':' -f2- | tr -d ' ')
+    echo "${repo_ssh}" | sed -e 's#.*\.com[/:][0-9]*/##g' -e 's#\.git$##g' | tr '/' ' '
+  }
+
   case "$1" in
     blame*)
       echo "Probablemente tu, así que mejor no preguntes" ;;
@@ -375,10 +384,10 @@ git() {
       sys.open ${project_url}
       ;;
     klone*)
-      shift; repo=$1 ; [ -z "${repo}" ] && return $(git clone "$@")
-      parts=($(echo "${repo}" | sed -E 's#^.*[:\/]([a-z-]+)\/([a-z_-]+)(.git)?$#\1 \2#g'))
+      shift; repo=$1 ; [ -z "${repo}" ] && return $(command git clone "$@")
+      parts=($( _get_repo_and_project "${repo}" ))
       target_dir="$HOME/Stuff/${parts[0]}/${parts[1]}"
-      command git clone "${repo}" "${target_dir}" && cd "${target_dir}"
+      git clone "${repo}" "${target_dir}" && cd "${target_dir}"
       ;;
     *)
       command git "$@" ;;
@@ -408,6 +417,16 @@ shell.expansion() {
   delimiter="__apply_shell_expansion_delimiter__"
   command="cat <<$delimiter"$'\n'"$data"$'\n'"$delimiter"
   eval "$command"
+}
+
+# Open Whatsapp web
+web.whatsapp() {
+  sys.open "https://web.whatsapp.com"
+}
+
+# Open Telegram web
+web.telegram() {
+  sys.open "https://web.telegram.org"
 }
 
 # Search for something from the commmand line
