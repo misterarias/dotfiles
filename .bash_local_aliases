@@ -350,14 +350,20 @@ git() {
     echo "${repo_ssh}" | sed -e 's#.*\.com[/:][0-9]*/##g' -e 's#\.git$##g' | tr '/' ' '
   }
 
+  _get_branch_name() {
+    git rev-parse --abbrev-ref HEAD
+  }
+
   case "$1" in
     blame*)
       echo "Probablemente tu, así que mejor no preguntes" ;;
     perrete*)
+      branch_name=$( _get_branch_name )
+      command git push -u origin "${branch_name}"
+
       repo_and_project=($( _get_repo_and_project ))
       project_url=$(printf "${BITBUCKET_REPO}/projects/%s/repos/%s/pull-requests" "${repo_and_project[0]}" "${repo_and_project[1]}")
 
-      branch_name=$(git rev-parse --abbrev-ref HEAD)
       url_params=$(printf "create&targetBranch=refs/heads/develop&sourceBranch=refs/heads/%s" "${branch_name}")
       escaped_params=${url_params//\//%2F}
 
@@ -366,7 +372,7 @@ git() {
       ;;
     pushete*)
       # pushes current branch and opens browser in repo webpage
-      branch_name=$(git rev-parse --abbrev-ref HEAD)
+      branch_name=$( _get_branch_name )
       [ ! -z "${branch_name}" ] && \
         command git push -u origin "${branch_name}" && git open
       ;;
