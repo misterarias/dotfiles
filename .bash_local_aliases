@@ -347,7 +347,7 @@ git() {
     # Returns a two-item array!!
     repo_ssh="$1" ; [ -z "${repo_ssh}" ] && \
       repo_ssh=$(git remote show origin -n | grep 'Fetch URL' | cut -d':' -f2- | tr -d ' ')
-    echo "${repo_ssh}" | sed -e 's#.*\.com[/:][0-9]*/##g' -e 's#\.git$##g' | tr '/' ' '
+    echo "${repo_ssh}" | sed -Ee 's#.*\.com(:[0-9]*/|:|/)##g' -e 's#\.git$##g' | tr '/' ' '
   }
 
   _get_branch_name() {
