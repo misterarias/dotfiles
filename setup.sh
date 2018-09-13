@@ -46,7 +46,7 @@ setup_git() {
 }
 
 setup_vim() {
-  [ -z $(which vim) ] && \
+  [ -z "$(which vim)" ] && \
     echo "You don't have VIM installed.... you suck" && return
 
   VIMDIR=~/.vim
@@ -87,7 +87,7 @@ setup_postgres() {
 }
 
 setup_configs() {
-  [ ! -z $(which terminator) ] && \
+  [ ! -z "$(which terminator)" ] && \
     echo && echo "${GREENCOLOR}Setting my terminator config...${ENDCOLOR}" && \
     mkdir -p "$HOME/.config/terminator" && \
     dotfiles_link .config/terminator/config "$HOME/.config/terminator/config"
@@ -98,8 +98,8 @@ setup_gnome_extensions() {
   is.mac && return
 
   # Maybe gnome stuff is not set up correctly
-  [ -z $(which gnome-shell-extension-installer) ] && return
-  [ -z $(which gnome-shell) ] && return
+  [ -z "$(which gnome-shell-extension-installer)" ] && return
+  [ -z "$(which gnome-shell)" ] && return
 
   # Download magnificent and already-created script for shell extension's management
   if [ ! -f "$HOME/bin/gnome-shell-extension-installer" ] ; then
@@ -149,6 +149,20 @@ setup_all() {
   setup_configs
   setup_gnome_extensions
   setup_repo_change_script
+  setup_binaries
+}
+
+_DEPRECATED() {
+  echo "${REDCOLOR_BOLD}DEPRECATED${ENDCOLOR} - $*"
+}
+
+setup_binaries() {
+  echo && echo "${GREENCOLOR}Copying 'useful' binaries....${ENDCOLOR}"
+
+  # I like this, it's the same used by 'pip install --user'
+  bin_dir="${HOME}/.local/bin"
+  mkdir -p "${bin_dir}"
+  cp -v ./bin/* "${bin_dir}"
 }
 
 mode=${1:-all}
@@ -160,22 +174,24 @@ case "${mode}" in
   postgres) setup_postgres ;;
   ruby)     setup_ruby ;;
   configs)  setup_configs ;;
-  gnome)    setup_gnome_extensions ;;
+  binaries) setup_binaries ;;
+  gnome)    _DEPRECATED setup_gnome_extensions ;;
   repo)     setup_repo_change_script ;;
   help|*)
     echo && echo "${GREENCOLOR_BOLD}setup.sh${ENDCOLOR}"
     echo "One-time, not-interactive setup for optimal CLI - by Juan Arias"
     echo ; echo "Args:"
     echo "* [no args] - Default option, installs everything in one go"
-    echo "* vim - installs my .vimrc file and most useful Plugins using Vundle (requires vim)"
-    echo "* dotfiles - installs my .bash* files, including Prompt and Aliases"
-    echo "* git - Some useful git aliases"
-    echo "* postgres - Basically a simple .psqlrc file"
-    echo "* ruby - Small improvement over default irb config"
-    echo "* configs - For now, only some terminator tweaks (requires Linux && terminator)"
-    echo "* gnome - Installs some really useful Gnome addons (requires Gnome 3.x)"
-    echo "* repo - If you have a lot of repos, you'll love this"
-    echo "* help - this message"
+    echo "* vim       - installs my .vimrc file and most useful Plugins using Vundle (requires vim)"
+    echo "* dotfiles  - installs my .bash* files, including Prompt and Aliases"
+    echo "* git       - Some useful git aliases"
+    echo "* postgres  - Basically a simple .psqlrc file"
+    echo "* ruby      - Small improvement over default irb config"
+    echo "* configs   - For now, only some terminator tweaks (requires Linux && terminator)"
+    echo "* gnome     - Installs some really useful Gnome addons (requires Gnome 3.x)"
+    echo "* binaries  - Installs some useful binaries for everyday use"
+    echo "* repo      - If you have a lot of repos, you'll love this"
+    echo "* help      - this message"
     echo && exit 0
     ;;
 esac
