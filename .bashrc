@@ -4,7 +4,7 @@
 # Bash Aliases
 if [ -f ~/.bash_local_aliases ]; then
   # shellcheck source=/dev/null
-	. ~/.bash_local_aliases
+  source ~/.bash_local_aliases
 fi
 
 # Bash completion location depends on OS
@@ -18,6 +18,9 @@ fi
 [ ! -f ~/.git-completion ] && \
     curl http://git.kernel.org/cgit/git/git.git/plain/contrib/completion/git-completion.bash?id=HEAD > ~/.git-completion
 
+# My custom stuff
+export PATH=$HOME/.local/bin:$PATH
+
 # shellcheck source=/dev/null
 . ~/.git-completion
 
@@ -27,15 +30,15 @@ my_commands() {
   function_filter='^[a-z][a-z._]\+()'
   for aliases in ${HOME}/.bash_local_aliases $HOME/.bash_private_aliases ; do
     [ ! -f "${aliases}" ] && continue
-    printf  "\n%s%s%s:\n\n" "${GREENCOLOR}${BOLD}" "${aliases}" "${ENDCOLOR}"
+    printf  "\n%s%s%s:\n\n" "${GREEN}${BOLD}" "${aliases}" "${ENDCOLOR}"
     grep -B1 -e "${alias_filter}" "$aliases" | sed -e 's#=.*##' -e 's#.*alias ##'  -e 's#--##g' \
-      -e "s/^\([a-z._]*\)$/${REDCOLOR}${BOLD}\1${ENDCOLOR}/g"
+      -e "s/^\([a-z._]*\)$/${RED}${BOLD}\1${ENDCOLOR}/g"
 
     printf "\n"
 
     # Do not show functions starting with '_'
     grep -B1 -e "${function_filter}" "$aliases" | sed -e 's#().*##g' -e 's#--##g' \
-        -e "s/^\([a-z._]*\)$/${REDCOLOR}${BOLD}\1${ENDCOLOR}/g"
+        -e "s/^\([a-z._]*\)$/${RED}${BOLD}\1${ENDCOLOR}/g"
   done
 }
 
@@ -69,7 +72,7 @@ __jobs() {
   is.repo && echo "$PROMPT_COMMAND" | grep -q -o __git_ps1 && \
     job_number=$((job_number - 3))
   if [ ${job_number} -gt 0 ] ; then
-    printf "#%d " "${job_number}"
+    printf "[%d]" "${job_number}"
   else
     printf ""
   fi
@@ -88,16 +91,16 @@ __battery_state() {
   fi
   if [ ! -z "$discharging" ] ; then
     if [ "${percentage}" -gt ${HIGH_THRESHOLD} ] ; then
-      batt="${GREENCOLOR}${BOLD}${percentage}%${ENDCOLOR}"
+      batt="${GREEN}${BOLD}${percentage}%${ENDCOLOR}"
     elif [ "${percentage}" -gt ${LOW_THRESHOLD} ] ; then
-      batt="${YELLOWCOLOR}${BOLD}${percentage}%${ENDCOLOR}"
+      batt="${YELLOW}${BOLD}${percentage}%${ENDCOLOR}"
     else
-      batt="${REDCOLOR}${BOLD}${percentage}%${ENDCOLOR}"
+      batt="${RED}${BOLD}${percentage}%${ENDCOLOR}"
     fi
   else
     # while charging, only show while it's kind of low
     if [ "${percentage}" -lt ${HIGH_THRESHOLD} ] ; then
-      batt="${YELLOWCOLOR}${BOLD}${percentage}%${ENDCOLOR}"
+      batt="${YELLOW}${BOLD}${percentage}%${ENDCOLOR}"
     fi
   fi
   [ ! -z "${batt}" ] && echo "${batt} "
@@ -105,23 +108,24 @@ __battery_state() {
 
 # Some color codes
 BOLD=$(tput bold)
-REDCOLOR=$(tput setaf 1)
-GREENCOLOR=$(tput setaf 2)
-YELLOWCOLOR=$(tput setaf 3)
-BLUECOLOR=$(tput setaf 4)
-WHITECOLOR=$(tput setaf 7)
+RED=$(tput setaf 1)
+GREEN=$(tput setaf 2)
+YELLOW=$(tput setaf 3)
+BLUE=$(tput setaf 4)
+MAGENTA=$(tput setaf 5)
+CYAN=$(tput setaf 6)
+WHITE=$(tput setaf 7)
 ENDCOLOR=$(tput sgr0)
 
 DISPLAY_BATTERY_LEVEL=1
 [ ! -z "${DISPLAY_BATTERY_LEVEL}" ] && BATT="\$(__battery_state)"
-WHEN="\[${BLUECOLOR}${BOLD}\]\$(date +%H:%M)\[${ENDCOLOR}\]"
-WHERE="\[${WHITECOLOR}${BOLD}\]\w\[${ENDCOLOR}\]"
-JOBS="\[${REDCOLOR}\]\$(__jobs)\[${ENDCOLOR}\]"
 SEPARATOR=" "
 PS2='> '
-
-AWS_PROFILE_SHOW='$([ ! -z "$AWS_PROFILE" ] && echo "\[${CYAN}\]#$AWS_PROFILE\[${ENDCOLOR}\] ")'
-VENV_SHOW='$([ ! -z "$VIRTUAL_ENV" ] && echo "\[${YELLOWCOLOR}\]#$(basename $VIRTUAL_ENV)\[${ENDCOLOR}\] ")'
+WHEN="\[${BLUE}${BOLD}\]\$(date +%H:%M)\[${ENDCOLOR}\]"
+WHERE="\[${WHITE}${BOLD}\]\w\[${ENDCOLOR}\]"
+JOBS="\[${RED}${BOLD}\]\$(__jobs)\[${ENDCOLOR}\]"
+AWS_PROFILE_SHOW='$([ ! -z "$AWS_PROFILE" ] && echo "\[${CYAN}${BOLD}\][aws:${AWS_PROFILE}]\[${ENDCOLOR}\]")'
+VENV_SHOW='$([ ! -z "$VIRTUAL_ENV" ] && echo "\[${MAGENTA}${BOLD}\][venv:$(basename $VIRTUAL_ENV)]\[${ENDCOLOR}\]")'
 PROMPT_SYMBOL='$ '
 
 export PROMPT_INFO=${JOBS}${VENV_SHOW}${AWS_PROFILE_SHOW}${BATT}${WHEN}${SEPARATOR}${WHERE}
@@ -142,15 +146,12 @@ if [ ! -z ${USE_GIT_PROMPT} ] ; then
   export GIT_PS1_SHOWUNTRACKEDFILES=1
   export GIT_PS1_SHOWUPSTREAM="auto verbose"
   export GIT_PS1_SHOWCOLORHINTS=true
+  export GIT_PS1_STATESEPARATOR="|"
   export GIT_PS1_DESCRIBE_STYLE=branch
-  #export GIT_PS1="\[${BLUECOLOR}\]\$(__git_ps1)\[${ENDCOLOR}\]"
-  #PS1=${BATT}${JOBS}${WHEN}${SEPARATOR}${WHERE}${SEPARATOR}${GIT_PS1}\\n${PROMPT_SYMBOL}
-  GIT=" (%s)"
+  GIT=" %s"
 
   export PROMPT_COMMAND='__git_ps1 "${PROMPT_INFO}" "${SYMBOL}" "${GIT}"'
 else
-  #export PROMPT_COMMAND='echo -en "\033]0;$(whoami)$(__jobs)@${PWD}\a"'
-  #export PROMPT_COMMAND='echo -en "${PROMPT_INFO}" "${SYMBOL}" '
   export PS1="${PROMPT_INFO}${SYMBOL}"
 fi
 
@@ -158,7 +159,7 @@ fi
 ulimit -c unlimited
 
 # Careful with messages (David Hasselhoff bombing is real)
-[ ! -z "$(which mesg)" ] && mesg n
+#[ ! -z "$(which mesg)" ] && mesg n
 
 # Useful for everything: bash, git, postgres...
 export EDITOR=vim
