@@ -24,7 +24,8 @@ get_repo_base() {
 
 # re-source all aliases
 alias.source() {
-  source "${HOME}/.bash_local_aliases"
+  source "${HOME}/.bashrc"
+  #source "${HOME}/.bash_local_aliases"
 }
 
 # Edit aliases fast
@@ -500,6 +501,9 @@ alias sys.utf_to_iso='iconv --to-code=iso-8859-1 --from-code=utf-8'
 # with X only, paste output of command into clipboard: echo 'AAA' | ccp
 if is.mac ; then alias ccp='pbcopy' ; else alias ccp='xclip -selection clipboard' ; fi
 
+# Copy current path to clipboard - needs 'ccp'
+alias ccpath='pwd | ccp'
+
 # OSX override of AWK, if installed
 is.mac && [ ! -z "$(which gawk)" ] && alias awk='gawk'
 
@@ -540,8 +544,11 @@ alias activate3='_activate3'
 alias virtualenver='_virtualenver'
 alias virtualenver3='_virtualenver3'
 
-# Copy current path to clipboard - needs 'ccp'
-alias ccpath="printf '%s' '$(pwd)' | ccp && echo '$(pwd) copied to Clipboard'"
+# Some bash-debugging help
+debug.on() {
+  export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+}
+alias debug.off='unset PS4'
 
 # DO NOT VERSION THESE THANKS
 [ -f ~/.bash_private_vars ] && source ~/.bash_private_vars
