@@ -60,6 +60,7 @@ autocmd! bufwritepost ~/.vimrc source %
 " Automagically indent templates
 au BufNewFile,BufRead *.less set filetype=css
 au BufNewFile,BufRead *.html.tmpl set filetype=html
+au BufNewFile,BufRead *.yaml.template set filetype=yaml
 au BufNewFile,BufRead *.psql.tmpl set filetype=sql
 
 " Set to auto read when a file is changed from the outside
@@ -145,15 +146,13 @@ set shiftwidth=2
 set tabstop=2
 set sts=2
 set expandtab
-
-" Python settings
-autocmd Filetype python setlocal ts=4 sts=4 sw=4
+set list
+set listchars=tab:␉·,trail:␠
 
 " More space in JSON files
+autocmd Filetype python setlocal ts=4 sts=4 sw=4
+autocmd Filetype groovy setlocal ts=4 sts=4 sw=4
 autocmd FileType json :set ts=4 sts=4 sts=4
-
-" Shallot files are yaml files
-autocmd BufEnter *.shallot :set filetype=yaml
 
 set ai "Auto indent
 set si "Smart indent
@@ -276,16 +275,13 @@ nmap z- [s
 " z= -> bring up list of suggestions
 " zg -> Add current spelling error to dictionary
 
-" Set type for custom extensions:
-" hbs: Handlebars template
-autocmd BufEnter *.hbs :set ft=html
-
 " Command to yank into clipboard (needs vim-gtk)
 if has('clipboard')==1
-  " for Linux
-  "set clipboard=unnamedplus
-  " for OSX
-  set clipboard=unnamed
+  if has("unix")
+    set clipboard=unnamedplus
+  else
+    set clipboard=unnamed
+  endif
 endif
 
 " Nerdtree starts OFF by default
