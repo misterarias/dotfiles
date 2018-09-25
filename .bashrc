@@ -68,9 +68,7 @@ export HISTFILESIZE=100000
 export LESS="--RAW-CONTROL-CHARS"
 
 __jobs() {
-  job_number=$(jobs | wc -l | tr -d '' )
-  is.repo && echo "$PROMPT_COMMAND" | grep -q -o __git_ps1 && \
-    job_number=$((job_number - 3))
+  local job_number=$(jobs | \grep -vi git | wc -l | tr -d '' )
   if [ ${job_number} -gt 0 ] ; then
     printf "[%d]" "${job_number}"
   else
@@ -83,12 +81,11 @@ __battery_state() {
   if ! is.mac ; then
     state=$(acpi)
     discharging=$(echo "$state" | grep remaining)
-    percentage=$(echo "$state" | grep -o "[0-9]*%" | tr -d '%')
   else
     state=$(pmset -g batt)
     discharging=$(echo "$state" | grep discharging)
-    percentage=$(echo "$state" | grep -o "[0-9]*%" | tr -d '%')
   fi
+  percentage=$(echo "$state" | grep -o "[0-9]*%" | tr -d '%')
   if [ ! -z "$discharging" ] ; then
     if [ "${percentage}" -gt ${HIGH_THRESHOLD} ] ; then
       batt="${GREEN}${BOLD}${percentage}%${ENDCOLOR}"
@@ -121,38 +118,43 @@ DISPLAY_BATTERY_LEVEL=1
 [ ! -z "${DISPLAY_BATTERY_LEVEL}" ] && BATT="\$(__battery_state)"
 SEPARATOR=" "
 PS2='> '
-WHEN="\[${BLUE}${BOLD}\]\$(date +%H:%M)\[${ENDCOLOR}\]"
-WHERE="\[${WHITE}${BOLD}\]\w\[${ENDCOLOR}\]"
-JOBS="\[${RED}${BOLD}\]\$(__jobs)\[${ENDCOLOR}\]"
-AWS_PROFILE_SHOW='$([ ! -z "$AWS_PROFILE" ] && echo "\[${CYAN}${BOLD}\][aws:${AWS_PROFILE}]\[${ENDCOLOR}\]")'
-VENV_SHOW='$([ ! -z "$VIRTUAL_ENV" ] && echo "\[${MAGENTA}${BOLD}\][venv:$(basename $VIRTUAL_ENV)]\[${ENDCOLOR}\]")'
+WHEN='\[${BLUE}${BOLD}\]$(date +%H:%M)\[${ENDCOLOR}\]'
+WHERE='\[${WHITE}${BOLD}\]\w\[${ENDCOLOR}\]'
+JOBS='\[${RED}\]$(__jobs)\[${ENDCOLOR}\]'
+AWS_PROFILE_SHOW='$([ ! -z "$AWS_PROFILE" ] && echo "\[${CYAN}\][aws:${AWS_PROFILE}]\[${ENDCOLOR}\]")'
+VENV_SHOW='$([ ! -z "$VIRTUAL_ENV" ] && echo "\[${MAGENTA}\][venv:$(basename $VIRTUAL_ENV)]\[${ENDCOLOR}\]")'
+GIT='${GREEN}[git:%s]${ENDCOLOR}'
 PROMPT_SYMBOL='$ '
 
-export PROMPT_INFO=${JOBS}${VENV_SHOW}${AWS_PROFILE_SHOW}${BATT}${WHEN}${SEPARATOR}${WHERE}
-export SYMBOL="\\n${PROMPT_SYMBOL}"
+PROMPT_INFO="${BATT}${WHEN}${SEPARATOR}${WHERE}${SEPARATOR}${JOBS}${VENV_SHOW}${AWS_PROFILE_SHOW}"
+SYMBOL="\\n${PROMPT_SYMBOL}"
+PS1="${PROMPT_INFO}${SYMBOL}"
 
-# For git prompt (download with: curl https://raw.github.com/git/git/master/contrib/completion/git-prompt.sh -o ~/.   git-prompt.sh)
 USE_GIT_PROMPT=yes
-if [ ! -z ${USE_GIT_PROMPT} ] ; then
+if [ "yes" == "${USE_GIT_PROMPT}" ] ; then
+  # For git prompt (download with: curl https://raw.github.com/git/git/master/contrib/completion/git-prompt.sh -o ~/.   git-prompt.sh)
   if [ ! -f ~/.git-prompt.sh ]; then
     curl https://raw.githubusercontent.com/git/git/master/contrib/completion/git-prompt.sh -o ~/.git-prompt.sh
   fi
-
-  # shellcheck source=/dev/null
-  source  ~/.git-prompt.sh
 
   # Enable for small repos or (non NFS mounted) connections
   export GIT_PS1_SHOWDIRTYSTATE=1
   export GIT_PS1_SHOWUNTRACKEDFILES=1
   export GIT_PS1_SHOWUPSTREAM="auto verbose"
-  export GIT_PS1_SHOWCOLORHINTS=true
-  export GIT_PS1_STATESEPARATOR="|"
-  export GIT_PS1_DESCRIBE_STYLE=branch
-  GIT=" %s"
+  #export GIT_PS1_SHOWCOLORHINTS=true
+  export GIT_PS1_HIDE_IF_PWD_IGNORED=true
+  export GIT_PS1_STATESEPARATOR=" "
+  export GIT_PS1_DESCRIBE_STYLE=#branch
+  unset GIT_PS1_SHOWCOLORHINTS
+
+  # shellcheck source=/dev/null
+  source  ~/.git-prompt.sh
+
 
   export PROMPT_COMMAND='__git_ps1 "${PROMPT_INFO}" "${SYMBOL}" "${GIT}"'
 else
-  export PS1="${PROMPT_INFO}${SYMBOL}"
+  unset PROMPT_COMMAND GIT_PS1_SHOWDIRTYSTATE GIT_PS1_SHOWUNTRACKEDFILES GIT_PS1_SHOWUPSTREAM GIT_PS1_SHOWCOLORHINTS GIT_PS1_HIDE_IF_PWD_IGNORED GIT_PS1_STATESEPARATOR GIT_PS1_DESCRIBE_STYLE
+  export PS1
 fi
 
 # I want cores
