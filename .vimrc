@@ -27,6 +27,7 @@ Plugin 'scrooloose/nerdtree'
 Plugin 'pangloss/vim-javascript'
 Plugin 'mxw/vim-jsx'
 Plugin 'sheerun/vim-polyglot'
+Plugin 'pearofducks/ansible-vim'
 
 " To enable code snippets
 "Plugin 'MarcWeber/vim-addon-mw-utils'
@@ -102,7 +103,7 @@ set showmatch
 set mat=2
 
 " My editor my rules
-set textwidth=150
+set textwidth=1000
 
 set wrapmargin=2
 "set wrap "Wrap lines
@@ -307,3 +308,6 @@ let g:jsx_ext_required = 0
 
 " Search highlighting
 hi Search ctermbg=DarkYellow ctermfg=Yellow
+
+" YAML Ansible
+let g:ansible_unindent_after_newline=1
