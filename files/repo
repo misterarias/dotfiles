@@ -1,8 +1,48 @@
 # repo(1) completion
 
+# Disables glob
+set -f
+
+__generate_filter() {
+  words=(${COMP_WORDS[*]})
+  filter=""
+  for i in $( seq 0 $((${#words[*]} -1)) ) ; do
+    if [ "${words[$i]}" != "repo" ] ; then
+      [ ! -z "${filter}" ] && minus_o=" -a"
+      filter="$(printf '%s%s -name *%s* ' "${filter}" "${minus_o}" "${words[$i]}")"
+    fi
+  done
+  echo "${filter}"
+}
+
+__get_all_repos() {
+  (cd "${1}" && \
+    find . -maxdepth 2 -mindepth 1 -type d $( __generate_filter )  \
+    | sed 's#^\.\/##' \
+    | xargs )
+}
+
 _repo_names() {
+  repos_dir="/Users/juanito/Stuff"
+  [ ! -d "${repos_dir}" ] && return
+
+  COMPREPLY=()
+
+  # If a word is set, check if it matches a valid directory
+  current="${COMP_WORDS[COMP_CWORD]}"
+  [ -z "${current}" ] && current="${COMP_WORDS[COMP_CWORD-1]}"
+  if [ ! -z "${current}" ] && [ -d "${repos_dir}/${current}" ] ; then
+    opts=$(__get_all_repos "${repos_dir}")
+    COMPREPLY=( $( compgen -W "${opts}" -- "${current}" ) )
+  else
+    opts=$(__get_all_repos "${repos_dir}")
+    COMPREPLY=( $( compgen -W "$opts" ) )
+  fi
+}
+
+_repo_names_and_dirs() {
   local  current previous opts base_dir
-  base_dir="#CHANGEME#"
+  base_dir="/Users/juanito/Stuff"
   [ ! -d "${base_dir}" ] && return
 
   current="${COMP_WORDS[COMP_CWORD]}"
@@ -13,7 +53,6 @@ _repo_names() {
   subdir="${base_dir}/${previous}"
   if [ -d "${subdir}" ] ; then
     opts="$(\ls "${subdir}" | xargs)"
-    COMPREPLY=( $( compgen -W "$opts" -- "$current" ) )
   else
     opts=$(\ls "${base_dir}" | xargs)
   fi

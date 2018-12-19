@@ -137,7 +137,7 @@ _virtualenver.core() {
 _virtualenver3() {
   local venv_name venv_global_binary
   venv_name="$(_venv.name)$PYTHON_3_SUFFIX"
-  venv_global_binary="virtualenv --python=python3.6"
+  venv_global_binary="virtualenv --python=python3"
 
   _virtualenver.core "${venv_name}" "${venv_global_binary}" "$@"
 }
@@ -145,7 +145,7 @@ _virtualenver3() {
 _virtualenver() {
   local venv_name venv_global_binary
   venv_name="$(_venv.name)$PYTHON_2_SUFFIX"
-  venv_global_binary="virtualenv --python=python2.7"
+  venv_global_binary="virtualenv --python=python2"
 
   _virtualenver.core "${venv_name}" "${venv_global_binary}" "$@"
 }
@@ -188,9 +188,11 @@ _repo() {
     sed  -e "s|#CHANGEME#|${base_dir}|g" "${autocomplete_file}" > /tmp/tmp && sudo cp /tmp/tmp "${autocomplete_file}"
     echo "Now create a new shell and start using the command" && return
   fi
-  local orgs_dir="$1"
-  local repo_name=$2
-  local fulldir="${base_dir}/${orgs_dir}/${repo_name}"
+
+  # This depends on the output of the 'repo' autocomplete!
+  #local orgs_dir="$1"
+  local repo_name=${2:-$1}
+  local fulldir="${base_dir}/${repo_name}"
   if [ ! -d "${fulldir}" ] ; then
     echo "'${fulldir}' is not a directory"
   else
@@ -484,6 +486,11 @@ gg() {
     path="$*"
   fi
   git grep -iI "$pattern" "$path" | sed -e 's#^\([^:]*\):\(.*\)$#\1 -> \2#g' | grep -iI "$pattern" --color
+}
+
+# mkdir -p + cd to newly created directory, in one go
+mcd() {
+  [ ! -z $1 ] && mkdir -p $1 && cd $1
 }
 
 # Typical shortcuts
