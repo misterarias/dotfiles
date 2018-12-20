@@ -1,4 +1,4 @@
-#/usr/bin/env bash
+#!/usr/bin/env bash
 
 SOURCES=$(cd "$(dirname "$0")/.." ; pwd )
 source "${SOURCES}/.bash_local_aliases"
@@ -15,7 +15,7 @@ function test__get_repo_and_project {
 }
 
 function load_git_functions {
-  git > /dev/null 2&>1
+  git > /dev/null 2>&1
 }
 
 __assert_equals() {
