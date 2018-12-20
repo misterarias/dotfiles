@@ -15,7 +15,7 @@ function test__get_repo_and_project {
 }
 
 function load_git_functions {
-  git >> /dev/null 2&>1
+  git > /dev/null 2&>1
 }
 
 __assert_equals() {
@@ -23,6 +23,12 @@ __assert_equals() {
     echo "[ERROR] $1 should be equal to $2" && exit 1
 }
 
+test_table_load() {
+  :
+}
+
 load_git_functions
 test__get_repo_and_project
+#test_table_load
+
 echo "OK!!!"
