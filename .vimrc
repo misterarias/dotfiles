@@ -29,14 +29,6 @@ Plugin 'mxw/vim-jsx'
 Plugin 'sheerun/vim-polyglot'
 Plugin 'pearofducks/ansible-vim'
 
-" To enable code snippets
-"Plugin 'MarcWeber/vim-addon-mw-utils'
-"Plugin 'tomtom/tlib_vim'
-"Plugin 'garbas/vim-snipmate'
-
-" Optional:
-"Plugin 'honza/vim-snippets'
-
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
 filetype plugin indent on    " required
@@ -63,6 +55,9 @@ au BufNewFile,BufRead *.less set filetype=css
 au BufNewFile,BufRead *.html.tmpl set filetype=html
 au BufNewFile,BufRead *.yaml.template set filetype=yaml
 au BufNewFile,BufRead *.psql.tmpl set filetype=sql
+
+" Custom formats
+au BufNewFile,BufRead *Jenkinsfile set filetype=groovy
 
 " Set to auto read when a file is changed from the outside
 set autoread
@@ -278,11 +273,8 @@ nmap z- [s
 
 " Command to yank into clipboard (needs vim-gtk)
 if has('clipboard')==1
-  if has("unix")
-    set clipboard=unnamedplus
-  else
-    set clipboard=unnamed
-  endif
+  "set clipboard=unnamedplus
+  set clipboard=unnamed
 endif
 
 " Nerdtree starts OFF by default
