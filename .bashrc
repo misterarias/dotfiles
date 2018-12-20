@@ -11,18 +11,16 @@ fi
 # shellcheck source=/dev/null
 [ -f "$(_get_bash_completion)" ] && . "$(_get_bash_completion)"
 
-# Debian-like completion for MacOSX
-# is.mac && bind '"\t":menu-complete'
-
-# git completion
-[ ! -f ~/.git-completion ] && \
-    curl http://git.kernel.org/cgit/git/git.git/plain/contrib/completion/git-completion.bash?id=HEAD > ~/.git-completion
+# git completion is installed with 'brew install git bash-completion'
+if ! is.mac ; then
+  [ ! -f ~/.git-completion ] && \
+      curl http://git.kernel.org/cgit/git/git.git/plain/contrib/completion/git-completion.bash?id=HEAD > ~/.git-completion
+  # shellcheck source=/dev/null
+  . ~/.git-completion
+fi
 
 # My custom stuff
 export PATH=$HOME/.local/bin:$PATH
-
-# shellcheck source=/dev/null
-. ~/.git-completion
 
 # show help on custom commands
 my_commands() {
@@ -68,7 +66,7 @@ export HISTFILESIZE=100000
 export LESS="--RAW-CONTROL-CHARS"
 
 __jobs() {
-  local job_number=$(jobs | \grep -vi git | wc -l | tr -d '' )
+  local job_number=$(jobs | \grep -v git | wc -l | tr -d '' )
   if [ ${job_number} -gt 0 ] ; then
     printf "[%d]" "${job_number}"
   else
@@ -149,8 +147,6 @@ if [ "yes" == "${USE_GIT_PROMPT}" ] ; then
 
   # shellcheck source=/dev/null
   source  ~/.git-prompt.sh
-
-
   export PROMPT_COMMAND='__git_ps1 "${PROMPT_INFO}" "${SYMBOL}" "${GIT}"'
 else
   unset PROMPT_COMMAND GIT_PS1_SHOWDIRTYSTATE GIT_PS1_SHOWUNTRACKEDFILES GIT_PS1_SHOWUPSTREAM GIT_PS1_SHOWCOLORHINTS GIT_PS1_HIDE_IF_PWD_IGNORED GIT_PS1_STATESEPARATOR GIT_PS1_DESCRIBE_STYLE
@@ -159,9 +155,6 @@ fi
 
 # I want cores
 ulimit -c unlimited
-
-# Careful with messages (David Hasselhoff bombing is real)
-#[ ! -z "$(which mesg)" ] && mesg n
 
 # Useful for everything: bash, git, postgres...
 export EDITOR=vim
