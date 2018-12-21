@@ -567,5 +567,9 @@ debug.on() {
 }
 alias debug.off='unset PS4'
 
+# Run locally installed npm binaries
+alias npm-exec='PATH=$(npm bin):$PATH'
+
+
 # DO NOT VERSION THESE THANKS
 [ -f ~/.bash_private_vars ] && source ~/.bash_private_vars
