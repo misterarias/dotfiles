@@ -59,11 +59,17 @@ setup_vim() {
   vim +PluginInstall +qall
 }
 
+run_tests() {
+  ./tests.sh
+}
+
 setup_dotfiles() {
   echo && echo "${GREENCOLOR}Setting up bash dotfiles_....${ENDCOLOR}"
   touch ~/.bash_profile # in case it does not exist..
   [ "$(grep -c "\. ~/.bashrc" ~/.bash_profile)" -ne 1 ] && cat .bash_profile  >> ~/.bash_profile
 
+  run_tests
+  if [ $? -ne 0 ] ; then echo "Tests not ok, I refuse to install broken dotfiles" && exit 1 ; fi
   dotfiles_link .bashrc ~/.bashrc
   dotfiles_link .bash_local_aliases ~/.bash_local_aliases
 
@@ -176,7 +182,8 @@ case "${mode}" in
   configs)  setup_configs ;;
   binaries) setup_binaries ;;
   gnome)    _DEPRECATED setup_gnome_extensions ;;
-  repo)     setup_repo_change_script ;;
+  repo)     setup_rep,o_change_script ;;
+  test)     run_tests;;
   help|*)
     echo && echo "${GREENCOLOR_BOLD}setup.sh${ENDCOLOR}"
     echo "One-time, not-interactive setup for optimal CLI - by Juan Arias"
@@ -191,6 +198,7 @@ case "${mode}" in
     echo "* gnome     - Installs some really useful Gnome addons (requires Gnome 3.x)"
     echo "* binaries  - Installs some useful binaries for everyday use"
     echo "* repo      - If you have a lot of repos, you'll love this"
+    echo "* test      - Runs locally installed test-battery"
     echo "* help      - this message"
     echo && exit 0
     ;;
