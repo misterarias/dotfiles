@@ -65,10 +65,14 @@ export HISTFILESIZE=100000
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 export LESS="--RAW-CONTROL-CHARS"
 
+__present() {
+  printf "(%s)" "$*"
+}
+
 __jobs() {
   local job_number=$(jobs | \grep -v git | wc -l | tr -d '' )
   if [ ${job_number} -gt 0 ] ; then
-    printf "[%d]" "${job_number}"
+    printf "$(__present %s)" "${job_number}"
   else
     printf ""
   fi
@@ -119,9 +123,9 @@ PS2='> '
 WHEN='\[${BLUE}${BOLD}\]$(date +%H:%M)\[${ENDCOLOR}\]'
 WHERE='\[${WHITE}${BOLD}\]\w\[${ENDCOLOR}\]'
 JOBS='\[${RED}\]$(__jobs)\[${ENDCOLOR}\]'
-AWS_PROFILE_SHOW='$([ ! -z "$AWS_PROFILE" ] && echo "\[${CYAN}\][aws:${AWS_PROFILE}]\[${ENDCOLOR}\]")'
-VENV_SHOW='$([ ! -z "$VIRTUAL_ENV" ] && echo "\[${MAGENTA}\][venv:$(basename $VIRTUAL_ENV)]\[${ENDCOLOR}\]")'
-GIT='${GREEN}[git:%s]${ENDCOLOR}'
+AWS_PROFILE_SHOW='$([ ! -z "$AWS_PROFILE" ] && echo "\[${CYAN}\]$(__present aws:${AWS_PROFILE})\[${ENDCOLOR}\]")'
+VENV_SHOW='$([ ! -z "$VIRTUAL_ENV" ] && echo "\[${MAGENTA}\]$(__present venv:$(basename $VIRTUAL_ENV))\[${ENDCOLOR}\]")'
+GIT='${GREEN}$(__present git:%s)${ENDCOLOR}'
 PROMPT_SYMBOL='$ '
 
 PROMPT_INFO="${BATT}${WHEN}${SEPARATOR}${WHERE}${SEPARATOR}${JOBS}${VENV_SHOW}${AWS_PROFILE_SHOW}"
