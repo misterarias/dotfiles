@@ -106,7 +106,8 @@ _get_bash_completion() {
   is.mac && echo "/usr/local/etc/bash_completion" || echo "/etc/bash_completion"
 }
 
-PYTHON_3_SUFFIX="_p3.6"
+PYTHON_36_SUFFIX="_p3.6"
+PYTHON_37_SUFFIX="_p3.7"
 PYTHON_2_SUFFIX=""
 
 _virtualenver.core() {
@@ -134,10 +135,18 @@ _virtualenver.core() {
   source "${venv_activate}"
 }
 
-_virtualenver3() {
+_virtualenver37() {
   local venv_name venv_global_binary
-  venv_name="$(_venv.name)$PYTHON_3_SUFFIX"
-  venv_global_binary="virtualenv --python=python3"
+  venv_name="$(_venv.name)$PYTHON_37_SUFFIX"
+  venv_global_binary="virtualenv --python=python3.7"
+
+  _virtualenver.core "${venv_name}" "${venv_global_binary}" "$@"
+}
+
+_virtualenver36() {
+  local venv_name venv_global_binary
+  venv_name="$(_venv.name)$PYTHON_36_SUFFIX"
+  venv_global_binary="virtualenv --python=python3.6"
 
   _virtualenver.core "${venv_name}" "${venv_global_binary}" "$@"
 }
@@ -167,8 +176,12 @@ _activate.core() {
   source "${venv_activate}"
 }
 
-_activate3() {
-  _activate.core "$PYTHON_3_SUFFIX"
+_activate36() {
+  _activate.core "$PYTHON_36_SUFFIX"
+}
+
+_activate37() {
+  _activate.core "$PYTHON_37_SUFFIX"
 }
 
 _activate() {
@@ -340,6 +353,10 @@ vim() {
       command echo "Lo que tu quieres es el 'git', negro.... en fin... que el día que me muera...." && read
       command git "$@"
       ;;
+    git*)
+      shift;
+      command echo "Casi seguro que se te fué la olla again, vamos a pasar del vim ese.... me muero y no te educo..."
+      command git "$@" ;;
     vim*)
       shift ; vim "$@" ;;
     *)
@@ -356,11 +373,39 @@ web.escape() {
 # Allows overriding GIT commands
 git() {
 
-  _get_repo_and_project() {
-    # Returns a two-item array!!
+  _get_repo_n_project() {
+    remote="$1" ; [ -z "${remote}" ] && \
+      remote=$(git remote get-url --push origin)
+    if echo "${remote}" | grep -q "${GITLAB_REPO}" ; then
+      _get_gitlab_repo_and_project "$@"
+    else
+      _get_bb_repo_n_project "$@"
+    fi
+  }
+
+  # Returns a two-item array!!
+  _get_bb_repo_n_project() {
     repo_ssh="$1" ; [ -z "${repo_ssh}" ] && \
       repo_ssh=$(git remote show origin -n | grep 'Fetch URL' | cut -d':' -f2- | tr -d ' ')
     echo "${repo_ssh}" | sed -Ee 's#.*\.com(:[0-9]*/|:|/)##g' -e 's#\.git$##g' | tr '/' ' '
+  }
+
+  # Returns a two-item array!!
+  _get_gitlab_repo_and_project() {
+    repo_ssh="$1" ; [ -z "${repo_ssh}" ] && \
+      repo_ssh="$(git remote get-url --push origin)"
+    echo "${repo_ssh}" | grep -Eio '[0-9a-z]+\/[0-9a-z_-]+\.git$' | sed -e 's/.git$//' | tr '/' ' '
+  }
+
+  _get_repo_url() {
+    repo_and_project=($( _get_repo_n_project "$1" ))
+    remote="$1" ; [ -z "${remote}" ] && \
+      remote=$(git remote get-url --push origin)
+    if echo "${remote}" | grep -q "${GITLAB_REPO}" ; then
+      printf "https://${GITLAB_REPO}/%s/%s" "${repo_and_project[0]}" "${repo_and_project[1]}"
+    else
+      printf "${BITBUCKET_REPO}/projects/%s/repos/%s" "${repo_and_project[0]}" "${repo_and_project[1]}"
+    fi
   }
 
   _get_branch_name() {
@@ -374,7 +419,7 @@ git() {
       branch_name=$( _get_branch_name )
       command git push -u origin "${branch_name}"
 
-      repo_and_project=($( _get_repo_and_project ))
+      repo_and_project=($( _get_bb_repo_n_project ))
       project_url=$(printf "${BITBUCKET_REPO}/projects/%s/repos/%s/pull-requests" "${repo_and_project[0]}" "${repo_and_project[1]}")
 
       url_params=$(printf "create&targetBranch=refs/heads/develop&sourceBranch=refs/heads/%s" "${branch_name}")
@@ -398,15 +443,15 @@ git() {
     git*)
       shift ; git "$@" ;;
     open*)
-      repo_and_project=($( _get_repo_and_project ))
-      project_url=$(printf "${BITBUCKET_REPO}/projects/%s/repos/%s" "${repo_and_project[0]}" "${repo_and_project[1]}")
+      shift ; project_url=$( _get_repo_url "$1" )
       sys.open ${project_url}
       ;;
     klone*)
       shift; repo=$1 ; [ -z "${repo}" ] && return $(command git clone "$@")
-      parts=($( _get_repo_and_project "${repo}" ))
+      parts=($( _get_repo_n_project "${repo}" ))
       target_dir="$HOME/Stuff/${parts[0]}/${parts[1]}"
-      git clone "${repo}" "${target_dir}" && cd "${target_dir}"
+      [ ! -d "${target_dir}" ] && command git clone "${repo}" "${target_dir}"
+      cd "${target_dir}" || return
       ;;
     *)
       command git "$@" ;;
@@ -555,11 +600,13 @@ alias repo='_repo'
 
 # Activate an existing Python 2/3 virtualenv in current directory
 alias activate='_activate'
-alias activate3='_activate3'
+alias activate36='_activate36'
+alias activate37='_activate37'
 
 # Install and activate a Python 2/3 Virtualenv in current location
 alias virtualenver='_virtualenver'
-alias virtualenver3='_virtualenver3'
+alias virtualenver36='_virtualenver36'
+aliasvirtualenver37='_virtualenver37'
 
 # Some bash-debugging help
 debug.on() {
@@ -570,6 +617,14 @@ alias debug.off='unset PS4'
 # Run locally installed npm binaries
 alias npm-exec='PATH=$(npm bin):$PATH'
 
+# Restart Emulation Station
+alias recalbox.es.restart="curl 'http://recalbox.local/post?action=reboot-es' -H 'Origin: http://recalbox.local' -H 'Accept-Encoding: gzip, deflate' -H 'Accept-Language: en-US,en;q=0.9,es;q=0.8' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36' -H 'Content-Type: application/json' -H 'Accept: */*' -H 'Referer: http://recalbox.local/help' -H 'Connection: keep-alive' -H 'DNT: 1' --data-binary '{}' --compressed"
+
+log_compress() {
+  regex=$1
+  [ -z "${regex}" ] && error "No regex, not doing anything"
+  echo "for $( ls -la '${regex}' | xargs ) ; do tar -cvzf '${log}.tgz' $log && rm $log ; done"
+}
 
 # DO NOT VERSION THESE THANKS
 [ -f ~/.bash_private_vars ] && source ~/.bash_private_vars
