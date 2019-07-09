@@ -13,7 +13,7 @@ call vundle#begin()
 Plugin 'gmarik/Vundle.vim'
 
 Plugin 'scrooloose/syntastic'
-Plugin 'Shougo/neocomplcache.vim'
+" Obsoleted by YCM: Plugin 'Shougo/neocomplcache.vim'
 Plugin 'kien/ctrlp.vim'
 Plugin 'vim-scripts/bufkill.vim'
 "Plugin 'vim-scripts/dbext.vim'
@@ -21,13 +21,23 @@ Plugin 'vim-scripts/bufkill.vim'
 "Plugin 'git://git.code.sf.net/p/vim-latex/vim-latex'
 "Plugin 'othree/html5.vim'
 Plugin 'scrooloose/nerdtree'
-" RST plugin
-"Plugin 'Rykka/riv.vim'
 " TO work with React this two are useful
 Plugin 'pangloss/vim-javascript'
 Plugin 'mxw/vim-jsx'
 Plugin 'sheerun/vim-polyglot'
 Plugin 'pearofducks/ansible-vim'
+" Write environment
+Plugin 'junegunn/goyo.vim'
+" Markdown pluginS - https://github.com/plasticboy/vim-markdown
+"Plugin 'godlygeek/tabular'
+"Plugin 'plasticboy/vim-markdown'
+" Better status bar
+Plugin 'vim-airline/vim-airline'
+" GIT integration
+"Plugin 'tpope/vim-fugitive'
+" YouCompleteMe
+Plugin 'ycm-core/YouCompleteMe'
+
 
 " All of your Plugins must be added before the following line
 call vundle#end()            " required
@@ -44,7 +54,7 @@ set termguicolors " True colors
 if &diff
 	colorscheme monokai "too cool :)
 else
-	colorscheme monokai "koehler
+	colorscheme default "monokai koehler
 endif
 
 "Autoreload self
@@ -132,8 +142,6 @@ set ffs=unix,dos,mac
 
 " Cursor highlighting
 " highlight Cursor guifg=blue guibg=white
-" Different cursor in markdown files
-autocmd Filetype markdown highlight Cursor guifg=Yellow guibg=DarkBlue
 hi Search ctermbg=DarkYellow ctermfg=Yellow
 " highlight iCursor guifg=white guibg=steelblue
 
@@ -168,12 +176,12 @@ set laststatus=2
 " use menu for command line completion
 "set wildmenu
 
-set statusline= "clear, for when vimrc is reloaded
-set statusline+=%.80F%m%r%h%w
-set statusline+=\ [ENC=%{&fenc}]
-set statusline+=\ [TYPE=%Y]
-set statusline+=%= " right align
-set statusline+=\ [POS=%.4l/%.4L\ (%p%%)]
+"set statusline= "clear, for when vimrc is reloaded
+"set statusline+=%.80F%m%r%h%w
+"set statusline+=\ [ENC=%{&fenc}]
+"set statusline+=\ [TYPE=%Y]
+"set statusline+=%= " right align
+"set statusline+=\ [POS=%.4l/%.4L\ (%p%%)]
 
 " So it doesn't ask to save evertytime you move out of buffers
 set hidden
@@ -263,7 +271,7 @@ function! ToggleSpell()
   echo "spell checking language:" g:myLangList[b:myLang]
 endfunction
 
-nmap <silent> <F7> :call ToggleSpell()<CR>
+nmap <silent> <leader>ts :call ToggleSpell()<CR>
 " ]s -> next spelling error
 nmap z+ ]s
 " [s -> previous spelling error
@@ -299,7 +307,25 @@ let g:scala_scaladoc_indent = 1
 let g:jsx_ext_required = 0
 
 " Search highlighting
-hi Search ctermbg=DarkYellow ctermfg=Yellow
+"hi Search ctermbg=DarkYellow ctermfg=Yellow
 
 " YAML Ansible
 let g:ansible_unindent_after_newline=1
+
+" CtrlP custom settings
+let g:ctrlp_cmd = 'CtrlP'
+let g:ctrlp_mruf_case_sensitive = 0
+let g:ctrlp_custom_ignore = '\v[\/](build|\.(git|hg|svn))$'
+
+" Open file in chrome
+nmap <silent> <leader>gc :!/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome %<CR>
+
+" Markdown + monokai : horrible
+autocmd Filetype markdown colorscheme default
+
+" Goyo defaults
+let g:goyo_width = 150
+" g:goyo_height` (default: 85%)
+
+" Mapping for vimgrep
+map <leader>vg :execute " grep -srnw --binary-files=without-match --exclude-dir=.git --exclude-dir=build --exclude-dir=no --exclude-dir=e_modules . -e " . expand("<cword>") . " " <bar> cwindow<CR>
