@@ -606,25 +606,24 @@ alias activate37='_activate37'
 # Install and activate a Python 2/3 Virtualenv in current location
 alias virtualenver='_virtualenver'
 alias virtualenver36='_virtualenver36'
-aliasvirtualenver37='_virtualenver37'
+alias virtualenver37='_virtualenver37'
 
 # Some bash-debugging help
 debug.on() {
   export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
 }
+
+# Turn off SUPER VERBOSE bash-debugging help
 alias debug.off='unset PS4'
 
 # Run locally installed npm binaries
 alias npm-exec='PATH=$(npm bin):$PATH'
 
+# Sudo edit /etc/hosts
+alias sys.hosts='sudo vim /etc/hosts'
+
 # Restart Emulation Station
 alias recalbox.es.restart="curl 'http://recalbox.local/post?action=reboot-es' -H 'Origin: http://recalbox.local' -H 'Accept-Encoding: gzip, deflate' -H 'Accept-Language: en-US,en;q=0.9,es;q=0.8' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36' -H 'Content-Type: application/json' -H 'Accept: */*' -H 'Referer: http://recalbox.local/help' -H 'Connection: keep-alive' -H 'DNT: 1' --data-binary '{}' --compressed"
-
-log_compress() {
-  regex=$1
-  [ -z "${regex}" ] && error "No regex, not doing anything"
-  echo "for $( ls -la '${regex}' | xargs ) ; do tar -cvzf '${log}.tgz' $log && rm $log ; done"
-}
 
 # DO NOT VERSION THESE THANKS
 [ -f ~/.bash_private_vars ] && source ~/.bash_private_vars
