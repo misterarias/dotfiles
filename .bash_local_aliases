@@ -5,21 +5,6 @@
 # By using meaningful one-line comments to functions, they'll get nicely printed
 # by means of the 'my_commands' help function (defined in ~/.bashrc)
 
-# Get current repository name
-get_repo_base() {
-  ! is.repo && error "Not a git repository"
-
-  local repo_base
-  repo_base=$(git remote show origin | grep 'Fetch URL' | cut -d':' -f2- | tr -d ' ')
-  [ -z "${repo_base}" ] && error "Unable to find Repository URL"
-
-  if [ "${repo_base}" != "${repo_base//git@}" ] ; then
-    echo "${repo_base//*:}"
-  else
-    echo "${repo_base}" | sed -e 's#.*/\(.*\)/\(.*\)$#\1/\2#g'
-  fi
-}
-
 # re-source all aliases
 alias.source() {
   source "${HOME}/.bashrc"
@@ -189,21 +174,23 @@ _activate() {
 }
 
 _repo() {
-  local autocomplete_file="$(_get_bash_completion).d/repo"
-  local base_dir="$(grep base_dir='.*' "${autocomplete_file}" | cut -d'=' -f2 | tr -d '"' )"
+  local autocomplete_file base_dir
+  autocomplete_file="$(_get_bash_completion).d/repo"
+  base_dir="$(grep base_dir='.*' "${autocomplete_file}" | cut -d'=' -f2 | tr -d '"' )"
+
+  # This should only get executed the first time
   if [ ! -d "${base_dir}" ] ; then
     read -r -e -p "Base repo dir is not set, or is not a directory. Enter path to repositories base dir: " input
     base_dir="${input/#\~/$HOME}"
     [ ! -d "${base_dir}" ] && \
       echo "Invalid directory: ${base_dir}" && return
 
-    # Update automcomplete file:
+    # Update autocomplete file:
     sed  -e "s|#CHANGEME#|${base_dir}|g" "${autocomplete_file}" > /tmp/tmp && sudo cp /tmp/tmp "${autocomplete_file}"
     echo "Now create a new shell and start using the command" && return
   fi
 
-  # This depends on the output of the 'repo' autocomplete!
-  #local orgs_dir="$1"
+  # This depends on the output of the 'repo' autocomplete in ${autocomplete_file}
   local repo_name=${2:-$1}
   local fulldir="${base_dir}/${repo_name}"
   if [ ! -d "${fulldir}" ] ; then
