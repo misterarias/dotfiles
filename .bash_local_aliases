@@ -5,6 +5,23 @@
 # By using meaningful one-line comments to functions, they'll get nicely printed
 # by means of the 'my_commands' help function (defined in ~/.bashrc)
 
+# enable ansible 2.x
+alias ansible.enable.27='_ansible_enable "2.7"'
+alias ansible.enable.24='_ansible_enable "2.4"'
+_ansible_enable() {
+  version=$1
+  venv_dir="${VENVS_HOME}/ansible_${version}"
+  [ -d "${venv_dir}" ] && source "${venv_dir}/bin/activate" && return
+
+  venv_global_binary="virtualenv --python=python3.7"
+  tmp_reqs=$(mktemp)
+  echo "ansible==${version}" >> "${tmp_reqs}"
+  _virtualenver.core "${venv_dir}" "${venv_global_binary}" "-r ${tmp_reqs}"
+}
+
+# disable Ansible
+alias ansible.disable='deactivate'
+
 # re-source all aliases
 alias.source() {
   source "${HOME}/.bashrc"
@@ -13,7 +30,7 @@ alias.source() {
 
 # Edit aliases fast
 alias.edit() {
-  vim "${HOME}/.bash_local_aliases" "${HOME}/.bash_private_aliases"
+  vim "${HOME}/.bash_local_aliases" "${HOME}/.bash_private_vars"
 }
 
 # kills anything similar to argument passed
@@ -78,9 +95,7 @@ sys.renamer() {
 }
 
 # Show a pretty error message
-error() {
-  echo "$(date -Iseconds) [ERROR] $*" ;
-}
+error() { echo "[ERROR] $*" ; }
 
 # 'Darwin' for Mac, 'Linux' or similar elsewhere
 is.mac() {
@@ -94,12 +109,13 @@ _get_bash_completion() {
 PYTHON_36_SUFFIX="_p3.6"
 PYTHON_37_SUFFIX="_p3.7"
 PYTHON_2_SUFFIX=""
+VENVS_HOME="$(cd "${HOME}/.venvs" && pwd)"
 
 _virtualenver.core() {
   local venv_name venv_dir venv_binaries venv_pip venv_activate venv_global_binary
   venv_name="$1" && shift
   venv_global_binary="$1" && shift
-  venv_dir="$(cd "${HOME}/.venvs/" && pwd)/${venv_name}"
+  venv_dir="${VENVS_HOME}/$( basename "${venv_name}" )"
   venv_binaries="${venv_dir}/bin"
   venv_pip="${venv_binaries}/pip"
   venv_activate="${venv_binaries}/activate"
@@ -154,7 +170,7 @@ _activate.core() {
   local venv_suffix venv_name venv_dir venv_activate
   venv_suffix=$1
   venv_name="$(_venv.name)$venv_suffix"
-  venv_dir="$(cd "${HOME}/.venvs/" && pwd)/${venv_name}"
+  venv_dir="${VENVS_HOME}/${venv_name}"
   venv_activate="${venv_dir}/bin/activate"
 
   [ ! -f "${venv_activate}" ] && echo "No virtualenv called '$venv_name'" && return 1
@@ -344,6 +360,9 @@ vim() {
       shift;
       command echo "Casi seguro que se te fué la olla again, vamos a pasar del vim ese.... me muero y no te educo..."
       command git "$@" ;;
+    modified|mod*)
+      modified_files=$(git status -s | grep -v '^\s*M^' | sed -E 's/^.*M //g' | xargs)
+      command vim ${modified_files} ;;
     vim*)
       shift ; vim "$@" ;;
     *)
@@ -611,6 +630,11 @@ alias sys.hosts='sudo vim /etc/hosts'
 
 # Restart Emulation Station
 alias recalbox.es.restart="curl 'http://recalbox.local/post?action=reboot-es' -H 'Origin: http://recalbox.local' -H 'Accept-Encoding: gzip, deflate' -H 'Accept-Language: en-US,en;q=0.9,es;q=0.8' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36' -H 'Content-Type: application/json' -H 'Accept: */*' -H 'Referer: http://recalbox.local/help' -H 'Connection: keep-alive' -H 'DNT: 1' --data-binary '{}' --compressed"
+
+# Start/ Stop  Forti Vpn
+alias vpn.activate="sudo /Users/juanito/Stuff/bgdts/fortivpn-mac/routes.sh add vpn"
+alias vpn.deactivate="sudo /Users/juanito/Stuff/bgdts/fortivpn-mac/routes.sh del vpn"
+alias vpn.restart="sudo bash -c '/Users/juanito/Stuff/bgdts/fortivpn-mac/routes.sh del vpn && sudo /Users/juanito/Stuff/bgdts/fortivpn-mac/routes.sh add vpn'"
 
 # DO NOT VERSION THESE THANKS
 [ -f ~/.bash_private_vars ] && source ~/.bash_private_vars

@@ -13,7 +13,7 @@ call vundle#begin()
 Plugin 'gmarik/Vundle.vim'
 
 Plugin 'scrooloose/syntastic'
-" Obsoleted by YCM: Plugin 'Shougo/neocomplcache.vim'
+Plugin 'Shougo/neocomplcache.vim'
 Plugin 'kien/ctrlp.vim'
 Plugin 'vim-scripts/bufkill.vim'
 "Plugin 'vim-scripts/dbext.vim'
@@ -34,9 +34,9 @@ Plugin 'junegunn/goyo.vim'
 " Better status bar
 Plugin 'vim-airline/vim-airline'
 " GIT integration
-"Plugin 'tpope/vim-fugitive'
+Plugin 'tpope/vim-fugitive'
 " YouCompleteMe
-Plugin 'ycm-core/YouCompleteMe'
+"Plugin 'ycm-core/YouCompleteMe'
 
 
 " All of your Plugins must be added before the following line
@@ -329,3 +329,9 @@ let g:goyo_width = 150
 
 " Mapping for vimgrep
 map <leader>vg :execute " grep -srnw --binary-files=without-match --exclude-dir=.git --exclude-dir=build --exclude-dir=no --exclude-dir=e_modules . -e " . expand("<cword>") . " " <bar> cwindow<CR>
+
+" Tab movement
+map <leader>tn :tabNext<CR>
+map <leader>tp :tabprevious<CR>
+map <leader>tc :tabclose<CR>
+
