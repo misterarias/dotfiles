@@ -33,6 +33,7 @@ Plugin 'junegunn/goyo.vim'
 "Plugin 'plasticboy/vim-markdown'
 " Better status bar
 Plugin 'vim-airline/vim-airline'
+Plugin 'vim-airline/vim-airline-themes'
 " GIT integration
 Plugin 'tpope/vim-fugitive'
 " YouCompleteMe
@@ -52,10 +53,13 @@ set termguicolors " True colors
 
 " Color first, so I can customize later
 if &diff
-	colorscheme monokai "too cool :)
+  colorscheme monokai
 else
-	colorscheme default "monokai koehler
+  colorscheme koehler
 endif
+
+" Start scrolling three lines before the horizontal window border
+set scrolloff=3
 
 "Autoreload self
 autocmd! bufwritepost ~/.vimrc source %
@@ -335,3 +339,12 @@ map <leader>tn :tabNext<CR>
 map <leader>tp :tabprevious<CR>
 map <leader>tc :tabclose<CR>
 
+" vim-airline configuration
+let g:airline_theme = 'powerlineish'
+let g:airline_powerline_fonts = 1
+set t_Co=256
+" Configure buffers
+" Enable the list of buffers
+let g:airline#extensions#tabline#enabled = 1
+" Show just the filename
+let g:airline#extensions#tabline#fnamemod = ':t'
