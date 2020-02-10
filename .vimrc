@@ -341,9 +341,8 @@ map <leader>tc :tabclose<CR>
 
 " vim-airline configuration
 let g:airline_theme = 'powerlineish'
-let g:airline_powerline_fonts = 1
+"let g:airline_powerline_fonts = 1
 set t_Co=256
-" Configure buffers
 " Enable the list of buffers
 let g:airline#extensions#tabline#enabled = 1
 " Show just the filename

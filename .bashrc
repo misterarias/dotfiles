@@ -19,9 +19,6 @@ if ! is.mac ; then
   . ~/.git-completion
 fi
 
-# My custom stuff
-export PATH=$HOME/.local/bin:$PATH
-
 # show help on custom commands
 my_commands() {
   alias_filter="alias .*"
@@ -40,37 +37,13 @@ my_commands() {
   done
 }
 
-#sets up some colors
-is.mac && export CLICOLOR=1
-
-export LSCOLORS=gxfxcxdxbxegedabagacad
-
-#enables color for iTerm
-export TERM=xterm-color
-
-export GREP_COLOR="01;34"
-
-# don't put duplicate lines in the history
-# don't save commands which start with a space
-export HISTCONTROL=ignoredups:erasedups:ignorespace
-
-# append to the history file, don't overwrite it
-shopt -s histappend
-
-# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
-export HISTSIZE=10000
-export HISTFILESIZE=100000
-
-# make less more friendly for non-text input files, see lesspipe(1)
-[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
-export LESS="--RAW-CONTROL-CHARS"
-
 __present() {
   printf "(%s)" "$*"
 }
 
+# Be careful with background stuff such as Z, or git
 __jobs() {
-  local job_number=$(jobs | \grep -v git | wc -l | tr -d ' ')
+  local job_number=$(jobs | \grep -v -E '(git|_z)' | wc -l | tr -d ' ')
   if [ ${job_number} -gt 0 ] ; then
     __present "${job_number}"
   else
@@ -158,9 +131,71 @@ else
   export PS1
 fi
 
+# My custom stuff
+export PATH=$HOME/bin:$PATH
+export PATH=$HOME/.local/bin:$PATH
+
+export LANG="en_US.UTF-8"
+export LC_ALL=$LANG
+echo -e "Setting LANG=$GREENCOLOR_BOLD$LANG$ENDCOLOR"
+
+# Used by '/usr/local/etc/bash_completion/repo'
+export _REPO_AUTOCOMPLETE_BASE_DIR=/Users/juanito/Stuff
+
+# Bind the Tab key to the menu-complete command instead of the default complete
+bind '"\C-i": menu-complete'
+
+# Display a list of the matching files
+bind "set show-all-if-ambiguous on"
+
+# Perform partial completion on the first Tab press,
+# only start cycling full results on the second Tab press
+bind "set menu-complete-display-prefix on"
+
+export GOPATH="$HOME/go"
+export GOBIN="$GOPATH/bin"
+export PATH=$PATH:$GOBIN  #/usr/local/opt/go/libexec/bin
+
+#sets up some colors
+is.mac && export CLICOLOR=1
+
+export LSCOLORS=gxfxcxdxbxegedabagacad
+
+#enables color for iTerm
+export TERM=xterm-color
+
+export GREP_COLOR="01;34"
+
+# don't put duplicate lines in the history
+# don't save commands which start with a space
+export HISTCONTROL=ignoredups:erasedups:ignorespace
+
+# append to the history file, don't overwrite it
+shopt -s histappend
+
+# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
+export HISTSIZE=10000
+export HISTFILESIZE=100000
+
+# make less more friendly for non-text input files, see lesspipe(1)
+[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+export LESS="--RAW-CONTROL-CHARS"
+
 # I want cores
 ulimit -c unlimited
+
+# brew install thefuck / pip install thefucl
+eval $(thefuck --alias)
 
 # Useful for everything: bash, git, postgres...
 export EDITOR=vim
 export PSQL_EDITOR='vim -c"set syntax=sql"'
+
+# Pycharm bug when using gevent
+export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
+
+# Rust Package manager
+export PATH="$HOME/.cargo/bin:$PATH"
+
+# Python default??
+#export PATH="/usr/local/opt/python36/bin:$PATH"

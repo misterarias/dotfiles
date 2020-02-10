@@ -189,10 +189,9 @@ _activate() {
   _activate.core "$PYTHON_2_SUFFIX"
 }
 
+# Wrapper for autocompletion script found in "$(_get_bash_completion).d/repo"
 _repo() {
-  local autocomplete_file base_dir
-  autocomplete_file="$(_get_bash_completion).d/repo"
-  base_dir="$(grep base_dir='.*' "${autocomplete_file}" | cut -d'=' -f2 | tr -d '"' )"
+  base_dir="${_REPO_AUTOCOMPLETE_BASE_DIR}"
 
   # This should only get executed the first time
   if [ ! -d "${base_dir}" ] ; then
@@ -201,12 +200,16 @@ _repo() {
     [ ! -d "${base_dir}" ] && \
       echo "Invalid directory: ${base_dir}" && return
 
-    # Update autocomplete file:
-    sed  -e "s|#CHANGEME#|${base_dir}|g" "${autocomplete_file}" > /tmp/tmp && sudo cp /tmp/tmp "${autocomplete_file}"
-    echo "Now create a new shell and start using the command" && return
+    export _REPO_AUTOCOMPLETE_BASE_DIR=${base_dir}
+    echo "Remember to add this to your profile file:"
+    echo
+    echo "# Used by '$( _get_bash_completion )/repo'"
+    echo "export _REPO_AUTOCOMPLETE_BASE_DIR=${_REPO_AUTOCOMPLETE_BASE_DIR}"
+    echo
+    return
   fi
 
-  # This depends on the output of the 'repo' autocomplete in ${autocomplete_file}
+  # This depends on the output of the 'repo' autocomplete
   local repo_name=${2:-$1}
   local fulldir="${base_dir}/${repo_name}"
   if [ ! -d "${fulldir}" ] ; then
@@ -329,13 +332,19 @@ aws.load_credentials() {
 
 # Remove given line from file
 sys.delete_line() {
-  [ $# -ne 2 ] && echo "Usage: delete_line <line_to_delete> <file_name>" && return 1
+  [ $# -ne 2 ] && echo "Usage: ${0} <line_to_delete> <file_name>" && return 1
   line_no=$1
   file=$2
   [ ! -f "${file}" ] && echo "File does not exist" && return 1
   [ ${line_no} -gt $(wc -l $2| awk '{print $1}') ] && echo "Line ${line_no} not found in file ${file}" && return 1
 
   sed -i -e "${line_no}d" ${file}
+}
+
+# Remove given ~/.ssh/known_hosts line
+ssh.delete_line() {
+  [ $# -ne 1 ] && echo "Usage: ${0} <line_to_delete>" && return 1
+  sys.delete_line "${1}" ~/.ssh/known_hosts
 }
 
 
@@ -419,8 +428,21 @@ git() {
   }
 
   case "$1" in
+    help*)
+      echo && command git --help && echo
+      echo "Custom git commands:" && echo
+      echo "  branchD   Delete all local, non-merged branches + unused remotes"
+      echo "  perrete   Pushes current branchs and opens browser in the Pull Request page"
+      echo "  pushete   Pushes current branch"
+      echo "  open      Opens current repo's page in browser"
+      echo "  klone     Clones given repo in ssh-format to ~/Stuff/<project>/<repo>"
+      ;;
     blame*)
       echo "Probablemente tu, así que mejor no preguntes" ;;
+    branchD*)
+      git branch --no-color --merged | command grep -vE "^(\*|\s(master|develop|dev)\s$)" | command xargs -n 1 git branch -d
+      git fetch -puta
+      ;;
     perrete*)
       branch_name=$( _get_branch_name )
       command git push -u origin "${branch_name}"
@@ -443,7 +465,7 @@ git() {
     checkete*)
       # like checkout -b but parsing incoming text into a proper branch name
       shift; [ "${1}" == "-b" ] && shift;
-      branch_name=$(echo "${@}" | sed -Ee 's/[[:space:]:_]+/-/g' )
+      branch_name=$(echo "${@}" | sed -Ee 's/[[:space:]:]+/_/g' )
       command git checkout -b "${branch_name}"
       ;;
     git*)
@@ -635,6 +657,9 @@ alias recalbox.es.restart="curl 'http://recalbox.local/post?action=reboot-es' -H
 alias vpn.activate="sudo /Users/juanito/Stuff/bgdts/fortivpn-mac/routes.sh add vpn"
 alias vpn.deactivate="sudo /Users/juanito/Stuff/bgdts/fortivpn-mac/routes.sh del vpn"
 alias vpn.restart="sudo bash -c '/Users/juanito/Stuff/bgdts/fortivpn-mac/routes.sh del vpn && sudo /Users/juanito/Stuff/bgdts/fortivpn-mac/routes.sh add vpn'"
+
+# chdir to to a temporary location
+alias cdtmp='cd "$(mktemp -d)"'
 
 # DO NOT VERSION THESE THANKS
 [ -f ~/.bash_private_vars ] && source ~/.bash_private_vars
