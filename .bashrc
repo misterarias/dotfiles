@@ -137,7 +137,6 @@ export PATH=$HOME/.local/bin:$PATH
 
 export LANG="en_US.UTF-8"
 export LC_ALL=$LANG
-echo -e "Setting LANG=$GREENCOLOR_BOLD$LANG$ENDCOLOR"
 
 # Used by '/usr/local/etc/bash_completion/repo'
 export _REPO_AUTOCOMPLETE_BASE_DIR=/Users/juanito/Stuff
