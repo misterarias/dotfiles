@@ -51,8 +51,8 @@ __jobs() {
   fi
 }
 
-__battery_state() {
-  local LOW_THRESHOLD=25 HIGH_THRESHOLD=65 state discharging percentage batt
+
+__battery_status() {
   if ! is.mac ; then
     state=$(acpi)
     discharging=$(echo "$state" | grep remaining)
@@ -60,7 +60,23 @@ __battery_state() {
     state=$(pmset -g batt)
     discharging=$(echo "$state" | grep discharging)
   fi
-  percentage=$(echo "$state" | grep -o "[0-9]*%" | tr -d '%')
+  echo "$discharging"
+}
+
+__battery_level() {
+  if ! is.mac ; then
+    state=$(acpi)
+  else
+    state=$(pmset -g batt)
+  fi
+  echo "$state" | grep -o "[0-9]*%" | tr -d '%'
+}
+
+__display_battery_state() {
+  set -e
+  local LOW_THRESHOLD=25 HIGH_THRESHOLD=65 state discharging percentage batt
+  percentage=$(__battery_level)
+  discharging=$(__battery_status)
   if [ ! -z "$discharging" ] ; then
     if [ "${percentage}" -gt ${HIGH_THRESHOLD} ] ; then
       batt="${GREEN}${BOLD}${percentage}%${ENDCOLOR}"
@@ -75,38 +91,45 @@ __battery_state() {
       batt="${YELLOW}${BOLD}${percentage}%${ENDCOLOR}"
     fi
   fi
-  [ ! -z "${batt}" ] && echo "${batt} "
+  [ ! -z "${batt}" ] && echo "${batt}"
 }
 
 # Some color codes
-BOLD=$(tput bold)
-RED=$(tput setaf 1)
-GREEN=$(tput setaf 2)
-YELLOW=$(tput setaf 3)
-BLUE=$(tput setaf 4)
-MAGENTA=$(tput setaf 5)
-CYAN=$(tput setaf 6)
-WHITE=$(tput setaf 7)
-ENDCOLOR=$(tput sgr0)
+##BOLD=$(tput bold)
+##RED=$(tput setaf 1)
+##GREEN=$(tput setaf 2)
+##YELLOW=$(tput setaf 3)
+##BLUE=$(tput setaf 4)
+##MAGENTA=$(tput setaf 5)
+##CYAN=$(tput setaf 6)
+##WHITE=$(tput setaf 7)
+##ENDCOLOR=$(tput sgr0)
 
-DISPLAY_BATTERY_LEVEL=1
-[ ! -z "${DISPLAY_BATTERY_LEVEL}" ] && BATT="\$(__battery_state)"
-SEPARATOR=" "
-PS2='> '
-WHEN='\[${BLUE}${BOLD}\]$(date +%H:%M)\[${ENDCOLOR}\]'
-WHERE='\[${WHITE}${BOLD}\]\w\[${ENDCOLOR}\]'
-JOBS='\[${RED}\]$(__jobs)\[${ENDCOLOR}\]'
-AWS_PROFILE_SHOW='$([ ! -z "$AWS_PROFILE" ] && echo "\[${CYAN}\]$(__present aws:${AWS_PROFILE})\[${ENDCOLOR}\]")'
-VENV_SHOW='$([ ! -z "$VIRTUAL_ENV" ] && echo "\[${MAGENTA}\]$(__present venv:$(basename $VIRTUAL_ENV))\[${ENDCOLOR}\]")'
-#GIT='${GREEN}(git:%s)${ENDCOLOR}'
-GIT='${GREEN}(git:%s)${ENDCOLOR}'
-PROMPT_SYMBOL='$ '
+DISPLAY_BATTERY_LEVEL=0
+[ ! -z "${DISPLAY_BATTERY_LEVEL}" ] && \
+  #BATT="\$(__display_battery_state)" && \
+  export BATT_LEVEL_VALUE=$(__battery_level) && \
+  export BATT_STATUS=$(__battery_status)
 
-PROMPT_INFO="${BATT}${WHEN}${SEPARATOR}${WHERE}${SEPARATOR}${JOBS}${VENV_SHOW}${AWS_PROFILE_SHOW}"
-SYMBOL="\\n${PROMPT_SYMBOL}"
-PS1="${PROMPT_INFO}${SYMBOL}"
+# SEPARATOR=" "
+##PS2='> '
+##WHEN='\[${BLUE}${BOLD}\]$(date +%H:%M)\[${ENDCOLOR}\]'
+###WHERE='$([ $? -eq 0 ] && echo ''[${WHITE}'' || echo ''[${RED}'')${BOLD}\]\w\[${ENDCOLOR}\]'
+##WHERE='\[${WHITE}${BOLD}\]\w\[${ENDCOLOR}\]'
+##JOBS='\[${RED}\]$(__jobs)\[${ENDCOLOR}\]'
+##AWS_PROFILE_SHOW='$([ ! -z "$AWS_PROFILE" ] && echo "\[${CYAN}\]$(__present aws:${AWS_PROFILE})\[${ENDCOLOR}\]")'
+##VENV_SHOW='$([ ! -z "$VIRTUAL_ENV" ] && echo "\[${MAGENTA}\]$(__present venv:$(basename $VIRTUAL_ENV))\[${ENDCOLOR}\]")'
+##GIT='${GREEN}(git:%s)${ENDCOLOR}'
+##PROMPT_SYMBOL='$ '
+##
+##PROMPT_INFO="${BATT}${WHEN}${SEPARATOR}${WHERE}${SEPARATOR}${JOBS}${VENV_SHOW}${AWS_PROFILE_SHOW}"
+##SYMBOL="\\n${PROMPT_SYMBOL}"
 
-USE_GIT_PROMPT=yes
+CUSTOMIZE_GIT_PROMPT=no
+[ "yes" == "${CUSTOMIZE_GIT_PROMPT}" ] && \
+  PS1="${PROMPT_INFO}${SYMBOL}"
+
+USE_GIT_PROMPT=no
 if [ "yes" == "${USE_GIT_PROMPT}" ] ; then
   # For git prompt (download with: curl https://raw.github.com/git/git/master/contrib/completion/git-prompt.sh -o ~/.   git-prompt.sh)
   if [ ! -f ~/.git-prompt.sh ]; then
@@ -196,5 +219,38 @@ export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 # Rust Package manager
 export PATH="$HOME/.cargo/bin:$PATH"
 
-# Python default??
-#export PATH="/usr/local/opt/python36/bin:$PATH"
+# Python BREW path
+#export PATH="/usr/local/opt/python@3.8/bin:$PATH"
+#alias python=python3
+#alias pip=pip3
+
+# Pyenv goodness
+export PYENV_ROOT=${HOME}/.venvs
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)"
+
+# direnv + virtualenvs
+#show_virtual_env() { :; }
+#export -f show_virtual_env
+# PS1='$(show_virtual_env)'$PS1
+
+# Depends on 'pip install powerline-shell'
+function _update_ps1() {
+    PS1=$(powerline-shell $?)
+}
+
+if [[ $TERM != linux && ! $PROMPT_COMMAND =~ _update_ps1 ]]; then
+    PROMPT_COMMAND="_update_ps1; $PROMPT_COMMAND"
+fi
+
+# Add this AFTER any prompt-manipulating extensions: https://direnv.net/docs/hook.html
+_direnv_hook() {
+  local previous_exit_status=$?;
+  eval "$(direnv export bash)";
+  return $previous_exit_status;
+}
+
+if ! [[ "${PROMPT_COMMAND:-}" =~ _direnv_hook ]]; then
+  PROMPT_COMMAND="_direnv_hook${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
+fi
+# This introduces the SIGINT trap error: eval "$(direnv hook bash)"

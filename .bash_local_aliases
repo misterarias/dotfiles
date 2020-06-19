@@ -1,4 +1,5 @@
 #!/bin/bash
+# shellcheck source=/dev/null disable=2155 disable=2207 disable=2142
 # vi: ft=sh ts=2 sw=2
 
 # functions and aliases, loaded on session start.
@@ -8,6 +9,7 @@
 # enable ansible 2.x
 alias ansible.enable.27='_ansible_enable "2.7"'
 alias ansible.enable.24='_ansible_enable "2.4"'
+alias ansible.enable.29='_ansible_enable "2.9"'
 _ansible_enable() {
   version=$1
   venv_dir="${VENVS_HOME}/ansible_${version}"
@@ -25,19 +27,42 @@ alias ansible.disable='deactivate'
 # re-source all aliases
 alias.source() {
   source "${HOME}/.bashrc"
-  #source "${HOME}/.bash_local_aliases"
 }
 
-# Edit aliases fast
+# Edit .bashrc and .bash_profile fast -and reenable
+bash.edit() {
+  vim "${HOME}/.bash_profile" "${HOME}/.bashrc"
+  alias.source
+}
+
+# Edit aliases fast -and reenable faster.
 alias.edit() {
   vim "${HOME}/.bash_local_aliases" "${HOME}/.bash_private_vars"
+  alias.source
+}
+
+# exports entries in a key=value file
+sys.export() {
+  [ ! -f "${1}" ] && \
+    error "Error: ${1} is not a valid file"
+
+  exported_lines=0
+  ignored_lines=0
+  while IFS= read -r line ; do
+    key=$(echo "${line}" | cut -d'=' -f1 | tr -d ' ')
+    [[ "$key" =~ ^#.* ]] && ignored_lines=$(( ignored_lines + 1 )) && continue
+
+    value=$(echo "${line}" | cut -d'=' -f2- | tr -d ' ' | tr -d '"' | tr -d "'")
+    export "${key}=${value}" && exported_lines=$(( exported_lines + 1 ))
+  done < "${1}"
+  echo "Successfully exported ${exported_lines} items from ${1}"
 }
 
 # kills anything similar to argument passed
 sys.kill() {
   regex=$1
-  while [ ! -z "${regex}" ] ; do
-    ps aux | grep -i ${regex} | awk '{print $2}' | xargs kill -9 > /dev/null 2>&1
+  while [ -n "${regex}" ] ; do
+    pgrep "${regex}" | awk '{print $2}' | xargs kill -9 > /dev/null 2>&1
     shift
     regex=$1
   done
@@ -45,29 +70,18 @@ sys.kill() {
 
 # Returns true if the current dir is a git repository
 is.repo() {
-  [ ! -z "$(git rev-parse \
+  [ -n "$(git rev-parse \
     --git-dir --is-inside-git-dir \
     --is-bare-repository --is-inside-work-tree \
     --short HEAD 2>/dev/null)" ]
 }
 
-# Convert a file from RST to Markdown
-rst2md() {
-  [ -z "$(which pandoc)" ] && error "pandoc is not installed"
-
-  local input="$1"
-  [ -z "${input}" -o "${input}" = "${input//.rst/}" ] && \
-    error "Need a rst file as input"
-
-  local output="${input//.rst/.md}"
-  pandoc "${input}" -f rst -t markdown -o "${output}"
-}
-
 # Report of disk space usage in current path
 sys.disk_usage() {
+  echo "Disk usage report for '$(pwd)':"
   for dir in $(\ls  -h .) ; do
     total=$(du -ch "$dir" | grep total | grep -E -o "[0-9]+[GM]")
-    [ ! -z "${total}" ] && echo "Disk usage in $dir: $total"
+    [ -n "${total}" ] && printf "* %-20s: %s\n" "$dir" "$total"
   done
 }
 
@@ -75,7 +89,7 @@ sys.disk_usage() {
 sys.find() {
   local arg=$1
   shift
-  [ ! -z "$*" ] && \
+  [ -n "$*" ] && \
     echo "[WARNING] Ignoring extra input parameters: $*"
   find . -iname "*${arg}*"
 }
@@ -106,28 +120,41 @@ _get_bash_completion() {
   is.mac && echo "/usr/local/etc/bash_completion" || echo "/etc/bash_completion"
 }
 
+# Python Venv wrappers
 PYTHON_36_SUFFIX="_p3.6"
 PYTHON_37_SUFFIX="_p3.7"
-PYTHON_2_SUFFIX=""
-VENVS_HOME="$(cd "${HOME}/.venvs" && pwd)"
+PYTHON_38_SUFFIX="_p3.8"
+PYTHON_3_SUFFIX="_p3"
+PYTHON_2_SUFFIX="_p2.7"
+#VENVS_HOME="$(cd "${HOME}/.venvs" && pwd)"
+
+_venv.name() {
+  root_dir=$( git rev-parse --show-toplevel 2> /dev/null || true )
+  [ -z "${root_dir}" ] && root_dir="${PWD}"
+  basename "${root_dir}"
+}
 
 _virtualenver.core() {
+  local venv_suffix venv_python_binary
+  venv_suffix="$1" && shift
+  venv_python_binary="$1" && shift
+
   local venv_name venv_dir venv_binaries venv_pip venv_activate venv_global_binary
-  venv_name="$1" && shift
-  venv_global_binary="$1" && shift
+  venv_name="$(_venv.name)${venv_suffix}"
+  venv_global_binary="virtualenv --python=${venv_python_binary}"
   venv_dir="${VENVS_HOME}/$( basename "${venv_name}" )"
   venv_binaries="${venv_dir}/bin"
   venv_pip="${venv_binaries}/pip"
   venv_activate="${venv_binaries}/activate"
 
   # Virtualenv at a global level is a must
-  [ -z "$(which virtualenv)" ] && pip install -q virtualenv
+  ! command -v virtualenv > /dev/null && pip install -q virtualenv
 
   # If venv'd PIP doesn't exist, install the virtualenv
   [ ! -f "${venv_pip}" ] && ${venv_global_binary} "${venv_dir}"
 
   # Use pip syntax to install requirements
-  "${venv_pip}" install ${*:-.}
+  "${venv_pip}" install "${*:-.}"
 
   # I use this with Syntastic :-)
   "${venv_pip}" install pylint
@@ -136,35 +163,12 @@ _virtualenver.core() {
   source "${venv_activate}"
 }
 
-_virtualenver37() {
-  local venv_name venv_global_binary
-  venv_name="$(_venv.name)$PYTHON_37_SUFFIX"
-  venv_global_binary="virtualenv --python=python3.7"
-
-  _virtualenver.core "${venv_name}" "${venv_global_binary}" "$@"
-}
-
-_virtualenver36() {
-  local venv_name venv_global_binary
-  venv_name="$(_venv.name)$PYTHON_36_SUFFIX"
-  venv_global_binary="virtualenv --python=python3.6"
-
-  _virtualenver.core "${venv_name}" "${venv_global_binary}" "$@"
-}
-
-_virtualenver() {
-  local venv_name venv_global_binary
-  venv_name="$(_venv.name)$PYTHON_2_SUFFIX"
-  venv_global_binary="virtualenv --python=python2"
-
-  _virtualenver.core "${venv_name}" "${venv_global_binary}" "$@"
-}
-
-_venv.name() {
-  root_dir=$( git rev-parse --show-toplevel 2> /dev/null || true )
-  [ -z "${root_dir}" ] && root_dir="${PWD}"
-  basename "${root_dir}"
-}
+# Install and activate a Python 2/3 Virtualenv in current location
+virtualenver38() { _virtualenver.core "${PYTHON_38_SUFFIX}" "python3.8" "$@" ; }
+virtualenver37() { _virtualenver.core "${PYTHON_37_SUFFIX}" "python3.7" "$@" ; }
+virtualenver36() { _virtualenver.core "${PYTHON_36_SUFFIX}" "python3.6" "$@" ; }
+virtualenver3()  { _virtualenver.core "${PYTHON_3_SUFFIX}" "python3" "$@" ; }
+virtualenver2()  { _virtualenver.core "${PYTHON_2_SUFFIX}" "python2.7" "$@" ; }
 
 _activate.core() {
   local venv_suffix venv_name venv_dir venv_activate
@@ -177,23 +181,28 @@ _activate.core() {
   source "${venv_activate}"
 }
 
-_activate36() {
-  _activate.core "$PYTHON_36_SUFFIX"
+# Activate an existing Python 2/3 virtualenv in current directory
+activate36() { _activate.core "$PYTHON_36_SUFFIX" ; }
+activate37() { _activate.core "$PYTHON_37_SUFFIX" ; }
+activate38() { _activate.core "$PYTHON_38_SUFFIX" ; }
+activate3() {
+  p3_suffixes="${PYTHON_36_SUFFIX} ${PYTHON_37_SUFFIX} ${PYTHON_38_SUFFIX}"
+  base_name="$(_venv.name)"
+  for venv_suffix in ${p3_suffixes} ; do
+    venv_name="${base_name}$venv_suffix"
+    venv_dir="${VENVS_HOME}/${venv_name}"
+    [ -d "${venv_dir}" ] && \
+      _activate.core "${venv_suffix}" && return
+  done
+  echo "No Python 3 virtualenv for ${base_name}"
 }
-
-_activate37() {
-  _activate.core "$PYTHON_37_SUFFIX"
-}
-
-_activate() {
-  _activate.core "$PYTHON_2_SUFFIX"
-}
+activate2() { _activate.core "$PYTHON_2_SUFFIX" ; }
 
 _despawn() {
   local service=$1
   local service_name="spawned_${service//\//_}"
   local ids=$(docker ps -a | grep "${service_name}" | awk '{print $1}')
-  [ ! -z "$ids" ] && \
+  [ -n "$ids" ] && \
     printf "Killing old '%s': %s\n" "$1" "$(docker rm -f "${ids}")"
 }
 
@@ -217,32 +226,41 @@ _spawn() {
 # Free some Docker disk space
 docker.free_space() {
   exited_ps_before=$(docker ps -a -q  -f 'status=exited')
-  exited_ps_before_count=$(echo "${exited_ps_before}" | grep -v ^$ | wc -l | tr -d ' ')
-  [ ${exited_ps_before_count} -gt 0 ] && \
+  exited_ps_before_count=$(echo "${exited_ps_before}" | grep -c -v ^$ )
+  [ "${exited_ps_before_count}" -gt 0 ] && \
     echo "Deleting ${exited_ps_before_count}  containers with status 'Exited'..." && \
-    docker rm -f $(echo ${exited_ps_before} | xargs)
+    docker rm -f "$(echo "${exited_ps_before}" | xargs)"
 
   dangling_images_before=$(docker images -q -a -f "dangling=true")
-  dangling_images_before_count=$(echo "${dangling_images_before}" | grep -v ^$ | wc -l | tr -d ' ')
-  [ ${dangling_images_before_count} -gt 0 ] && \
+  dangling_images_before_count=$(echo "${dangling_images_before}" | grep -c -v ^$ )
+  [ "${dangling_images_before_count}" -gt 0 ] && \
     echo "Deleting ${dangling_images_before_count} dangling images..." && \
-    docker rmi -f $(echo ${dangling_images_before} | xargs)
+    docker rmi -f "$(echo "${dangling_images_before}" | xargs)"
 
   # Delete volumes
-  docker volume rm $(docker volume ls -q)
+  volumes=$(docker volume ls -q)
+  [ -n "${volumes}" ] && \
+    docker volume rm "${volumes}"
 }
 
 # export AWS credentials for given profile
 aws.load_credentials() {
   _unset() { unset AWS_PROFILE AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY ; }
   _hint() { echo && echo "[HINT] Use '-1' to unload current session" ; }
+  _debug() {
+    echo "AWS_PROFILE=${AWS_PROFILE}"
+    echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}"
+    echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}"
+    echo "AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}"
+    echo "AWS_REGION=${AWS_REGION}"
+  }
 
   # 'default' is not a profile we want to use
-  local profiles more_profiles aws_access_key_id aws_secret_access_key chosen_profile
+  local profiles more_profiles aws_access_key_id chosen_profile
   profiles=$(grep -o '\[.*\]' ~/.aws/credentials | tr -d "][" )
   more_profiles=$(grep -o '\[.*\]' ~/.aws/config | tr -d "][" | cut -d' ' -f2)
-  profiles="$(echo $profiles $more_profiles | tr ' ' '\n' | grep -v 'default' | sort -u | xargs)"
-  chosen_profile=$1
+  profiles="$(echo "$profiles" "$more_profiles" | tr ' ' '\n' | grep -v 'default' | sort -u | xargs)"
+  chosen_profile=$1 && shift
   if [ -z "${chosen_profile}" ] ; then
     echo "You need to choose one AWS profile from this list:"  && echo "${profiles}"
     _hint
@@ -251,6 +269,9 @@ aws.load_credentials() {
     _unset
     echo "AWS information unloaded from session"
     return 0
+  elif [ "${chosen_profile}" == "--debug" ] ; then
+    _debug
+    return 0
   elif [ "${profiles}" = "${profiles//${chosen_profile}}" ] ; then
     echo "Profile '${chosen_profile}' not found. Valid profiles are:" && echo "${profiles}"
     _hint
@@ -258,12 +279,12 @@ aws.load_credentials() {
   fi
 
   _unset
-  mfa_token=$2
+  mfa_token=$1 && shift
   if [ -z "${mfa_token}" ] ; then
     echo "MFA token is missing, loading previous session..."
     _hint
 
-    aws_access_key_id=$(aws configure get aws_access_key_id --profile ${chosen_profile})
+    aws_access_key_id=$(aws configure get aws_access_key_id --profile "${chosen_profile}")
     [ -z "${aws_access_key_id}" ] && \
       echo && error "No credentials found, you need to authenticate again" && \
       return 3
@@ -275,29 +296,30 @@ aws.load_credentials() {
     export AWS_REGION=$(aws configure get region)
   else
     echo "Creating new temporary session with MFA token..."
-    cross_account_role=$(aws configure get x_role_arn --profile $chosen_profile)
+    cross_account_role=$(aws configure get x_role_arn --profile "$chosen_profile")
     [ -z "${cross_account_role}" ] && \
       error "you need to configure chosen role ARN as 'x_role_arn' in ~/.aws/config, under [profile ${chosen_profile}" && \
       return 4
 
-    mfa_iam=$(aws configure get x_mfa_serial --profile $chosen_profile)
+    mfa_iam=$(aws configure get x_mfa_serial --profile "$chosen_profile")
     [ -z "${cross_account_role}" ] && \
       error "you need to configure your MFA ARN as 'x_mfa_arn' in ~/.aws/config, under [profile ${chosen_profile}" && \
       return 5
 
-    temp_keys=($(aws sts assume-role --role-arn $cross_account_role --role-session-name session-$1 --serial-number $mfa_iam --token-code $mfa_token --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' --output text))
-    [ $? -ne 0 ] && return 6
+    temp_keys=($(aws sts assume-role --role-arn "$cross_account_role" --role-session-name "session-${1}" --serial-number "$mfa_iam" --token-code "$mfa_token" --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' --output text || ''))
 
+    [ "${#temp_keys[@]}" -eq 0 ] && return 6
     export AWS_PROFILE=${chosen_profile}
     export AWS_ACCESS_KEY_ID=${temp_keys[0]}
     export AWS_SECRET_ACCESS_KEY=${temp_keys[1]}
     export AWS_SESSION_TOKEN=${temp_keys[2]}
     export AWS_REGION=$(aws configure get region)
 
-    aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY}
-    aws configure set aws_access_key_id ${AWS_ACCESS_KEY_ID}
-    aws configure set aws_session_token ${AWS_SESSION_TOKEN}
+    aws configure set aws_secret_access_key "${AWS_SECRET_ACCESS_KEY}"
+    aws configure set aws_access_key_id     "${AWS_ACCESS_KEY_ID}"
+    aws configure set aws_session_token     "${AWS_SESSION_TOKEN}"
   fi
+  #[ "${1}" == "--debug" ] && _debug
 }
 
 # Remove given line from file
@@ -306,9 +328,9 @@ sys.delete_line() {
   line_no=$1
   file=$2
   [ ! -f "${file}" ] && echo "File does not exist" && return 1
-  [ ${line_no} -gt $(wc -l $2| awk '{print $1}') ] && echo "Line ${line_no} not found in file ${file}" && return 1
+  [ "${line_no}" -gt "$(wc -l "${file}" | awk '{print $1}')" ] && echo "Line ${line_no} not found in file ${file}" && return 1
 
-  sed -i -e "${line_no}d" ${file}
+  sed -i -e "${line_no}d" "${file}"
 }
 
 # Remove given ~/.ssh/known_hosts line
@@ -327,31 +349,31 @@ sys.duprm() {
   awk '!x[$0]++' "$1"
 }
 
-# Allows overriding of VIM commands
-vim() {
-  first_param=$1
-  case "${first_param}" in
-    checkout|commit|pull|push)
-      command echo "Lo que tu quieres es el 'git', negro.... en fin... que el día que me muera...." && read
-      command git "$@"
-      ;;
-    git*)
-      shift;
-      command echo "Casi seguro que se te fué la olla again, vamos a pasar del vim ese.... me muero y no te educo..."
-      command git "$@" ;;
-    modified|mod*)
-      modified_files=$(git status -s | grep -v '^\s*M^' | sed -E 's/^.*M //g' | xargs)
-      command vim ${modified_files} ;;
-    vim*)
-      shift ; vim "$@" ;;
-    *)
-      command vim "$@" ;;
-  esac
-}
+# # Allows overriding of VIM commands
+# vim() {
+#   first_param=$1
+#   case "${first_param}" in
+#     checkout|commit|pull|push)
+#       command echo "Lo que tu quieres es el 'git', negro.... en fin... que el día que me muera...." && read
+#       command git "$@"
+#       ;;
+#     git*)
+#       shift;
+#       command echo "Casi seguro que se te fué la olla again, vamos a pasar del vim ese.... me muero y no te educo..."
+#       command git "$@" ;;
+#     modified|mod*)
+#       modified_files=$(git status -s | grep -v '^\s*M^' | sed -E 's/^.*M //g' | xargs)
+#       command vim "${modified_files}" ;;
+#     vim)
+#       shift ; command vim "$@" ;;
+#     *)
+#       command vim "$@" ;;
+#   esac
+# }
 
 # URL Escape a string
 web.escape() {
-  [ -z $(which perl) ] && error "PERL is not installed in your system" && return 1
+  ! command -v perl > /dev/null && error "PERL is not installed in your system" && return 1
   perl -MURI::Escape -e 'print uri_escape($ARGV[0]);' "${1}"
 }
 
@@ -406,7 +428,27 @@ git() {
       echo "  pushete   Pushes current branch"
       echo "  open      Opens current repo's page in browser"
       echo "  klone     Clones given repo in ssh-format to ~/Stuff/<project>/<repo>"
+      echo "  checkout  Uses fzf for fuzzy branch completion"
       ;;
+    checkout)
+      shift ; fuzzy_path=${1:-"."}
+      if [ -f "${fuzzy_path}" ] ; then
+        # it's a file!
+        command git checkout "$@"
+      elif [[ "${fuzzy_path}" =~ ^[0-9.]+$ ]] ; then
+        # assuming a tag
+        command git checkout "$@"
+      elif [ "$(echo "${fuzzy_path}" | tr -d ' ' | wc -c)" -lt 4 ] ; then
+        # do not fuzzy-anything with less than 3 chars
+        command git checkout "$@"
+      elif git branch -a | tr -d ' ' | sed  's/.*remotes\/origin\///' | sort -u | grep -q -E "^\*?${fuzzy_path}\$" ; then
+        # exact match
+        command git checkout "${fuzzy_path}"
+      else
+        # anything else, fuzzy search it
+        echo "Using 'git checkout' wrapper with fzf, it it doesn't work use the -q flag"
+        command git checkout "$(git branch -a | sed  's/.*remotes\/origin\///' | sort -u | grep -i "${fuzzy_path}" | fzf)"
+      fi ;;
     blame*)
       echo "Probablemente tu, así que mejor no preguntes" ;;
     branchD*)
@@ -429,7 +471,7 @@ git() {
     pushete*)
       # pushes current branch and opens browser in repo webpage
       branch_name=$( _get_branch_name )
-      [ ! -z "${branch_name}" ] && \
+      [ -n "${branch_name}" ] && \
         command git push -u origin "${branch_name}" && git open
       ;;
     checkete*)
@@ -442,10 +484,10 @@ git() {
       shift ; git "$@" ;;
     open*)
       shift ; project_url=$( _get_repo_url "$1" )
-      sys.open ${project_url}
+      sys.open "${project_url}"
       ;;
     klone*)
-      shift; repo=$1 ; [ -z "${repo}" ] && return $(command git clone "$@")
+      shift; repo=$1 ; [ -z "${repo}" ] && return "$(command git clone "$@")"
       parts=($( _get_repo_n_project "${repo}" ))
       target_dir="$HOME/Stuff/${parts[0]}/${parts[1]}"
       [ ! -d "${target_dir}" ] && command git clone "${repo}" "${target_dir}"
@@ -504,22 +546,6 @@ web.search() {
   sys.open "${base_url}${escaped_search_string}"
 }
 
-# Get the N% of the files of the input file
-rand.lines() {
-  in=$1
-  N=$2
-
-  if [ -z "$in"  ] || [ ! -f "$in" ] ; then
-    error "Invalid input file: Syntax is $0 <input_file> [<percentage of lines (Default: 10%)>]"
-  else
-    [ -z "$N" -o "$N" -lt 0 -o "$N" -gt 100 ] && N=10
-
-    while read -r line ; do
-      [ $((RANDOM % 100)) -le $N ] && echo "$line"
-    done < "$in"
-  fi
-}
-
 # Perform a faster, recursive and case-ignoring 'grep' search on a GIT repo.
 gg() {
   pattern=$1
@@ -533,7 +559,7 @@ gg() {
 
 # mkdir -p + cd to newly created directory, in one go
 mcd() {
-  [ ! -z $1 ] && mkdir -p $1 && cd $1
+  [ -n "${1}" ] && mkdir -p "$1" && (cd "$1" || true)
 }
 
 # Typical shortcuts
@@ -565,7 +591,7 @@ if is.mac ; then alias ccp='pbcopy' ; else alias ccp='xclip -selection clipboard
 alias ccpath='pwd | ccp'
 
 # OSX override of AWK, if installed
-is.mac && [ ! -z "$(which gawk)" ] && alias awk='gawk'
+is.mac && [ -n "$(command -v gawk > /dev/null)" ] && alias awk='gawk'
 
 # Pushes production, develop, and all tags in one go
 alias super.push='git push origin prod  && git push --tags && git push origin develop'
@@ -587,21 +613,11 @@ alias spawn.memcached='_spawn memcached -p 11211:11211'
 alias despawn.memcached='_despawn memcached'
 
 # VIM aliases, for great justice
-alias bim="echo 'LOL eres un mamón, es ''vi'' o ''vim'', no va con B... te lo paso por esta' && read && vim $*"
-alias vin="echo 'VIN?? 'Vin' qué, Diesel??? Madre mía, que paciencia...' && read && vim $*"
+alias bim="echo 'LOL eres un mamón, es ''vi'' o ''vim'', no va con B... te lo paso por esta' && read && vim \$*"
+alias vin="echo 'VIN?? 'Vin' qué, Diesel??? Madre mía, que paciencia...' && read && vim \$*"
 
 # Random 32-char string
 alias rand.str="cat /dev/urandom | base64 | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1"
-
-# Activate an existing Python 2/3 virtualenv in current directory
-alias activate='_activate'
-alias activate36='_activate36'
-alias activate37='_activate37'
-
-# Install and activate a Python 2/3 Virtualenv in current location
-alias virtualenver='_virtualenver'
-alias virtualenver36='_virtualenver36'
-alias virtualenver37='_virtualenver37'
 
 # Some bash-debugging help
 debug.on() {
@@ -632,30 +648,44 @@ alias cdtmp='cd "$(mktemp -d)"'
 newtabi(){
   is.mac && osascript \
     -e 'tell application "iTerm2" to tell current window to set newWindow to (create tab with default profile)'\
-    -e "tell application \"iTerm2\" to tell current session of newWindow to write text \"${@}\""
+    -e "tell application \"iTerm2\" to tell current session of newWindow to write text \"${*}\""
 }
+
+# curl + jq in one
+jcurl() { curl -s -H 'Accept: application/json' "$@" | jq ; }
 
 # NEW FZF GOODNESS
 if [ -f ~/.fzf.bash ] ; then
   source ~/.fzf.bash
 
   # FZF Custom vars and functions
-  export FZF_DEFAULT_OPTS="--layout=reverse --inline-info --height 40%"
+  export FZF_DEFAULT_OPTS='--layout=reverse --inline-info --height 40%'
   export FZF_DEFAULT_COMMAND='fd --type f'
+
+  # Automagically autocomplete repo names and 'cd' into them. Needs a proper base repo dir. Depends on fzf and fd
+  repo() {
+    base_dir="${_REPO_AUTOCOMPLETE_BASE_DIR}"
+    [ $# -gt 0 ] && regex="$(eval echo  \$$(($#)))" || regex="."
+    [ -d "${base_dir}/${regex}" ] && \
+      cd "${base_dir}/${regex}" || \
+      cd "$(fd --maxdepth 2 --type d . "${base_dir}" | grep -i "${regex}" | fzf)" || true
+  }
 
   # Vim + fzf (an easy alternative is vim **<TAB>)
   fim() {
-    vim "$(fzf)"
+    if [ $# -gt 0 ] ; then
+      vim $(fd --type file $1 | fzf)
+    else
+      vim "$(fzf)"
+    fi
   }
+else
+  cat << EOF
+  Please install fzf and fd
 
-  # Automagically autocomplete repo names and 'cd' into them. Needs a proper base repo dir. Depends on fzf
-  repo() {
-    base_dir="${_REPO_AUTOCOMPLETE_BASE_DIR}"
-    [ $# -gt 0 ] && regex=$(echo $(eval echo  \$$(($#)))) || regex="."
-    [ -d "${base_dir}/${regex}" ] && \
-      cd "${base_dir}/${regex}" || \
-      cd $(fd --maxdepth 2 --type d . ${base_dir} | grep -i "${regex}" | fzf)
-  }
+  * fzf:  https://github.com/junegunn/fzf
+  * fd:   https://github.com/sharkdp/fd
+EOF
 fi
 
 # DO NOT VERSION THESE THANKS
