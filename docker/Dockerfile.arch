@@ -21,7 +21,8 @@ COPY .vimrc dotfiles/
 COPY .psqlrc dotfiles/
 COPY setup.sh dotfiles/
 COPY .fzf.bash  dotfiles/
-COPY bin dotfiles/
+COPY bin/ dotfiles/bin
+COPY powerline-shell/  dotfiles/powerline-shell
 
 RUN chmod -R 777 dotfiles && chown -R testuser:testuser  dotfiles/
 

@@ -150,14 +150,19 @@ setup_dotfiles() {
   install_pyenv
   install_autocompletion
   install_direnv
+
+  # Powerline package and config
   pip3 install powerline-shell
+  mkdir -p "${HOME}/.config"
+  [ ! -d "${HOME}/.config/powerline-shell" ] && \
+    cp -a ./powerline-shell "${HOME}/.config/powerline-shell"
 
   is.mac && brew install git bash-completion
   ! is.mac && install_acpi
 
   dotfiles_link .bashrc ~/.bashrc
   dotfiles_link .bash_local_aliases ~/.bash_local_aliases
-  dotfiles_link .fzf-bash ~/.fzf.bash
+  dotfiles_link .fzf.bash ~/.fzf.bash
 
   # shellcheck source=/dev/null
   . ~/.bash_profile

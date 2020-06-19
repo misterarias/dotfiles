@@ -663,8 +663,8 @@ newtabi(){
 jcurl() { curl -s -H 'Accept: application/json' "$@" | jq ; }
 
 # NEW FZF GOODNESS
-command -v fd-find >/dev/null && \
-  alias fd=fd-fina
+command -v fdfind >/dev/null && \
+  alias fd=fdfind
 
 if command -v fzf >/dev/null ; then
   source ~/.fzf.bash

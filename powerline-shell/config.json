@@ -1,0 +1,17 @@
+{
+  "segments": [
+    "time",
+    "virtual_env",
+    "aws_profile",
+    "cwd",
+    "git",
+    "~/.config/powerline-shell/batt.py",
+    "newline",
+    "root"
+  ],
+  "theme": "gruvbox",
+  "cwd": {
+    "mode": "plain",
+    "max_depth": 4
+  }
+}
