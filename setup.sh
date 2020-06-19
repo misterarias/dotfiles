@@ -46,7 +46,7 @@ setup_git() {
 }
 
 setup_vim() {
-  [ -z "$(which vim)" ] && \
+  ! command -v vim > /dev/null &&
     echo "You don't have VIM installed.... you suck" && return
 
   VIMDIR=~/.vim
@@ -59,8 +59,84 @@ setup_vim() {
   vim +PluginInstall +qall
 }
 
-run_tests() {
-  ./tests.sh
+install_fd() {
+  if command -v fd >/dev/null ;then
+    return
+  elif is.mac ; then
+    brew install fd
+   elif is.debian ; then
+    sudo apt install -y fd-find
+  elif is.arch ; then
+    sudo pacman -S --noconfirm  fd
+  else
+    error "Don't know how to install fd"
+  fi
+}
+
+install_pyenv() {
+  if command -v pyenv >/dev/null ;then
+    return
+  elif is.mac ; then
+    brew install pyenv
+    brew install pyenv-virtualenv
+  else
+    curl https://pyenv.run | bash
+    export PATH="${HOME}/.pyenv/bin:$PATH"
+    git clone https://github.com/pyenv/pyenv-virtualenv.git "$(pyenv root)/plugins/pyenv-virtualenv"
+  fi
+}
+
+install_fzf() {
+  if command -v fzf >/dev/null ;then
+    return
+  elif is.mac ; then
+    brew install fzf
+  elif is.debian ; then
+    sudo apt install fzf
+  elif is.arch ; then
+    sudo pacman -S --noconfirm  fzf
+  else
+    error "Don't know how to install fzf"
+  fi
+}
+
+# batt management
+install_acpi() {
+  if command -v acpi >/dev/null ;then
+    return
+  elif is.debian ; then
+    sudo apt install acpi
+  elif is.arch ; then
+    sudo pacman -S --noconfirm acpi
+  else
+    error "Don't know how to install acpi"
+  fi
+}
+
+install_autocompletion() {
+  if is.mac ; then
+    brew install bash-completion
+  elif is.debian ; then
+    sudo apt install  bash-completion
+  elif is.arch ; then
+    sudo pacman -S bash-completion
+  else
+    echo "Don't know how to install bash completion"
+  fi
+}
+
+install_direnv() {
+  if command -v direnv >/dev/null ; then
+    return
+  elif is.mac ;then
+    brew install direnv
+  elif is.debian ; then
+    sudo apt install direnv
+  elif is.arch ; then
+    curl -sfL https://direnv.net/install.sh | bash
+  else
+    echo "Don't know how to install direnv"
+  fi
 }
 
 setup_dotfiles() {
@@ -68,13 +144,23 @@ setup_dotfiles() {
   touch ~/.bash_profile # in case it does not exist..
   [ "$(grep -c "\. ~/.bashrc" ~/.bash_profile)" -ne 1 ] && cat .bash_profile  >> ~/.bash_profile
 
-  run_tests
-  if [ $? -ne 0 ] ; then echo "Tests not ok, I refuse to install broken dotfiles" && exit 1 ; fi
+  # Install pre-requisites for powerline and pyenv
+  install_fzf
+  install_fd
+  install_pyenv
+  install_autocompletion
+  install_direnv
+  pip3 install powerline-shell
+
+  is.mac && brew install git bash-completion
+  ! is.mac && install_acpi
+
   dotfiles_link .bashrc ~/.bashrc
   dotfiles_link .bash_local_aliases ~/.bash_local_aliases
+  dotfiles_link .fzf-bash ~/.fzf.bash
 
   # shellcheck source=/dev/null
-  . ~/.bash_profile 2>&1 > /dev/null
+  . ~/.bash_profile
 
   printf "\nNew functions and aliases installed, type '%s' tp check them out!\n" "${BLUECOLOR_BOLD}my_commands${ENDCOLOR}"
 }
@@ -93,7 +179,7 @@ setup_postgres() {
 }
 
 setup_configs() {
-  [ ! -z "$(which terminator)" ] && \
+  command -v terminator >/dev/null  && \
     echo && echo "${GREENCOLOR}Setting my terminator config...${ENDCOLOR}" && \
     mkdir -p "$HOME/.config/terminator" && \
     dotfiles_link .config/terminator/config "$HOME/.config/terminator/config"
@@ -104,8 +190,8 @@ setup_gnome_extensions() {
   is.mac && return
 
   # Maybe gnome stuff is not set up correctly
-  [ -z "$(which gnome-shell-extension-installer)" ] && return
-  [ -z "$(which gnome-shell)" ] && return
+  ! command -v gnome-shell-extension-installer > /dev/null && return
+  ! command -v gnome-shell >/dev/null && return
 
   # Download magnificent and already-created script for shell extension's management
   if [ ! -f "$HOME/bin/gnome-shell-extension-installer" ] ; then
@@ -125,36 +211,18 @@ setup_gnome_extensions() {
   gnome-shell --replace &
 }
 
-setup_repo_change_script() {
-  autocomplete_route="$(_get_bash_completion)"
-  [ ! -f "${autocomplete_route}" ] && \
-    echo "Bash auto-completion not installed, or not found in '${autocomplete_route}', refusing to install repo autocomplete" && return
-
-  # In Linux this route is most probably not writable
-  if ! is.mac ; then
-    echo "${REDCOLOR_BOLD}I need superpowers to copy to '${autocomplete_route}.d'${ENDCOLOR}"
-    sudo cp -f ./files/repo "${autocomplete_route}.d/"
-  else
-    cp -f ./files/repo "${autocomplete_route}.d/"
-  fi
-
-  printf "\nAutocompletion for the %s command has been installed.\nRun it once to configure it, and then %s.\n" \
-    "${BLUECOLOR_BOLD}repo${ENDCOLOR}" "${REDCOLOR_BOLD}START A NEW SHELL${ENDCOLOR}"
-}
-
 # Lots of fancy functions here:
 # shellcheck source=/dev/null
 source .bash_local_aliases
 
 setup_all() {
-  setup_vim
+  #setup_vim
   setup_dotfiles
   setup_git
   setup_postgres
   setup_ruby
   setup_configs
   setup_gnome_extensions
-  setup_repo_change_script
   setup_binaries
 }
 

@@ -1,0 +1,29 @@
+FROM archlinux:20200605
+
+ENV LANG en_US.UTF-8
+ENV LC_ALL ${LANG}
+
+RUN set -ex && \
+      pacman -Sy && \
+      pacman -S --noconfirm git curl python3 vim sudo python-pip
+
+RUN useradd -m -s /bin/bash testuser
+RUN echo 'testuser ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+
+WORKDIR /home/testuser
+
+COPY .bash_local_aliases dotfiles/
+COPY .bash_profile dotfiles/
+COPY .bashrc dotfiles/
+COPY .gitconfig dotfiles/
+COPY .git-completion.bash dotfiles/
+COPY .vimrc dotfiles/
+COPY .psqlrc dotfiles/
+COPY setup.sh dotfiles/
+COPY .fzf.bash  dotfiles/
+COPY bin dotfiles/
+
+RUN chmod -R 777 dotfiles && chown -R testuser:testuser  dotfiles/
+
+USER testuser
+RUN cd dotfiles && ./setup.sh

@@ -116,6 +116,14 @@ is.mac() {
   [ "$(uname -s)" == "Darwin" ]
 }
 
+is.debian() {
+  command -v apt > /dev/null
+}
+
+is.arch() {
+  command -v pacman > /dev/null
+}
+
 _get_bash_completion() {
   is.mac && echo "/usr/local/etc/bash_completion" || echo "/etc/bash_completion"
 }
@@ -655,7 +663,10 @@ newtabi(){
 jcurl() { curl -s -H 'Accept: application/json' "$@" | jq ; }
 
 # NEW FZF GOODNESS
-if [ -f ~/.fzf.bash ] ; then
+command -v fd-find >/dev/null && \
+  alias fd=fd-fina
+
+if command -v fzf >/dev/null ; then
   source ~/.fzf.bash
 
   # FZF Custom vars and functions

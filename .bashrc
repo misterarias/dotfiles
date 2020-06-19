@@ -11,14 +11,6 @@ fi
 # shellcheck source=/dev/null
 [ -f "$(_get_bash_completion)" ] && . "$(_get_bash_completion)"
 
-# git completion is installed with 'brew install git bash-completion'
-if ! is.mac ; then
-  [ ! -f ~/.git-completion ] && \
-      curl http://git.kernel.org/cgit/git/git.git/plain/contrib/completion/git-completion.bash?id=HEAD > ~/.git-completion
-  # shellcheck source=/dev/null
-  . ~/.git-completion
-fi
-
 # show help on custom commands
 my_commands() {
   alias_filter="alias .*"
@@ -206,9 +198,6 @@ export LESS="--RAW-CONTROL-CHARS"
 # I want cores
 ulimit -c unlimited
 
-# brew install thefuck / pip install thefucl
-eval $(thefuck --alias)
-
 # Useful for everything: bash, git, postgres...
 export EDITOR=vim
 export PSQL_EDITOR='vim -c"set syntax=sql"'
@@ -226,6 +215,7 @@ export PATH="$HOME/.cargo/bin:$PATH"
 
 # Pyenv goodness
 export PYENV_ROOT=${HOME}/.venvs
+export PATH="${HOME}/.pyenv/bin:$PATH"
 eval "$(pyenv init -)"
 eval "$(pyenv virtualenv-init -)"
 

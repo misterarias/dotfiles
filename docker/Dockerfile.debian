@@ -1,0 +1,33 @@
+FROM debian:9.0
+
+RUN set -ex && \
+      apt update --assume-no &&\
+      DEBIAN_FRONTEND=noninteractive apt-get install -y \
+        locales vim git python3 curl sudo python3-pip
+
+RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
+    dpkg-reconfigure --frontend=noninteractive locales && \
+    update-locale LANG=en_US.UTF-8
+
+ENV LANG en_US.UTF-8
+
+RUN adduser --disabled-password --gecos "" testuser
+RUN echo 'testuser ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+
+WORKDIR /home/testuser
+
+COPY .bash_local_aliases dotfiles/
+COPY .bash_profile dotfiles/
+COPY .bashrc dotfiles/
+COPY .gitconfig dotfiles/
+COPY .git-completion.bash dotfiles/
+COPY .vimrc dotfiles/
+COPY .psqlrc dotfiles/
+COPY setup.sh dotfiles/
+COPY bin dotfiles/
+COPY .fzf.bash  dotfiles/
+
+RUN chmod -R 777 dotfiles && chown -R testuser:testuser  dotfiles/
+
+USER testuser
+RUN cd dotfiles && ./setup.sh
