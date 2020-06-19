@@ -221,7 +221,7 @@ setup_gnome_extensions() {
 source .bash_local_aliases
 
 setup_all() {
-  #setup_vim
+  setup_vim
   setup_dotfiles
   setup_git
   setup_postgres
