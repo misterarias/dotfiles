@@ -10,7 +10,7 @@ set rtp+=~/.vim/bundle/Vundle.vim
 call vundle#begin()
 
 " let Vundle manage Vundle, required
-Plugin 'gmarik/Vundle.vim'
+Plugin 'VundleVim/Vundle.vim'
 
 Plugin 'scrooloose/syntastic'
 Plugin 'Shougo/neocomplcache.vim'
@@ -22,12 +22,12 @@ Plugin 'vim-scripts/bufkill.vim'
 "Plugin 'othree/html5.vim'
 Plugin 'scrooloose/nerdtree'
 " TO work with React this two are useful
-Plugin 'pangloss/vim-javascript'
-Plugin 'mxw/vim-jsx'
+"Plugin 'pangloss/vim-javascript'
+"Plugin 'mxw/vim-jsx'
 Plugin 'sheerun/vim-polyglot'
 Plugin 'pearofducks/ansible-vim'
 " Write environment
-Plugin 'junegunn/goyo.vim'
+"Plugin 'junegunn/goyo.vim'
 " Markdown pluginS - https://github.com/plasticboy/vim-markdown
 "Plugin 'godlygeek/tabular'
 "Plugin 'plasticboy/vim-markdown'
@@ -52,10 +52,10 @@ set encoding=utf8
 set termguicolors " True colors
 
 " Color first, so I can customize later
-if &diff
-  colorscheme monokai
+if $ITERM_PROFILE == "Hotkey"
+  colorscheme delek
 else
-  colorscheme koehler
+  colorscheme koehler " monokai
 endif
 
 " Start scrolling three lines before the horizontal window border
@@ -228,7 +228,7 @@ noremap <leader>sc :SyntasticCheck<cr>
 
 let g:syntastic_javascript_checkers = ['eslint'] " npm
 let g:syntastic_go_checkers = ['go']
-let g:syntastic_py_checkers = ['pylint'] " PIP
+let g:syntastic_python_checkers = ['flake8'] " PIP
 let g:syntastic_rst_checkers = ['sphinx'] " PIP
 let g:syntastic_scala_checkers = ['scalac']
 let g:syntastic_sh_checkers = ['shellcheck'] " Package manager
@@ -341,10 +341,11 @@ map <leader>tp :tabprevious<CR>
 map <leader>tc :tabclose<CR>
 
 " vim-airline configuration
-let g:airline_theme = 'powerlineish'
-" let g:airline_powerline_fonts = 1
-"set t_Co=256
+let g:airline_theme = 'dark' "'powerlineish'
+let g:airline_powerline_fonts = 1
+let t_Co=256
 " Enable the list of buffers
 let g:airline#extensions#tabline#enabled = 1
 " Show just the filename
 let g:airline#extensions#tabline#fnamemod = ':t'
+

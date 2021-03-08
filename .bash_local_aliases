@@ -112,9 +112,7 @@ sys.renamer() {
 error() { echo "[ERROR] $*" ; }
 
 # 'Darwin' for Mac, 'Linux' or similar elsewhere
-is.mac() {
-  [ "$(uname -s)" == "Darwin" ]
-}
+is.mac() { [[ $OSTYPE =~ darwin.* ]] ; }
 
 is.debian() {
   command -v apt > /dev/null
@@ -460,7 +458,7 @@ git() {
     blame*)
       echo "Probablemente tu, así que mejor no preguntes" ;;
     branchD*)
-      git branch --no-color --merged | command grep -vE "^(\*|\s(master|develop|dev)\s$)" | command xargs -n 1 git branch -d
+      git branch --no-color --merged | command grep -vE '(master|develop)' | command xargs -n 1 echo git branch -d
       git fetch -puta
       ;;
     perrete*)
@@ -470,7 +468,7 @@ git() {
       repo_and_project=($( _get_bb_repo_n_project ))
       project_url=$(printf "${BITBUCKET_REPO}/projects/%s/repos/%s/pull-requests" "${repo_and_project[0]}" "${repo_and_project[1]}")
 
-      url_params=$(printf "create&targetBranch=refs/heads/develop&sourceBranch=refs/heads/%s" "${branch_name}")
+      url_params=$(printf "create&sourceBranch=refs/heads/%s" "${branch_name}")
       escaped_params=${url_params//\//%2F}
 
       final_url="${project_url}?${escaped_params}"
@@ -605,7 +603,7 @@ is.mac && [ -n "$(command -v gawk > /dev/null)" ] && alias awk='gawk'
 alias super.push='git push origin prod  && git push --tags && git push origin develop'
 
 # Starts/stops a local Datascience notebook:  https://github.com/jupyter/docker-stacks/tree/master/datascience-notebook
-alias spawn.ds-notebook='_spawn jupyter/datascience-notebook  -v "$(pwd):/home/jovyan/work" -p 8888:8888'
+alias spawn.ds-notebook='_spawn jupyter/datascience-notebook -e JUPYTER_ENABLE_LAB=yes --workdir="/home/jovyan/work"  -v "$(pwd):/home/jovyan/work" -p 8888:8888 && sleep 3 && docker logs $(docker ps -l -q)'
 alias despawn.ds-notebook='_despawn jupyter/datascience-notebook'
 
 # Starts/stops a Jupyter notebook being run
@@ -651,6 +649,9 @@ alias vpn.restart="sudo bash -c '/Users/juanito/Stuff/bgdts/fortivpn-mac/routes.
 
 # chdir to to a temporary location
 alias cdtmp='cd "$(mktemp -d)"'
+
+# ID of last container
+alias docker.last='docker ps -l -q'
 
 # Open a new iTerm tab and execute command
 newtabi(){
