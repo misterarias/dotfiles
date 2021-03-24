@@ -5,7 +5,6 @@
 # functions and aliases, loaded on session start.
 # By using meaningful one-line comments to functions, they'll get nicely printed
 # by means of the 'my_commands' help function (defined in ~/.bashrc)
-
 # enable ansible 2.x
 alias ansible.enable.27='_ansible_enable "2.7"'
 alias ansible.enable.24='_ansible_enable "2.4"'
@@ -643,9 +642,9 @@ alias sys.hosts='sudo vim /etc/hosts'
 alias recalbox.es.restart="curl 'http://recalbox.local/post?action=reboot-es' -H 'Origin: http://recalbox.local' -H 'Accept-Encoding: gzip, deflate' -H 'Accept-Language: en-US,en;q=0.9,es;q=0.8' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36' -H 'Content-Type: application/json' -H 'Accept: */*' -H 'Referer: http://recalbox.local/help' -H 'Connection: keep-alive' -H 'DNT: 1' --data-binary '{}' --compressed"
 
 # Start/ Stop  Forti Vpn
-alias vpn.activate="sudo /Users/juanito/Stuff/bgdts/fortivpn-mac/routes.sh add vpn"
-alias vpn.deactivate="sudo /Users/juanito/Stuff/bgdts/fortivpn-mac/routes.sh del vpn"
-alias vpn.restart="sudo bash -c '/Users/juanito/Stuff/bgdts/fortivpn-mac/routes.sh del vpn && sudo /Users/juanito/Stuff/bgdts/fortivpn-mac/routes.sh add vpn'"
+alias vpn.activate="sudo ${HOME}/Stuff/bgdts/fortivpn-mac/routes.sh add vpn"
+alias vpn.deactivate="sudo ${HOME}/Stuff/bgdts/fortivpn-mac/routes.sh del vpn"
+alias vpn.restart="sudo bash -c '${HOME}/Stuff/bgdts/fortivpn-mac/routes.sh del vpn && sudo ${HOME}/Stuff/bgdts/fortivpn-mac/routes.sh add vpn'"
 
 # chdir to to a temporary location
 alias cdtmp='cd "$(mktemp -d)"'

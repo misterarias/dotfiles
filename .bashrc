@@ -1,82 +1,12 @@
-#!/usr/bin/env bash
-#ft=sh; ts=2; sw=2
-
-# Bash Aliases
-if [ -f ~/.bash_local_aliases ]; then
-  # shellcheck source=/dev/null
-  . ~/.bash_local_aliases
-fi
-
-# Bash completion location depends on OS
-# shellcheck source=/dev/null
-[ -f "$(_get_bash_completion)" ] && . "$(_get_bash_completion)"
-
-# show help on custom commands
-my_commands() {
-  alias_filter="alias .*"
-  function_filter='^[a-z][a-z._]\+()'
-  for aliases in ${HOME}/.bash_local_aliases $HOME/.bash_private_aliases ; do
-    [ ! -f "${aliases}" ] && continue
-    printf  "\n%s%s%s:\n\n" "${GREEN}${BOLD}" "${aliases}" "${ENDCOLOR}"
-    grep -B1 -e "${alias_filter}" "$aliases" | sed -e 's#=.*##' -e 's#.*alias ##'  -e 's#--##g' \
-      -e "s/^\([a-z._]*\)$/${RED}${BOLD}\1${ENDCOLOR}/g"
-
-    printf "\n"
-
-    # Do not show functions starting with '_'
-    grep -B1 -e "${function_filter}" "$aliases" | sed -e 's#().*##g' -e 's#--##g' \
-        -e "s/^\([a-z._]*\)$/${RED}${BOLD}\1${ENDCOLOR}/g"
-  done
-}
-
-# My custom stuff
-export PATH=$HOME/bin:$PATH
-export PATH=$HOME/.local/bin:$PATH
-
-export LANG="en_US.UTF-8"
-export LC_ALL=$LANG
-
-# Used by '/usr/local/etc/bash_completion/repo'
-export _REPO_AUTOCOMPLETE_BASE_DIR=/Users/juanito/Stuff
-
-# Bind the Tab key to the menu-complete command instead of the default complete
-bind '"\C-i": menu-complete'
-
-# Display a list of the matching files
-bind "set show-all-if-ambiguous on"
-
-# Perform partial completion on the first Tab press,
-# only start cycling full results on the second Tab press
-bind "set menu-complete-display-prefix on"
-
-export GOPATH="$HOME/go"
-export GOBIN="$GOPATH/bin"
-export PATH=$PATH:$GOBIN  #/usr/local/opt/go/libexec/bin
-
-#sets up some colors
-is.mac && export CLICOLOR=1
-
-export LSCOLORS=gxfxcxdxbxegedabagacad
-
-#enables color for iTerm
-export TERM=xterm-color
-
-#export GREP_COLOR="01;34"
-
-# don't put duplicate lines in the history
-# don't save commands which start with a space
-export HISTCONTROL=ignoredups:erasedups:ignorespace
-
-# append to the history file, don't overwrite it
-shopt -s histappend
-
-# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
-export HISTSIZE=10000
-export HISTFILESIZE=100000
+# vi: ft=sh ts=2 sw=2
+[ -f ~/.bash_local_aliases ] && source ~/.bash_local_aliases
 
 # make less more friendly for non-text input files, see lesspipe(1)
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 export LESS="--RAW-CONTROL-CHARS"
+
+# DDAMNDED WARNING
+export BASH_SILENCE_DEPRECATION_WARNING=1
 
 # I want cores
 #ulimit -c unlimited
@@ -141,26 +71,17 @@ if ! [[ "${PROMPT_COMMAND:-}" =~ _direnv_hook ]]; then
 fi
 
 # This introduces the SIGINT trap error: eval "$(direnv hook bash)"
-[ -f "/Users/juanito/.ghcup/env" ] && source "/Users/juanito/.ghcup/env" # ghcup-env
+[ -f "${HOME}/.ghcup/env" ] && source "${HOME}/.ghcup/env" # ghcup-env
 
-#AWSume alias to source the AWSume script
-alias awsume=". \$(pyenv which awsume)"
+# CAREFUL
+eval "$(direnv hook bash)"
 
-#Auto-Complete function for AWSume
-_awsume() {
-    local cur prev opts
-    COMPREPLY=()
-    cur="${COMP_WORDS[COMP_CWORD]}"
-    prev="${COMP_WORDS[COMP_CWORD-1]}"
-    opts=$(awsume-autocomplete)
-    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
-    return 0
-}
-complete -F _awsume awsume
-
-
-export SDKMAN_DIR="/Users/juanito/.sdkman"
+export SDKMAN_DIR="${HOME}/.sdkman"
 # shellcheck source=/dev/null
 [ -s "${SDKMAN_DIR}/bin/sdkman-init.sh" ] && source "${SDKMAN_DIR}/bin/sdkman-init.sh"
 
+# PATH=$(brew --prefix)/opt/python/libexec/bin:$PATH
+
 eval "$(thefuck --alias)"
+
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash

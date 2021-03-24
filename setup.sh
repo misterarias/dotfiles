@@ -136,7 +136,9 @@ install_direnv() {
     curl -sfL https://direnv.net/install.sh | bash
   else
     echo "Don't know how to install direnv"
+    return
   fi
+  dotfiles_link direnvrc ~/.direnvrc
 }
 
 setup_dotfiles() {
@@ -162,6 +164,10 @@ setup_dotfiles() {
 
   dotfiles_link .bashrc ~/.bashrc
   dotfiles_link .bash_local_aliases ~/.bash_local_aliases
+  [ ! -f ~/.bash_private_vars ] && \
+    dotfiles_link .bash_private_vars ~/.bash_private_vars && \
+    printf "\nCreated sample %s file, edit it and modify %s var to enable 'repo' command.\n" "${BLUECOLOR_BOLD}~/.bash_private_vars${ENDCOLOR}" "${REDCOLOR}_REPO_AUTOCOMPLETE_BASE_DIR${ENDCOLOR}"
+
   dotfiles_link .fzf.bash ~/.fzf.bash
 
   # shellcheck source=/dev/null
@@ -255,7 +261,6 @@ case "${mode}" in
   configs)  setup_configs ;;
   binaries) setup_binaries ;;
   gnome)    _DEPRECATED setup_gnome_extensions ;;
-  repo)     setup_rep,o_change_script ;;
   test)     run_tests;;
   help|*)
     echo && echo "${GREENCOLOR_BOLD}setup.sh${ENDCOLOR}"
@@ -270,7 +275,6 @@ case "${mode}" in
     echo "* configs   - For now, only some terminator tweaks (requires Linux && terminator)"
     echo "* gnome     - Installs some really useful Gnome addons (requires Gnome 3.x)"
     echo "* binaries  - Installs some useful binaries for everyday use"
-    echo "* repo      - If you have a lot of repos, you'll love this"
     echo "* test      - Runs locally installed test-battery"
     echo "* help      - this message"
     echo && exit 0
