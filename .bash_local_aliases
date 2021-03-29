@@ -398,8 +398,9 @@ git() {
   # Returns a two-item array!!
   _get_bb_repo_n_project() {
     repo_ssh="$1" ; [ -z "${repo_ssh}" ] && \
-      repo_ssh=$(git remote show origin -n | grep 'Fetch URL' | cut -d':' -f2- | tr -d ' ')
-    echo "${repo_ssh}" | sed -Ee 's#.*\.com(:[0-9]*/|:|/)##g' -e 's#\.git$##g' | tr '/' ' '
+      repo_ssh="$(git remote get-url --push origin)"
+    #echo "${repo_ssh}" | sed -Ee 's#.*\.com(:[0-9]*/|:|/)##g' -e 's#\.git$##g' | tr '/' ' '
+    echo "${repo_ssh}" | sed -E 's#^.*@globaldevtools.bbva.com:7999/(.*)/(.*).git#\1 \2#g'
   }
 
   # Returns a two-item array!!
