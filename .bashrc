@@ -85,3 +85,4 @@ export SDKMAN_DIR="${HOME}/.sdkman"
 eval "$(thefuck --alias)"
 
 [ -f ~/.fzf.bash ] && source ~/.fzf.bash
+export JAVA_HOME="/Users/juanarias/.sdkman/candidates/java/current/"

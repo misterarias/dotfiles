@@ -116,10 +116,14 @@ install_acpi() {
 install_autocompletion() {
   if is.mac ; then
     brew install bash-completion
+    dotfiles_link autocompletion/repo  $(brew --prefix)/etc/bash_completion.d/repo
+    return
   elif is.debian ; then
     sudo apt install  bash-completion
+    echo "MISSING: dotfiles_link autocompletion/repo  /usr/local/etc/bash_completion.d/repo "
   elif is.arch ; then
     sudo pacman -S bash-completion
+    echo "MISSING: dotfiles_link autocompletion/repo  /usr/local/etc/bash_completion.d/repo "
   else
     echo "Don't know how to install bash completion"
   fi

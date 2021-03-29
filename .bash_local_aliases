@@ -638,14 +638,6 @@ alias npm-exec='PATH=$(npm bin):$PATH'
 # Sudo edit /etc/hosts
 alias sys.hosts='sudo vim /etc/hosts'
 
-# Restart Emulation Station
-alias recalbox.es.restart="curl 'http://recalbox.local/post?action=reboot-es' -H 'Origin: http://recalbox.local' -H 'Accept-Encoding: gzip, deflate' -H 'Accept-Language: en-US,en;q=0.9,es;q=0.8' -H 'User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36' -H 'Content-Type: application/json' -H 'Accept: */*' -H 'Referer: http://recalbox.local/help' -H 'Connection: keep-alive' -H 'DNT: 1' --data-binary '{}' --compressed"
-
-# Start/ Stop  Forti Vpn
-alias vpn.activate="sudo ${HOME}/Stuff/bgdts/fortivpn-mac/routes.sh add vpn"
-alias vpn.deactivate="sudo ${HOME}/Stuff/bgdts/fortivpn-mac/routes.sh del vpn"
-alias vpn.restart="sudo bash -c '${HOME}/Stuff/bgdts/fortivpn-mac/routes.sh del vpn && sudo ${HOME}/Stuff/bgdts/fortivpn-mac/routes.sh add vpn'"
-
 # chdir to to a temporary location
 alias cdtmp='cd "$(mktemp -d)"'
 
@@ -676,10 +668,11 @@ if command -v fzf >/dev/null ; then
   # Automagically autocomplete repo names and 'cd' into them. Needs a proper base repo dir. Depends on fzf and fd
   repo() {
     base_dir="${_REPO_AUTOCOMPLETE_BASE_DIR}"
+    # regex is a valid dir ---> probably comes from autocompletion _repo
+    [ -d "$*" ] && cd "$*" && return
     [ $# -gt 0 ] && regex="$(eval echo  \$$(($#)))" || regex="."
-    [ -d "${base_dir}/${regex}" ] && \
-      cd "${base_dir}/${regex}" || \
-      cd "$(fd --maxdepth 2 --type d . "${base_dir}" | grep -i "${regex}" | fzf)" || true
+    [ -d "${base_dir}/${regex}" ] && cd "${base_dir}/${regex}" && return
+    cd "$(fd --maxdepth 2 --type d . "${base_dir}" | grep -i "${regex}" | fzf)" || true
   }
 
   # Vim + fzf (an easy alternative is vim **<TAB>)
