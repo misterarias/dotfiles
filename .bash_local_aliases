@@ -7,18 +7,20 @@
 # by means of the 'my_commands' help function (defined in ~/.bashrc)
 
 # enable ansible 2.x
-alias ansible.enable.27='_ansible_enable "2.7"'
-alias ansible.enable.24='_ansible_enable "2.4"'
-alias ansible.enable.29='_ansible_enable "2.9"'
+alias ansible.enable.27='_ansible_enable 2.7 2.7.18'
+alias ansible.enable.4.0='_ansible_enable 4.0 4.0.0a4'
+alias ansible.enable.29='_ansible_enable 2.9 2.9.20'
 _ansible_enable() {
-  version=$1
-  venv_dir="${VENVS_HOME}/ansible_${version}"
-  [ -d "${venv_dir}" ] && source "${venv_dir}/bin/activate" && return
+  local ansible_version pip_version
+  ansible_version=$1
+  pyenv_name="ansible-${ansible_version}"
+  pip_version="${2:-${ansible_version}.0}"
 
-  venv_global_binary="virtualenv --python=python3.7"
-  tmp_reqs=$(mktemp)
-  echo "ansible==${version}" >> "${tmp_reqs}"
-  _virtualenver.core "${venv_dir}" "${venv_global_binary}" "-r ${tmp_reqs}"
+  #echo "[INFO] Venv for Ansible ${ansible_version} not found, creating a new one now..."
+
+  python_version="$(pyenv versions | grep -e '^\s*[23]\.' | cut -d '/' -f1 | sort -u | tr -d ' ' | head -1)"
+  venv.create "${python_version}" "${pyenv_name}"
+  pip install "ansible==${pip_version}"
 }
 
 # disable Ansible
@@ -550,9 +552,11 @@ _venv_create() {
     echo "[INFO] Deleting old ${ENV_FILE} file ..." && rm "${ENV_FILE}"
   fi
 
+  # Allow commands to choose the env name (Ansible commands, for example)
+  pyenv="${2:-\$(basename \$PWD)}"
   cat > "${ENV_FILE}" << EOF
 pyversion=${version}
-pvenv=\$(basename \$PWD)
+pvenv=${pyenv}
 
 use python \${pyversion}
 layout virtualenv \${pyversion} \${pvenv}
@@ -560,7 +564,7 @@ layout activate \${pvenv}-\${pyversion}
 unset PS1
 EOF
   direnv allow
-  echo "Done!"
+  echo "[INFO] Successfully created virtualenv '${pyenv}' for Python ${version}, autoactivated via direnv"
 }
 
 alias venv.create='_venv_create'
