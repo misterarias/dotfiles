@@ -5,6 +5,7 @@
 # functions and aliases, loaded on session start.
 # By using meaningful one-line comments to functions, they'll get nicely printed
 # by means of the 'my_commands' help function (defined in ~/.bashrc)
+
 # enable ansible 2.x
 alias ansible.enable.27='_ansible_enable "2.7"'
 alias ansible.enable.24='_ansible_enable "2.4"'
@@ -24,21 +25,12 @@ _ansible_enable() {
 alias ansible.disable='deactivate'
 
 # re-source all aliases
-alias.source() {
-  source "${HOME}/.bashrc"
-}
-
-# Edit .bashrc and .bash_profile fast -and reenable
-bash.edit() {
-  vim "${HOME}/.bash_profile" "${HOME}/.bashrc"
-  alias.source
-}
+alias alias.source='source ${HOME}/.bashrc && echo "Successfully sourced ${HOME}/.bashrc"'
+alias bash.source='alias.source'
 
 # Edit aliases fast -and reenable faster.
-alias.edit() {
-  vim "${HOME}/.bash_local_aliases" "${HOME}/.bash_private_vars"
-  alias.source
-}
+alias bash.edit='vim "${HOME}/.bash_profile" "${HOME}/.bashrc" && bash.source'
+alias alias.edit='vim "${HOME}/.bash_local_aliases" "${HOME}/.bash_private_vars" && alias.source'
 
 # exports entries in a key=value file
 sys.export() {
@@ -49,12 +41,12 @@ sys.export() {
   ignored_lines=0
   while IFS= read -r line ; do
     key=$(echo "${line}" | cut -d'=' -f1 | tr -d ' ')
-    [[ "$key" =~ ^#.* ]] && ignored_lines=$(( ignored_lines + 1 )) && continue
+    [[ "$key" =~ ^#.* ]] && ignored_lines=$(( ignored_lines + 1 )) && echo "Ignoring '${line}'" && continue
 
     value=$(echo "${line}" | cut -d'=' -f2- | tr -d ' ' | tr -d '"' | tr -d "'")
     export "${key}=${value}" && exported_lines=$(( exported_lines + 1 ))
   done < "${1}"
-  echo "Successfully exported ${exported_lines} items from ${1}"
+  echo "Successfully exported ${exported_lines} items from ${1}, ignored ${ignored_lines}."
 }
 
 # kills anything similar to argument passed
@@ -125,84 +117,6 @@ _get_bash_completion() {
   is.mac && echo "/usr/local/etc/bash_completion" || echo "/etc/bash_completion"
 }
 
-# Python Venv wrappers
-PYTHON_36_SUFFIX="_p3.6"
-PYTHON_37_SUFFIX="_p3.7"
-PYTHON_38_SUFFIX="_p3.8"
-PYTHON_3_SUFFIX="_p3"
-PYTHON_2_SUFFIX="_p2.7"
-#VENVS_HOME="$(cd "${HOME}/.venvs" && pwd)"
-
-_venv.name() {
-  root_dir=$( git rev-parse --show-toplevel 2> /dev/null || true )
-  [ -z "${root_dir}" ] && root_dir="${PWD}"
-  basename "${root_dir}"
-}
-
-_virtualenver.core() {
-  local venv_suffix venv_python_binary
-  venv_suffix="$1" && shift
-  venv_python_binary="$1" && shift
-
-  local venv_name venv_dir venv_binaries venv_pip venv_activate venv_global_binary
-  venv_name="$(_venv.name)${venv_suffix}"
-  venv_global_binary="virtualenv --python=${venv_python_binary}"
-  venv_dir="${VENVS_HOME}/$( basename "${venv_name}" )"
-  venv_binaries="${venv_dir}/bin"
-  venv_pip="${venv_binaries}/pip"
-  venv_activate="${venv_binaries}/activate"
-
-  # Virtualenv at a global level is a must
-  ! command -v virtualenv > /dev/null && pip install -q virtualenv
-
-  # If venv'd PIP doesn't exist, install the virtualenv
-  [ ! -f "${venv_pip}" ] && ${venv_global_binary} "${venv_dir}"
-
-  # Use pip syntax to install requirements
-  "${venv_pip}" install "${*:-.}"
-
-  # I use this with Syntastic :-)
-  "${venv_pip}" install pylint
-
-  # Auto activate
-  source "${venv_activate}"
-}
-
-# Install and activate a Python 2/3 Virtualenv in current location
-virtualenver38() { _virtualenver.core "${PYTHON_38_SUFFIX}" "python3.8" "$@" ; }
-virtualenver37() { _virtualenver.core "${PYTHON_37_SUFFIX}" "python3.7" "$@" ; }
-virtualenver36() { _virtualenver.core "${PYTHON_36_SUFFIX}" "python3.6" "$@" ; }
-virtualenver3()  { _virtualenver.core "${PYTHON_3_SUFFIX}" "python3" "$@" ; }
-virtualenver2()  { _virtualenver.core "${PYTHON_2_SUFFIX}" "python2.7" "$@" ; }
-
-_activate.core() {
-  local venv_suffix venv_name venv_dir venv_activate
-  venv_suffix=$1
-  venv_name="$(_venv.name)$venv_suffix"
-  venv_dir="${VENVS_HOME}/${venv_name}"
-  venv_activate="${venv_dir}/bin/activate"
-
-  [ ! -f "${venv_activate}" ] && echo "No virtualenv called '$venv_name'" && return 1
-  source "${venv_activate}"
-}
-
-# Activate an existing Python 2/3 virtualenv in current directory
-activate36() { _activate.core "$PYTHON_36_SUFFIX" ; }
-activate37() { _activate.core "$PYTHON_37_SUFFIX" ; }
-activate38() { _activate.core "$PYTHON_38_SUFFIX" ; }
-activate3() {
-  p3_suffixes="${PYTHON_36_SUFFIX} ${PYTHON_37_SUFFIX} ${PYTHON_38_SUFFIX}"
-  base_name="$(_venv.name)"
-  for venv_suffix in ${p3_suffixes} ; do
-    venv_name="${base_name}$venv_suffix"
-    venv_dir="${VENVS_HOME}/${venv_name}"
-    [ -d "${venv_dir}" ] && \
-      _activate.core "${venv_suffix}" && return
-  done
-  echo "No Python 3 virtualenv for ${base_name}"
-}
-activate2() { _activate.core "$PYTHON_2_SUFFIX" ; }
-
 _despawn() {
   local service=$1
   local service_name="spawned_${service//\//_}"
@@ -246,85 +160,6 @@ docker.free_space() {
   volumes=$(docker volume ls -q)
   [ -n "${volumes}" ] && \
     docker volume rm "${volumes}"
-}
-
-# export AWS credentials for given profile
-aws.load_credentials() {
-  _unset() { unset AWS_PROFILE AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY ; }
-  _hint() { echo && echo "[HINT] Use '-1' to unload current session" ; }
-  _debug() {
-    echo "AWS_PROFILE=${AWS_PROFILE}"
-    echo "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}"
-    echo "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}"
-    echo "AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}"
-    echo "AWS_REGION=${AWS_REGION}"
-  }
-
-  # 'default' is not a profile we want to use
-  local profiles more_profiles aws_access_key_id chosen_profile
-  profiles=$(grep -o '\[.*\]' ~/.aws/credentials | tr -d "][" )
-  more_profiles=$(grep -o '\[.*\]' ~/.aws/config | tr -d "][" | cut -d' ' -f2)
-  profiles="$(echo "$profiles" "$more_profiles" | tr ' ' '\n' | grep -v 'default' | sort -u | xargs)"
-  chosen_profile=$1 && shift
-  if [ -z "${chosen_profile}" ] ; then
-    echo "You need to choose one AWS profile from this list:"  && echo "${profiles}"
-    _hint
-    return 1
-  elif [ "${chosen_profile}" = "-1" ] ; then
-    _unset
-    echo "AWS information unloaded from session"
-    return 0
-  elif [ "${chosen_profile}" == "--debug" ] ; then
-    _debug
-    return 0
-  elif [ "${profiles}" = "${profiles//${chosen_profile}}" ] ; then
-    echo "Profile '${chosen_profile}' not found. Valid profiles are:" && echo "${profiles}"
-    _hint
-    return 2
-  fi
-
-  _unset
-  mfa_token=$1 && shift
-  if [ -z "${mfa_token}" ] ; then
-    echo "MFA token is missing, loading previous session..."
-    _hint
-
-    aws_access_key_id=$(aws configure get aws_access_key_id --profile "${chosen_profile}")
-    [ -z "${aws_access_key_id}" ] && \
-      echo && error "No credentials found, you need to authenticate again" && \
-      return 3
-
-    export AWS_PROFILE=${chosen_profile}
-    export AWS_ACCESS_KEY_ID=$(aws configure get aws_access_key_id)
-    export AWS_SECRET_ACCESS_KEY=$(aws configure get aws_secret_access_key)
-    export AWS_SESSION_TOKEN=$(aws configure get aws_session_token)
-    export AWS_REGION=$(aws configure get region)
-  else
-    echo "Creating new temporary session with MFA token..."
-    cross_account_role=$(aws configure get x_role_arn --profile "$chosen_profile")
-    [ -z "${cross_account_role}" ] && \
-      error "you need to configure chosen role ARN as 'x_role_arn' in ~/.aws/config, under [profile ${chosen_profile}" && \
-      return 4
-
-    mfa_iam=$(aws configure get x_mfa_serial --profile "$chosen_profile")
-    [ -z "${cross_account_role}" ] && \
-      error "you need to configure your MFA ARN as 'x_mfa_arn' in ~/.aws/config, under [profile ${chosen_profile}" && \
-      return 5
-
-    temp_keys=($(aws sts assume-role --role-arn "$cross_account_role" --role-session-name "session-${1}" --serial-number "$mfa_iam" --token-code "$mfa_token" --query 'Credentials.[AccessKeyId,SecretAccessKey,SessionToken]' --output text || ''))
-
-    [ "${#temp_keys[@]}" -eq 0 ] && return 6
-    export AWS_PROFILE=${chosen_profile}
-    export AWS_ACCESS_KEY_ID=${temp_keys[0]}
-    export AWS_SECRET_ACCESS_KEY=${temp_keys[1]}
-    export AWS_SESSION_TOKEN=${temp_keys[2]}
-    export AWS_REGION=$(aws configure get region)
-
-    aws configure set aws_secret_access_key "${AWS_SECRET_ACCESS_KEY}"
-    aws configure set aws_access_key_id     "${AWS_ACCESS_KEY_ID}"
-    aws configure set aws_session_token     "${AWS_SESSION_TOKEN}"
-  fi
-  #[ "${1}" == "--debug" ] && _debug
 }
 
 # Remove given line from file
@@ -434,27 +269,7 @@ git() {
       echo "  pushete   Pushes current branch"
       echo "  open      Opens current repo's page in browser"
       echo "  klone     Clones given repo in ssh-format to ~/Stuff/<project>/<repo>"
-      echo "  checkout  Uses fzf for fuzzy branch completion"
       ;;
-    checkout)
-      shift ; fuzzy_path=${1:-"."}
-      if [ -f "${fuzzy_path}" ] ; then
-        # it's a file!
-        command git checkout "$@"
-      elif [[ "${fuzzy_path}" =~ ^[0-9.]+$ ]] ; then
-        # assuming a tag
-        command git checkout "$@"
-      elif [ "$(echo "${fuzzy_path}" | tr -d ' ' | wc -c)" -lt 4 ] ; then
-        # do not fuzzy-anything with less than 3 chars
-        command git checkout "$@"
-      elif git branch -a | tr -d ' ' | sed  's/.*remotes\/origin\///' | sort -u | grep -q -E "^\*?${fuzzy_path}\$" ; then
-        # exact match
-        command git checkout "${fuzzy_path}"
-      else
-        # anything else, fuzzy search it
-        echo "Using 'git checkout' wrapper with fzf, it it doesn't work use the -q flag"
-        command git checkout "$(git branch -a | sed  's/.*remotes\/origin\///' | sort -u | grep -i "${fuzzy_path}" | fzf)"
-      fi ;;
     blame*)
       echo "Probablemente tu, así que mejor no preguntes" ;;
     branchD*)
@@ -692,6 +507,73 @@ else
   * fd:   https://github.com/sharkdp/fd
 EOF
 fi
+
+# Alias for awsume
+alias awsume=". awsume"
+
+#Auto-Complete function for AWSume
+_awsume() {
+    local cur prev opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    opts=$(awsume-autocomplete)
+    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+    return 0
+}
+complete -F _awsume awsume
+
+# Auto-Complete function for mccute
+_mccute() {
+    local cur prev opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    opts="status stop start alias bin logs connect disconnect"
+    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+    return 0
+}
+complete -F _mccute mccute
+
+# Enable a pyenv-powered virtualenv via direnv
+_venv_create() {
+  version=$1
+  [ -z "$version" ] && error "No python version specified as parameter" && return
+  valid_versions="$(pyenv versions | grep -e '^\s*[23]\.' | cut -d '/' -f1 | sort -u | tr -d ' ' | xargs)"
+  [ -z "$(echo "${valid_versions}" | grep -o "${version}")" ] && \
+    error "No valid Python version specified, choose one of: ${valid_versions}" && return
+
+  ENV_FILE='.envrc'
+  if [ -f "${ENV_FILE}" ] ; then
+    grep -q "pyversion=${version}" "${ENV_FILE}" && \
+      echo "[INFO] ${ENV_FILE} for '${version}' already exists, ignoring..." && return
+    echo "[INFO] Deleting old ${ENV_FILE} file ..." && rm "${ENV_FILE}"
+  fi
+
+  cat > "${ENV_FILE}" << EOF
+pyversion=${version}
+pvenv=\$(basename \$PWD)
+
+use python \${pyversion}
+layout virtualenv \${pyversion} \${pvenv}
+layout activate \${pvenv}-\${pyversion}
+unset PS1
+EOF
+  direnv allow
+  echo "Done!"
+}
+
+alias venv.create='_venv_create'
+_complete_venv_create() {
+    local cur prev opts
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
+    opts="$(pyenv versions | grep -e '^\s*[23]\.' | cut -d '/' -f1 | sort -u | tr -d ' ' | grep "${cur}" | fzf)"
+    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+    return 0
+}
+complete -F _complete_venv_create venv.create
 
 # DO NOT VERSION THESE THANKS
 [ -f ~/.bash_private_vars ] && source ~/.bash_private_vars

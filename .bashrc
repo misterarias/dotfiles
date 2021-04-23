@@ -1,5 +1,10 @@
+#!/usr/bin/env bash
 # vi: ft=sh ts=2 sw=2
-[ -f ~/.bash_local_aliases ] && source ~/.bash_local_aliases
+# shellcheck source=/dev/null
+[ -f ~/.bash_local_aliases ] && . ~/.bash_local_aliases
+
+# At the very least, colours in MAC
+export CLICOLOR=1
 
 # make less more friendly for non-text input files, see lesspipe(1)
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
@@ -9,7 +14,7 @@ export LESS="--RAW-CONTROL-CHARS"
 export BASH_SILENCE_DEPRECATION_WARNING=1
 
 # I want cores
-#ulimit -c unlimited
+ulimit -c unlimited
 
 # Useful for everything: bash, git, postgres...
 export EDITOR=vim
@@ -27,31 +32,16 @@ export PATH="${HOME}/.pyenv/bin:$PATH"
 eval "$(pyenv init -)"
 eval "$(pyenv virtualenv-init -)"
 
-# Enable a pyenv-powered virtualenv via direnv
-venv.create() {
-  [ -f ".envrc" ]  && echo "[INFO] .envrc already exists, ignoring..." && return
-  [ -z "$1" ] && error "No python version specified as parameter" && return
+# Enable bash to cycle through completions (https://superuser.com/a/59198)
+#[[ $- = *i* ]] && echo "$-" && bind TAB:menu-complete
 
-  version=$1
-  valid_versions="$(pyenv  versions | grep -e '^\s*[23]\.' | cut -d '/' -f1 | sort -u | tr -d ' ' | xargs)"
-  [ -z "$(echo "${valid_versions}" | grep -o "${version}")" ] && \
-    error "No valid Python version specified, choose one of: ${valid_versions}" && return
-
-  cat > .envrc << EOF
-pyversion=${version}
-pvenv=\$(basename \$PWD)
-
-use python \${pyversion}
-layout virtualenv \${pyversion} \${pvenv}
-layout activate \${pvenv}-\${pyversion}
-unset PS1
-EOF
-  direnv allow
-  echo "Done!"
-}
+# Options for autocompletion
+bind "set show-all-if-ambiguous on"
+bind "set completion-ignore-case on"
+bind "set menu-complete-display-prefix on"
 
 # Depends on 'pip install powerline-shell'
-function _update_ps1() {
+_update_ps1() {
     PS1=$(powerline-shell $?)
 }
 
@@ -70,19 +60,18 @@ if ! [[ "${PROMPT_COMMAND:-}" =~ _direnv_hook ]]; then
   PROMPT_COMMAND="_direnv_hook${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 fi
 
+## Should not be needed if the above works
+# eval "$(direnv hook bash)"
+
 # This introduces the SIGINT trap error: eval "$(direnv hook bash)"
-[ -f "${HOME}/.ghcup/env" ] && source "${HOME}/.ghcup/env" # ghcup-env
+[ -f "${HOME}/.ghcup/env" ] && . "${HOME}/.ghcup/env" # ghcup-env
 
-# CAREFUL
-eval "$(direnv hook bash)"
-
-export SDKMAN_DIR="${HOME}/.sdkman"
-# shellcheck source=/dev/null
-[ -s "${SDKMAN_DIR}/bin/sdkman-init.sh" ] && source "${SDKMAN_DIR}/bin/sdkman-init.sh"
-
-# PATH=$(brew --prefix)/opt/python/libexec/bin:$PATH
-
+# brew install fuck
 eval "$(thefuck --alias)"
 
-[ -f ~/.fzf.bash ] && source ~/.fzf.bash
+# brew install fzf
+[ -f ~/.fzf.bash ] && . ~/.fzf.bash
 export JAVA_HOME="/Users/juanarias/.sdkman/candidates/java/current/"
+
+# To use 'gtools' as normal, i.e make instead of gmake
+PATH="/usr/local/opt/make/libexec/gnubin:$PATH"
