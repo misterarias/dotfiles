@@ -46,6 +46,7 @@ sys.export() {
     [[ "$key" =~ ^#.* ]] && ignored_lines=$(( ignored_lines + 1 )) && echo "Ignoring '${line}'" && continue
 
     value=$(echo "${line}" | cut -d'=' -f2- | tr -d ' ' | tr -d '"' | tr -d "'")
+    value=$(eval echo "${value}") # in case it is an env var itself
     export "${key}=${value}" && exported_lines=$(( exported_lines + 1 ))
   done < "${1}"
   echo "Successfully exported ${exported_lines} items from ${1}, ignored ${ignored_lines}."
