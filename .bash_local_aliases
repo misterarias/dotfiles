@@ -546,18 +546,6 @@ _awsume() {
 }
 complete -F _awsume awsume
 
-# Auto-Complete function for mccute
-_mccute() {
-    local cur prev opts
-    COMPREPLY=()
-    cur="${COMP_WORDS[COMP_CWORD]}"
-    prev="${COMP_WORDS[COMP_CWORD-1]}"
-    opts="status stop start alias bin logs connect disconnect"
-    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
-    return 0
-}
-complete -F _mccute mccute
-
 # Enable a pyenv-powered virtualenv via direnv
 _venv_create() {
   version=$1
