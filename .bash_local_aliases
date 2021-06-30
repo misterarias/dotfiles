@@ -489,10 +489,30 @@ if command -v fzf >/dev/null ; then
     base_dir="${_REPO_AUTOCOMPLETE_BASE_DIR}"
     # regex is a valid dir ---> probably comes from autocompletion _repo
     [ -d "$*" ] && cd "$*" && return
-    [ $# -gt 0 ] && regex="$(eval echo  \$$(($#)))" || regex="."
+    #regex="$(eval echo  \$$(($#)))" || regex="."
+    [ $# -gt 0 ] && regex=$(echo "$*" | sed -E 's# +#.*#g')
     [ -d "${base_dir}/${regex}" ] && cd "${base_dir}/${regex}" && return
-    cd "$(fd --maxdepth 2 --type d . "${base_dir}" | grep -i "${regex}" | fzf)" || true
+    if fd --maxdepth 2 --type d . "${base_dir}" | grep -iq "${regex}"  ; then
+      cd "$(fd --maxdepth 2 --type d . "${base_dir}" | grep -i "${regex}" | fzf)"
+    else
+      echo "No results :("
+    fi
   }
+
+  _repo() {
+    _get_comp_words_by_ref cur prev
+
+    base_dir="${_REPO_AUTOCOMPLETE_BASE_DIR}"
+    [ "${prev}" = "repo" ] && prev=""
+    regex="${prev} ${cur}"
+    regex="${regex// /.*}"
+    if [ -d "${base_dir}/${regex}" ] ; then
+        COMPREPLY=$( compgen -W "${base_dir}/${regex}" )
+    elif fd --maxdepth 2 --type d . "${base_dir}" | grep -iq "${regex}"  ; then
+        COMPREPLY=$( compgen -W "$(fd --maxdepth 2 --type d . "${base_dir}" | grep -i "${regex}" | fzf)"  )
+    fi
+  }
+  complete -F _repo repo
 
   # Vim + fzf (an easy alternative is vim **<TAB>)
   fim() {

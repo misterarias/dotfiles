@@ -320,7 +320,7 @@ let g:ansible_unindent_after_newline=1
 let g:ctrlp_cmd = 'CtrlP'
 let g:ctrlp_mruf_case_sensitive = 1
 let g:ctrlp_show_hidden = 0
-let g:ctrlp_custom_ignore = '\v[\/](build|\.(git|hg|svn))$'
+let g:ctrlp_custom_ignore = '\v[\/](node_modules|build|\.(git|hg|svn))$'
 
 " Open file in chrome
 nmap <silent> <leader>gc :!/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome %<CR>
@@ -329,7 +329,7 @@ nmap <silent> <leader>gc :!/Applications/Google\ Chrome.app/Contents/MacOS/Googl
 autocmd Filetype markdown colorscheme default
 
 " Goyo defaults
-let g:goyo_width = 150
+" let g:goyo_width = 150
 " g:goyo_height` (default: 85%)
 
 " Mapping for vimgrep

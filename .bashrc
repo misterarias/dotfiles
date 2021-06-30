@@ -3,6 +3,9 @@
 # shellcheck source=/dev/null
 [ -f ~/.bash_local_aliases ] && . ~/.bash_local_aliases
 
+# My local binaries path
+export PATH="$HOME/.local/bin:$PATH"
+
 # At the very least, colours in MAC
 export CLICOLOR=1
 
@@ -33,7 +36,7 @@ eval "$(pyenv init -)"
 eval "$(pyenv virtualenv-init -)"
 
 # Enable bash to cycle through completions (https://superuser.com/a/59198)
-#[[ $- = *i* ]] && echo "$-" && bind TAB:menu-complete
+[[ $- = *i* ]] && bind TAB:menu-complete
 
 # Options for autocompletion
 bind "set show-all-if-ambiguous on"
@@ -71,7 +74,11 @@ eval "$(thefuck --alias)"
 
 # brew install fzf
 [ -f ~/.fzf.bash ] && . ~/.fzf.bash
-export JAVA_HOME="/Users/juanarias/.sdkman/candidates/java/current/"
+export JAVA_HOME="${HOME}/.sdkman/candidates/java/current/"
 
 # To use 'gtools' as normal, i.e make instead of gmake
 PATH="/usr/local/opt/make/libexec/gnubin:$PATH"
+
+# GIT completion, among others
+is.mac && [[ -r "/usr/local/etc/profile.d/bash_completion.sh" ]] && . "/usr/local/etc/profile.d/bash_completion.sh"
+
