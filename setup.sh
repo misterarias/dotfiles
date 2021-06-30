@@ -249,6 +249,7 @@ setup_binaries() {
   bin_dir="${HOME}/.local/bin"
   mkdir -p "${bin_dir}"
   cp -v ./bin/* "${bin_dir}"
+  chmod +x "${bin_dir}/"*
 }
 
 mode=${1:-all}

@@ -5,10 +5,5 @@ import sys
 import yaml
 import json
 
-docs = yaml.load_all(sys.stdin)
-json_docs = list()
-for doc in docs:
-    json_docs.append(doc)
-
-print(json.dumps(json_docs))
+print(json.dumps(yaml.load(sys.stdin, Loader=yaml.FullLoader)))
 """ | jq  .
