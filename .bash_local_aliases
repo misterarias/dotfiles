@@ -222,7 +222,6 @@ web.escape() {
 
 # Allows overriding GIT commands
 git() {
-
   _get_repo_n_project() {
     remote="$1" ; [ -z "${remote}" ] && \
       remote=$(git remote get-url --push origin)
@@ -514,6 +513,26 @@ if command -v fzf >/dev/null ; then
   }
   complete -F _repo repo
 
+  # git greps and offers vim to open a result
+  ggrep() {
+    [ -z "$1" ] && error "Cannot search nothing...."
+    if git grep "$1" ; then
+      vim +/"$1" $(git grep "$1" | cut -d":" -f1 | sort -u | fzf)
+    else
+      echo "No matches for $1"
+    fi
+  }
+
+  # git greps and opens all results
+  gopen() {
+    [ -z "$1" ] && error "Cannot search nothing...."
+    if git grep "$1" ; then
+      vim +/"$1" $(git grep "$1" | cut -d":" -f1)
+    else
+      echo "No matches for $1"
+    fi
+  }
+
   # Vim + fzf (an easy alternative is vim **<TAB>)
   fim() {
     if [ $# -gt 0 ] ; then
@@ -523,12 +542,16 @@ if command -v fzf >/dev/null ; then
     fi
   }
 else
+  fzf() {
   cat << EOF
+  'fzf' command not found: it is very useful and I need it.
   Please install fzf and fd
 
   * fzf:  https://github.com/junegunn/fzf
   * fd:   https://github.com/sharkdp/fd
 EOF
+  }
+  fzf
 fi
 
 # Alias for awsume
