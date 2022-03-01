@@ -20,7 +20,7 @@ Plugin 'vim-scripts/bufkill.vim'
 "Plugin 'derekwyatt/vim-scala'
 "Plugin 'git://git.code.sf.net/p/vim-latex/vim-latex'
 "Plugin 'othree/html5.vim'
-Plugin 'scrooloose/nerdtree'
+Plugin 'scrooloose/nerdtree' | Plugin 'Xuyuanp/nerdtree-git-plugin'
 " TO work with React this two are useful
 "Plugin 'pangloss/vim-javascript'
 "Plugin 'mxw/vim-jsx'
@@ -35,9 +35,12 @@ Plugin 'pearofducks/ansible-vim'
 Plugin 'vim-airline/vim-airline'
 Plugin 'vim-airline/vim-airline-themes'
 " GIT integration
-Plugin 'tpope/vim-fugitive'
+" Plugin 'tpope/vim-fugitive'
 " YouCompleteMe
 "Plugin 'ycm-core/YouCompleteMe'
+"Plugin 'davidhalter/jedi-vim'
+Plugin 'martinda/Jenkinsfile-vim-syntax.git'
+Plugin 'alfredodeza/coveragepy.vim'
 
 
 " All of your Plugins must be added before the following line
@@ -45,7 +48,7 @@ call vundle#end()            " required
 filetype plugin indent on    " required
 
 " test stuff
-"setl foldmethod=syntax
+au BufNewFile,BufRead *.json setl foldmethod=syntax
 
 set encoding=utf8
 

@@ -1,13 +1,4 @@
 #!/bin/bash
-BOLD=$(tput bold)
-BLUECOLOR=$(tput setaf 4)
-REDCOLOR=$(tput setaf 1)
-GREENCOLOR=$(tput setaf 2)
-BLUECOLOR_BOLD=$BLUECOLOR$BOLD
-REDCOLOR_BOLD=$REDCOLOR$BOLD
-GREENCOLOR_BOLD=$GREENCOLOR$BOLD
-ENDCOLOR=$(tput sgr0)
-
 # Copies of system files will be kept here
 BACKUP_FOLDER="${HOME}/backup"
 
@@ -32,10 +23,11 @@ dotfiles_link() {
 }
 
 setup_git() {
-  echo && echo "${GREENCOLOR}Setting up some git defaults.....${ENDCOLOR}"
+  install_git_delta
+  green "Setting up some git defaults..."
   while read -r line ; do
 
-    echo "${BLUECOLOR}${line}${ENDCOLOR}"
+    blue "$line"
     section=$(echo "$line" | cut -d" " -f1)
     value=$(echo "$line" | cut -d" " -f2-)
 
@@ -47,16 +39,67 @@ setup_git() {
 
 setup_vim() {
   ! command -v vim > /dev/null &&
-    echo "You don't have VIM installed.... you suck" && return
+    red "You don't have VIM installed.... you suck" && return
 
   VIMDIR=~/.vim
-  echo && echo "${GREENCOLOR}Setting up VIM in ${VIMDIR} ...${ENDCOLOR}"
+  green "Setting up VIM in ${VIMDIR}..."
   rm -rf "${VIMDIR}/bundle"
   mkdir -p "${VIMDIR}/tmp" "${VIMDIR}/backup" "${VIMDIR}/colors" > /dev/null 2>&1
   cp .vim/colors/monokai.vim "${VIMDIR}/colors/"
   git clone https://github.com/gmarik/Vundle.vim ${VIMDIR}/bundle/Vundle.vim
   dotfiles_link .vimrc ~/.vimrc
   vim +PluginInstall +qall
+}
+
+install_git_delta() {
+  if ! command -v delta >/dev/null ; then
+    if is.mac ; then
+      brew install git-delta
+     elif is.debian ; then
+      sudo apt install -y git-delta
+    elif is.arch ; then
+      sudo pacman -S --noconfirm  git-delta
+    else
+      error "Don't know how to install delta"
+    fi
+  fi
+  git config --global core.pager delta
+
+  ! grep -q '[delta "interactive"]' ~/.gitconfig && cat >> ~/.gitconfig <<EOF
+[interactive]
+    diffFilter = delta --color-only --features=interactive
+
+[delta]
+    features = decorations
+
+[delta "interactive"]
+    keep-plus-minus-markers = false
+
+[delta "decorations"]
+    commit-decoration-style = blue ol
+    commit-style = raw
+    file-style = omit
+    hunk-header-decoration-style = blue box
+    hunk-header-file-style = red
+    hunk-header-line-number-style = "#067a00"
+    hunk-header-style = file line-number syntax
+EOF
+
+  green "Git 'delta' installed successfully"
+}
+
+install_bat() {
+  if command -v bat >/dev/null ;then
+    return
+  elif is.mac ; then
+    brew install bat
+   elif is.debian ; then
+    sudo apt install -y bat
+  elif is.arch ; then
+    sudo pacman -S --noconfirm  bat
+  else
+    error "Don't know how to install bat"
+  fi
 }
 
 install_fd() {
@@ -87,17 +130,19 @@ install_pyenv() {
 }
 
 install_fzf() {
-  if command -v fzf >/dev/null ;then
-    return
-  elif is.mac ; then
-    brew install fzf
-  elif is.debian ; then
-    sudo apt install fzf
-  elif is.arch ; then
-    sudo pacman -S --noconfirm  fzf
-  else
-    error "Don't know how to install fzf"
+  if ! command -v fzf >/dev/null ; then
+    if is.mac ; then
+      brew install fzf
+    elif is.debian ; then
+      sudo apt install fzf
+    elif is.arch ; then
+      sudo pacman -S --noconfirm  fzf
+    else
+      error "Don't know how to install fzf"
+    fi
   fi
+  install_fd
+  install_bat
 }
 
 # batt management
@@ -122,7 +167,7 @@ install_autocompletion() {
   elif is.arch ; then
     sudo pacman -S bash-completion
   else
-    echo "Don't know how to install bash completion"
+    error "Don't know how to install bash completion"
   fi
 }
 
@@ -136,20 +181,19 @@ install_direnv() {
   elif is.arch ; then
     curl -sfL https://direnv.net/install.sh | bash
   else
-    echo "Don't know how to install direnv"
+    error "Don't know how to install direnv"
     return
   fi
   dotfiles_link direnvrc ~/.direnvrc
 }
 
 setup_dotfiles() {
-  echo && echo "${GREENCOLOR}Setting up bash dotfiles_....${ENDCOLOR}"
+  green "Setting up bash dotfiles..."
   touch ~/.bash_profile # in case it does not exist..
   [ "$(grep -c "\. ~/.bashrc" ~/.bash_profile)" -ne 1 ] && cat .bash_profile  >> ~/.bash_profile
 
   # Install pre-requisites for powerline and pyenv
   install_fzf
-  install_fd
   install_pyenv
   install_autocompletion
   install_direnv
@@ -174,53 +218,28 @@ setup_dotfiles() {
   # shellcheck source=/dev/null
   . ~/.bash_profile
 
-  printf "\nNew functions and aliases installed, type '%s' tp check them out!\n" "${BLUECOLOR_BOLD}my_commands${ENDCOLOR}"
+  green "New functions and aliases installed"
+  # blue "type 'my_commands' to check them out!"
 }
 
 setup_ruby() {
   [ ! -f ~/.irbrc ] && return
-  echo && echo "${GREENCOLOR}Setting up some Ruby defaults.....${ENDCOLOR}"
+  green "Setting up some Ruby defaults..."
   ! grep -q 'irb/completion' ~/.irbrc && \
     echo "require 'irb/completion'" >> ~/.irbrc
 }
 
 setup_postgres() {
   [ ! -f ~/.psqlrc ] && return
-  echo "${GREENCOLOR}Setting up some PostgreSQL defaults.....${ENDCOLOR}"
+  green "Setting up some PostgreSQL defaults..."
   dotfiles_link .psqlrc ~/.psqlrc
 }
 
 setup_configs() {
   command -v terminator >/dev/null  && \
-    echo && echo "${GREENCOLOR}Setting my terminator config...${ENDCOLOR}" && \
+    green "Setting my terminator config..." && \
     mkdir -p "$HOME/.config/terminator" && \
     dotfiles_link .config/terminator/config "$HOME/.config/terminator/config"
-}
-
-setup_gnome_extensions() {
-  # If not in Linux, just get out:
-  is.mac && return
-
-  # Maybe gnome stuff is not set up correctly
-  ! command -v gnome-shell-extension-installer > /dev/null && return
-  ! command -v gnome-shell >/dev/null && return
-
-  # Download magnificent and already-created script for shell extension's management
-  if [ ! -f "$HOME/bin/gnome-shell-extension-installer" ] ; then
-    mkdir -p "$HOME/bin"
-    curl -qsS https://raw.githubusercontent.com/brunelli/gnome-shell-extension-installer/master/gnome-shell-extension-installer -o "$HOME/bin/gnome-shell-extension-installer"
-    chmod +x "$HOME/bin/gnome-shell-extension-installer"
-  fi
-
-  # Install my main extensions
-  gnome-shell-extension-installer 307 3.18 # Dash to dock
-  gnome-shell-extension-installer 112 3.18 # remove accesibility
-  gnome-shell-extension-installer 613 3.14 # Weather
-  gnome-shell-extension-installer 545  # Hide top bar
-  gnome-shell-extension-installer 442 3.20 # Dropdown terminal
-
-  # restart shell - the ampersand is mandatory
-  gnome-shell --replace &
 }
 
 # Lots of fancy functions here:
@@ -234,16 +253,12 @@ setup_all() {
   setup_postgres
   setup_ruby
   setup_configs
-  setup_gnome_extensions
   setup_binaries
 }
 
-_DEPRECATED() {
-  echo "${REDCOLOR_BOLD}DEPRECATED${ENDCOLOR} - $*"
-}
 
 setup_binaries() {
-  echo && echo "${GREENCOLOR}Copying 'useful' binaries....${ENDCOLOR}"
+  green "Copying 'useful' binaries..."
 
   # I like this, it's the same used by 'pip install --user'
   bin_dir="${HOME}/.local/bin"
@@ -262,10 +277,9 @@ case "${mode}" in
   ruby)     setup_ruby ;;
   configs)  setup_configs ;;
   binaries) setup_binaries ;;
-  gnome)    _DEPRECATED setup_gnome_extensions ;;
   test)     run_tests;;
   help|*)
-    echo && echo "${GREENCOLOR_BOLD}setup.sh${ENDCOLOR}"
+    blue "setup.sh"
     echo "One-time, not-interactive setup for optimal CLI - by Juan Arias"
     echo ; echo "Args:"
     echo "* [no args] - Default option, installs everything in one go"
@@ -275,7 +289,6 @@ case "${mode}" in
     echo "* postgres  - Basically a simple .psqlrc file"
     echo "* ruby      - Small improvement over default irb config"
     echo "* configs   - For now, only some terminator tweaks (requires Linux && terminator)"
-    echo "* gnome     - Installs some really useful Gnome addons (requires Gnome 3.x)"
     echo "* binaries  - Installs some useful binaries for everyday use"
     echo "* test      - Runs locally installed test-battery"
     echo "* help      - this message"
@@ -283,4 +296,4 @@ case "${mode}" in
     ;;
 esac
 
-printf "\n%s\n" "${GREENCOLOR_BOLD}Everything is done, enjoy!${ENDCOLOR}"
+green "Everything is done, enjoy!"

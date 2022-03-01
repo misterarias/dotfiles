@@ -3,6 +3,9 @@
 # shellcheck source=/dev/null
 [ -f ~/.bash_local_aliases ] && . ~/.bash_local_aliases
 
+# Locale select
+export LANG="es_ES.UTF-8"
+
 # My local binaries path
 export PATH="$HOME/.local/bin:$PATH"
 
