@@ -16,7 +16,7 @@ Plugin 'scrooloose/syntastic'
 Plugin 'Shougo/neocomplcache.vim'
 Plugin 'kien/ctrlp.vim'
 Plugin 'vim-scripts/bufkill.vim'
-"Plugin 'vim-scripts/dbext.vim'
+Plugin 'vim-scripts/dbext.vim'
 "Plugin 'derekwyatt/vim-scala'
 "Plugin 'git://git.code.sf.net/p/vim-latex/vim-latex'
 "Plugin 'othree/html5.vim'
@@ -160,7 +160,8 @@ set expandtab
 set list
 set listchars=tab:␉·,trail:␠
 
-" More space in JSON files
+" More space in certain files (TODO maybe all...)
+autocmd Filetype xml setlocal ts=4 sts=4 sw=4
 autocmd Filetype python setlocal ts=4 sts=4 sw=4
 autocmd Filetype groovy setlocal ts=4 sts=4 sw=4
 autocmd FileType json :set ts=4 sts=4 sts=4
@@ -180,15 +181,15 @@ map <C-c> :BW<CR>
 " Super needed in order for multiple buffers to work properly
 set laststatus=2
 
-" use menu for command line completion
-"set wildmenu
+" Enable auto completion menu after pressing TAB.
+set wildmenu
 
-"set statusline= "clear, for when vimrc is reloaded
-"set statusline+=%.80F%m%r%h%w
-"set statusline+=\ [ENC=%{&fenc}]
-"set statusline+=\ [TYPE=%Y]
-"set statusline+=%= " right align
-"set statusline+=\ [POS=%.4l/%.4L\ (%p%%)]
+" Make wildmenu behave like similar to Bash completion.
+set wildmode=list:longest
+
+" There are certain files that we would never want to edit with Vim.
+" Wildmenu will ignore files with these extensions.
+set wildignore=*.docx,*.jpg,*.png,*.gif,*.pdf,*.pyc,*.exe,*.flv,*.img,*.xlsx
 
 " So it doesn't ask to save evertytime you move out of buffers
 set hidden
@@ -231,12 +232,12 @@ noremap <leader>sc :SyntasticCheck<cr>
 
 let g:syntastic_javascript_checkers = ['eslint'] " npm
 let g:syntastic_go_checkers = ['go']
-let g:syntastic_python_checkers = ['flake8'] " PIP
 let g:syntastic_rst_checkers = ['sphinx'] " PIP
 let g:syntastic_scala_checkers = ['scalac']
 let g:syntastic_sh_checkers = ['shellcheck'] " Package manager
 let g:syntastic_sql_checkers = ['sqlint'] " Ruby gem
 let g:syntastic_yaml_checkers = ['yamllint'] " PIP
+let g:syntastic_python_checkers=['flake8'] "PIP - TODO use mypy
 let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_aggregate_errors = 1
 let g:syntastic_auto_loc_list = 1

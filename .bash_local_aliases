@@ -16,15 +16,15 @@ GREENCOLOR_BOLD=$GREENCOLOR$BOLD
 ENDCOLOR=$(tput sgr0)
 
 green() {
-  printf "\n%s\n" "${GREENCOLOR_BOLD}$*${ENDCOLOR}"
+  printf "%s\n" "${GREENCOLOR_BOLD}$*${ENDCOLOR}"
 }
 
 blue() {
-  printf "\n%s\n" "${BLUECOLOR_BOLD}$*${ENDCOLOR}"
+  printf "%s\n" "${BLUECOLOR_BOLD}$*${ENDCOLOR}"
 }
 
 red() {
-  printf "\n%s\n" "${REDCOLOR_BOLD}$*${ENDCOLOR}"
+  printf "%s\n" "${REDCOLOR_BOLD}$*${ENDCOLOR}"
 }
 
 # enable ansible 2.x
@@ -57,7 +57,7 @@ alias alias.edit='vim "${HOME}/.bash_local_aliases" "${HOME}/.bash_private_vars"
 
 # exports entries in a key=value file
 sys.export() {
-  __SYS_EXPORT_DEBUG=1
+  __SYS_EXPORT_DEBUG=
   [ ! -f "${1}" ] && \
     error "Error: ${1} is not a valid file"
 
@@ -170,6 +170,8 @@ _spawn() {
 
 # Free some Docker disk space
 docker.free_space() {
+  green "Pruning all unused images with docker itself..."
+  docker image prune -af
   exited_ps_before=$(docker ps -a -q  -f 'status=exited')
   exited_ps_before_count=$(echo "${exited_ps_before}" | grep -c -v ^$ )
   [ "${exited_ps_before_count}" -gt 0 ] && \
@@ -234,9 +236,16 @@ vim() {
   esac
 }
 
+# Edit files with merge conflicts in workspace
+vim.conflicted() {
+  modified_files=$(git status -s | grep '^\s*UU\s' | sed -E 's/^.*UU //g' | xargs)
+  [ -n "${modified_files}" ] && command vim ${modified_files} \
+    || error "No files with conflicts to edit"
+}
+
 # Edit current modified files in workspace
 vim.modified() {
-  modified_files=$(git status -s | grep -v '^\s*M^' | sed -E 's/^.*M //g' | xargs)
+  modified_files=$(git status -s | grep '^\s*M\s' | sed -E 's/^.*M //g' | xargs)
   [ -n "${modified_files}" ] && command vim ${modified_files} \
     || error "No modified files to edit"
 }
@@ -517,7 +526,7 @@ if command -v fzf >/dev/null ; then
 
   # fzf + preview
   if [ -x $(which bat) ] ; then
-    __FZF_PREVIEW_CMD="--preview 'bat --color=always --style=numbers --line-range=:500 {}'"
+    __FZF_PREVIEW_CMD="--preview 'bat --color=always --style=plain --line-range=:200 {}'"
     alias fzf.preview="fzf ${__FZF_PREVIEW_CMD}"
   fi
 
@@ -529,11 +538,9 @@ if command -v fzf >/dev/null ; then
     #regex="$(eval echo  \$$(($#)))" || regex="."
     [ $# -gt 0 ] && regex=$(echo "$*" | sed -E 's# +#.*#g')
     [ -d "${base_dir}/${regex}" ] && cd "${base_dir}/${regex}" && return
-    if fd --maxdepth 2 --type d . "${base_dir}" | grep -iq "${regex}"  ; then
-      cd "$(fd --maxdepth 2 --type d . "${base_dir}" | grep -i "${regex}" | fzf)"
-    else
-      echo "No results :("
-    fi
+
+    repo="$(fd --maxdepth 2 --type d . "${base_dir}" | grep -i "${regex}" | fzf --preview 'bat --color=always --language=md --style=plain --line-range=:40 {}/README.md')"
+    if [ -z "${repo}" ] ; then error "No results" ; else cd "${repo}" ; fi
   }
 
   _repo() {
@@ -554,30 +561,33 @@ if command -v fzf >/dev/null ; then
   # git greps and offers vim to open a result
   ggrep() {
     [ -z "$1" ] && error "Cannot search nothing...."
-    if git grep "$@" ; then
-      vim +/"$1" $(git grep "$@" | cut -d":" -f1 | sort -u | fzf.preview)
-    else
-      echo "No matches for $*"
-    fi
+    local matches
+
+    matches=$(git grep "$@" | cut -d":" -f1 | sort -u | fzf.preview)
+    [ -z "${matches}" ] && error "No matches for '$*'" && return
+    vim +/"$1" "${matches}"
   }
 
   # git greps and opens all results
   gopen() {
     [ -z "$1" ] && error "Cannot search nothing...."
-    if git grep "$@" ; then
-      vim +/"$1" $(git grep "$*" | cut -d":" -f1)
-    else
-      echo "No matches for $*"
-    fi
+
+    local matches
+
+    matches=$(git grep "$@" | cut -d":" -f1 | sort)
+    [ -z "${matches}" ] && error "No matches for '$*'" && return
+    vim +/"$1" "${matches}"
   }
 
-  # Vim + fzf (an easy alternative is vim **<TAB>)
+  # Vim + fzf
   fim() {
+    local matches
     if [ $# -gt 0 ] ; then
-      vim $(fd --type file $1 | fzf.preview)
+      matches=$(fd --type file "$1" | fzf.preview)
     else
-      vim "$(fzf.preview)"
+      matches="$(fzf.preview)"
     fi
+    [ -n "${matches}" ] && vim "${matches}"
   }
 else
   fzf() {
@@ -661,13 +671,14 @@ release.minor() {
   git perrete
 }
 
-bkp() {
-  file="${1}"
-  [ -f "${file}" ] && \
-    mv "${1}" "${1}.bkp" && \
-    echo "Backed up file into ${1}.bkp"
+file.backup() {
+  for _file in $* ; do
+    [ -f "${_file}" ] && \
+      mv "${_file}" "${_file}.bkp" && \
+      echo "Backed up file into ${_file}.bkp"
+  done
 }
-unbkp() {
+file.unbackup() {
   file="${1}"
   [ -f "${file}" ] && mv ${file} "${file//.bkp}" && echo "Restored ${file//.bkp}"
 }

@@ -9,6 +9,9 @@ export LANG="es_ES.UTF-8"
 # My local binaries path
 export PATH="$HOME/.local/bin:$PATH"
 
+# brew doctor
+export PATH="/usr/local/sbin:$PATH"
+
 # At the very least, colours in MAC
 export CLICOLOR=1
 
@@ -84,4 +87,3 @@ PATH="/usr/local/opt/make/libexec/gnubin:$PATH"
 
 # GIT completion, among others
 is.mac && [[ -r "/usr/local/etc/profile.d/bash_completion.sh" ]] && . "/usr/local/etc/profile.d/bash_completion.sh"
-
