@@ -35,7 +35,7 @@ setup_git() {
   done < .gitconfig
 
   # This is now configured in core.excludesfile
-  touch ~/.gitignore
+  dotfiles_link .gitignore ~/.gitignore
   printf "\n%s\n" "Remember to execute: ${GREENCOLOR_BOLD}git config --global user.email <YOUR_EMAIL>${ENDCOLOR}"
 }
 
