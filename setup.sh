@@ -34,6 +34,8 @@ setup_git() {
     git config --global "$section" "$value"
   done < .gitconfig
 
+  # This is now configured in core.excludesfile
+  touch ~/.gitignore
   printf "\n%s\n" "Remember to execute: ${GREENCOLOR_BOLD}git config --global user.email <YOUR_EMAIL>${ENDCOLOR}"
 }
 

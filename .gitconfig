@@ -8,3 +8,4 @@ alias.diff diff --word-diff
 alias.cp cherry-pick
 alias.unstage reset HEAD --
 alias.last log -1 HEAD
+core.excludesfile ~/.gitignore
