@@ -16,15 +16,15 @@ GREENCOLOR_BOLD=$GREENCOLOR$BOLD
 ENDCOLOR=$(tput sgr0)
 
 green() {
-  printf "%s\n" "${GREENCOLOR_BOLD}$*${ENDCOLOR}"
+  echo -e "${GREENCOLOR_BOLD}$*${ENDCOLOR}\n"
 }
 
 blue() {
-  printf "%s\n" "${BLUECOLOR_BOLD}$*${ENDCOLOR}"
+  echo -e "${BLUECOLOR_BOLD}$*${ENDCOLOR}\n"
 }
 
 red() {
-  printf "%s\n" "${REDCOLOR_BOLD}$*${ENDCOLOR}"
+  echo -e "${REDCOLOR_BOLD}$*${ENDCOLOR}\n"
 }
 
 # enable ansible 2.x
@@ -236,6 +236,17 @@ vim() {
   esac
 }
 
+_vim_branch_diff() {
+  local name="${1:-develop}"
+  branch_files=$(git diff "${name}" --name-only | xargs)
+  [ -n "${branch_files}" ] && command vim ${branch_files} \
+    || error "No changes between current branch and '${name}'"
+}
+
+# Open modified files between current branch and develop or master
+vim.branch_diff.develop() { _vim_branch_diff "develop" ; }
+vim.branch_diff.master() { _vim_branch_diff "master" ; }
+
 # Edit files with merge conflicts in workspace
 vim.conflicted() {
   modified_files=$(git status -s | grep '^\s*UU\s' | sed -E 's/^.*UU //g' | xargs)
@@ -309,13 +320,14 @@ git() {
       git fetch -puta
       ;;
     perrete*)
+      shift; target_branch=${1:-master}
       branch_name=$( _get_branch_name )
       command git push -u origin "${branch_name}"
 
       repo_and_project=($( _get_bb_repo_n_project ))
       project_url=$(printf "${BITBUCKET_REPO}/projects/%s/repos/%s/pull-requests" "${repo_and_project[0]}" "${repo_and_project[1]}")
 
-      url_params=$(printf "create&sourceBranch=refs/heads/%s" "${branch_name}")
+      url_params=$(printf "create&targetBranch=refs/heads/%s&sourceBranch=refs/heads/%s" "${target_branch}" "${branch_name}")
       escaped_params=${url_params//\//%2F}
 
       final_url="${project_url}?${escaped_params}"
@@ -574,9 +586,9 @@ if command -v fzf >/dev/null ; then
 
     local matches
 
-    matches=$(git grep "$@" | cut -d":" -f1 | sort)
+    matches=$(git grep "$@" | cut -d":" -f1 | sort | xargs)
     [ -z "${matches}" ] && error "No matches for '$*'" && return
-    vim +/"$1" "${matches}"
+    vim +/"$1" ${matches}
   }
 
   # Vim + fzf
@@ -618,25 +630,60 @@ _awsume() {
 }
 complete -F _awsume awsume
 
+__pyenv_versions() {
+  pyenv versions --bare --skip-aliases | grep -e '^\s*[23]\.' | cut -d '/' -f1 | sort -u | tr -d ' '
+}
+
+__envrc_assert() {
+  [ -f .envrc ] && error ".envrc file already exists, refusing to overwrite" && return 1
+  return 0
+}
+
+# Enable a Pipenv-powered virtualenv via direnv
+_pipenv_venv_create() {
+  __envrc_assert || return
+  [ ! -x "$(which pipenv)" ] && \
+    error "PipEnv is not installed/available on current path" && return
+
+  cat > .envrc << EOF
+layout pipenv
+unset PS1
+EOF
+  direnv allow
+  echo "[INFO] Successfully created direnv configuration for $(which pipenv)"
+}
+alias envrc.pipenv='_poetry_venv_create'
+
+# Enable a poetry-powered virtualenv via direnv
+_poetry_venv_create() {
+  __envrc_assert || return
+  [ ! -x "$(which poetry)" ] && \
+    error "Poetry is not installed/available on current path" && return
+  cat > .envrc << EOF
+layout poetry
+unset PS1
+EOF
+  direnv allow
+  echo "[INFO] Successfully created direnv configuration for $(which poetry)"
+}
+alias envrc.poetry='_poetry_venv_create'
+
 # Enable a pyenv-powered virtualenv via direnv
 _venv_create() {
+  __envrc_assert || return
   version=$1
-  valid_versions="$(pyenv versions --bare --skip-aliases | grep -e '^\s*[23]\.' | cut -d '/' -f1 | sort -u | tr -d ' ' | xargs)"
-  [ -z "$version" ] && error "No python version specified as parameter. Valid versions: ${valid_versions}" && return
+  valid_versions="$(__pyenv_versions)"
+  [ -z "$version" ] && error "No python version specified as parameter. Valid versions:\n${valid_versions}" && return
   [ -z "$(echo "${valid_versions}" | grep -o "${version}")" ] && \
-    error "No valid Python version specified, choose one of: ${valid_versions}" && return
-
-  ENV_FILE='.envrc'
-  if [ -f "${ENV_FILE}" ] ; then
-    grep -q "pyversion=${version}" "${ENV_FILE}" && \
-      echo "[INFO] ${ENV_FILE} for '${version}' already exists, ignoring..." && return
-    echo "[INFO] Deleting old ${ENV_FILE} file ..." && rm "${ENV_FILE}"
-  fi
+    error "No valid Python version specified, choose one of:\n${valid_versions}" && return
 
   # Allow commands to choose the env name (Ansible commands, for example)
-  pyenv="${2:-\$(basename \$PWD)}"
-  cat > "${ENV_FILE}" << EOF
-pyversion=${version}
+  base_name=$(basename "$(pwd)")
+  pyenv="${2:-${base_name}}"
+
+  pyenv local "${version}"
+  cat > .envrc << EOF
+pyversion=\$(cat .python-version)
 pvenv=${pyenv}
 
 use python \${pyversion}
@@ -648,17 +695,17 @@ EOF
   echo "[INFO] Successfully created virtualenv '${pyenv}' for Python ${version}, autoactivated via direnv"
 }
 
-alias venv.create='_venv_create'
+alias envrc.venv='_venv_create'
 _complete_venv_create() {
     local cur prev opts
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-    opts="$(pyenv versions | grep -e '^\s*[23]\.' | cut -d '/' -f1 | sort -u | tr -d ' ' | grep "${cur}" | fzf)"
+    opts="$(__pyenv_versions)"
     COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
     return 0
 }
-complete -F _complete_venv_create venv.create
+complete -F _complete_venv_create envrc.venv
 
 # proper release procedure with python and bumpversion
 release.minor() {
@@ -672,15 +719,20 @@ release.minor() {
 }
 
 file.backup() {
-  for _file in $* ; do
+  for _file in "$@" ; do
+    [[ "${_file}" == *".bkp" ]] && \
+      error "${_file} is already a .bkp file" && continue
     [ -f "${_file}" ] && \
-      mv "${_file}" "${_file}.bkp" && \
-      echo "Backed up file into ${_file}.bkp"
+      mv "${_file}" "${_file}.bkp" && echo "Backed up file into ${_file}.bkp"
   done
 }
 file.unbackup() {
-  file="${1}"
-  [ -f "${file}" ] && mv ${file} "${file//.bkp}" && echo "Restored ${file//.bkp}"
+  for _file in "$@" ; do
+    [[ "${_file}" != *".bkp" ]] && \
+      error "${_file} is not a .bkp file" && continue
+    [ -f "${_file}" ] && \
+      mv "${_file}" "${_file//.bkp}" && echo "Restored ${_file//.bkp}"
+  done
 }
 
 # DO NOT VERSION THESE THANKS

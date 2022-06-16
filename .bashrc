@@ -36,10 +36,13 @@ export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 export PATH="$HOME/.cargo/bin:$PATH"
 
 # Pyenv goodness
-export PYENV_ROOT=${HOME}/.venvs
-export PATH="${HOME}/.pyenv/bin:$PATH"
+# export PYENV_ROOT=${HOME}/.venvs # pyenv local does not seem to work
+#export PYENV_ROOT=${HOME}/.venvs/shims
+
 eval "$(pyenv init -)"
-eval "$(pyenv virtualenv-init -)"
+if which pyenv-virtualenv-init > /dev/null; then eval "$(pyenv virtualenv-init -)"; fi
+export PATH="${PYENV_ROOT}:${PATH}"
+export PIPENV_PYTHON="$PYENV_ROOT/python"
 
 # Enable bash to cycle through completions (https://superuser.com/a/59198)
 [[ $- = *i* ]] && bind TAB:menu-complete
@@ -80,7 +83,6 @@ eval "$(thefuck --alias)"
 
 # brew install fzf
 [ -f ~/.fzf.bash ] && . ~/.fzf.bash
-export JAVA_HOME="${HOME}/.sdkman/candidates/java/current/"
 
 # To use 'gtools' as normal, i.e make instead of gmake
 PATH="/usr/local/opt/make/libexec/gnubin:$PATH"
