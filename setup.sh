@@ -133,7 +133,7 @@ __install_git_delta() {
   hunk-header-line-number-style = "#067a00"
   hunk-header-style = file line-number syntax
 EOF
-    green "Git 'delta' installed successfully"
+    green "Git 'delta' configured successfully"
 }
 
 __install_bat() {
