@@ -1,6 +1,14 @@
 #!/bin/bash
+
+#set -o errexit
+set -o nounset
+set -o pipefail
+
 # Copies of system files will be kept here
 BACKUP_FOLDER="${HOME}/backup"
+
+# Temporary crap
+PIPFILE_LIST="$(mktemp -d)/piplistfile"
 
 # return the absolute path of a local file
 dotfiles_absolute() {
@@ -23,7 +31,7 @@ dotfiles_link() {
 }
 
 setup_git() {
-  install_git_delta
+  __install_git_delta
   green "Setting up some git defaults..."
   while read -r line ; do
 
@@ -33,9 +41,13 @@ setup_git() {
 
     git config --global "$section" "$value"
   done < .gitconfig
+  dotfiles_link .gitignore ~/.gitignore
+
+  is.mac && \
+    green "Installing Mac git completion" && \
+    brew install git bash-completion
 
   # This is now configured in core.excludesfile
-  dotfiles_link .gitignore ~/.gitignore
   printf "\n%s\n" "Remember to execute: ${GREENCOLOR_BOLD}git config --global user.email <YOUR_EMAIL>${ENDCOLOR}"
 }
 
@@ -53,7 +65,7 @@ setup_vim() {
   vim +PluginInstall +qall
 }
 
-install_git_delta() {
+__install_git_delta() {
   if ! command -v delta >/dev/null ; then
     if is.mac ; then
       brew install git-delta
@@ -90,7 +102,7 @@ EOF
   green "Git 'delta' installed successfully"
 }
 
-install_bat() {
+__install_bat() {
   if command -v bat >/dev/null ;then
     return
   elif is.mac ; then
@@ -104,7 +116,7 @@ install_bat() {
   fi
 }
 
-install_fd() {
+__install_fd() {
   if command -v fd >/dev/null ;then
     return
   elif is.mac ; then
@@ -118,20 +130,20 @@ install_fd() {
   fi
 }
 
-install_pyenv() {
-  if command -v pyenv >/dev/null ;then
-    return
-  elif is.mac ; then
-    brew install pyenv
-    brew install pyenv-virtualenv
-  else
-    curl https://pyenv.run | bash
-    export PATH="${HOME}/.pyenv/bin:$PATH"
-    git clone https://github.com/pyenv/pyenv-virtualenv.git "$(pyenv root)/plugins/pyenv-virtualenv"
+__install_pyenv() {
+  if ! command -v pyenv >/dev/null ; then
+    if is.mac ; then
+      brew install pyenv
+      brew install pyenv-virtualenv
+    else
+      curl https://pyenv.run | bash
+      export PATH="${HOME}/.pyenv/bin:$PATH"
+      git clone https://github.com/pyenv/pyenv-virtualenv.git "$(pyenv root)/plugins/pyenv-virtualenv"
+    fi
   fi
 }
 
-install_fzf() {
+__install_fzf() {
   if ! command -v fzf >/dev/null ; then
     if is.mac ; then
       brew install fzf
@@ -143,12 +155,12 @@ install_fzf() {
       error "Don't know how to install fzf"
     fi
   fi
-  install_fd
-  install_bat
+  __install_fd
+  __install_bat
 }
 
 # batt management
-install_acpi() {
+__install_acpi() {
   if command -v acpi >/dev/null ;then
     return
   elif is.debian ; then
@@ -160,10 +172,11 @@ install_acpi() {
   fi
 }
 
-install_autocompletion() {
+__install_autocompletion() {
   if is.mac ; then
+    [[ -r "/usr/local/etc/profile.d/bash_completion.sh" ]] && \
+      blue "Bash completion already active" && return
     brew install bash-completion
-    return
   elif is.debian ; then
     sudo apt install  bash-completion
   elif is.arch ; then
@@ -173,20 +186,43 @@ install_autocompletion() {
   fi
 }
 
-install_direnv() {
-  if command -v direnv >/dev/null ; then
-    return
-  elif is.mac ;then
-    brew install direnv
-  elif is.debian ; then
-    sudo apt install direnv
-  elif is.arch ; then
-    curl -sfL https://direnv.net/install.sh | bash
-  else
-    error "Don't know how to install direnv"
-    return
+__install_direnv() {
+  if ! command -v direnv >/dev/null ; then
+    if is.mac ;then
+      brew install direnv
+    elif is.debian ; then
+      sudo apt install direnv
+    elif is.arch ; then
+      curl -sfL https://direnv.net/install.sh | bash
+    else
+      error "Don't know how to install direnv"
+      return
+    fi
   fi
-  dotfiles_link direnvrc ~/.direnvrc
+
+  direnv_dir="${HOME}/.config/direnv/"
+  green "Setting up direnv main file in ${direnv_dir}"
+  mkdir -p "${direnv_dir}"
+  dotfiles_link files/direnvrc "${direnv_dir}/.direnvrc"
+}
+
+__install_powerline_shell() {
+  # Powerline package and config
+  grep -q powerline-shell < "${PIPFILE_LIST}" ||
+    pip3 install powerline-shell
+
+  powerline_config_dir="${HOME}/.config/powerline-shell"
+  green "Setting up direnv main file in ${powerline_config_dir}"
+  mkdir -p "${powerline_config_dir}"
+  ln -f files/powerline-shell/* ~/.config/powerline-shell/
+
+  ! is.mac && __install_acpi
+}
+
+__prepare_pip() {
+  green "Updating PIP now..."
+  pip install --upgrade --quiet pip
+  pip list --no-color > "${PIPFILE_LIST}"
 }
 
 setup_dotfiles() {
@@ -194,20 +230,12 @@ setup_dotfiles() {
   touch ~/.bash_profile # in case it does not exist..
   [ "$(grep -c "\. ~/.bashrc" ~/.bash_profile)" -ne 1 ] && cat .bash_profile  >> ~/.bash_profile
 
-  # Install pre-requisites for powerline and pyenv
-  install_fzf
-  install_pyenv
-  install_autocompletion
-  install_direnv
-
-  # Powerline package and config
-  pip3 install powerline-shell
-  mkdir -p "${HOME}/.config"
-  [ ! -d "${HOME}/.config/powerline-shell" ] && \
-    cp -a ./powerline-shell "${HOME}/.config/powerline-shell"
-
-  is.mac && brew install git bash-completion
-  ! is.mac && install_acpi
+  __prepare_pip
+  __install_fzf
+  __install_pyenv
+  __install_autocompletion
+  __install_direnv
+  __install_powerline_shell
 
   dotfiles_link .bashrc ~/.bashrc
   dotfiles_link .bash_local_aliases ~/.bash_local_aliases
@@ -218,9 +246,9 @@ setup_dotfiles() {
   dotfiles_link .fzf.bash ~/.fzf.bash
 
   # shellcheck source=/dev/null
-  . ~/.bash_profile
+  #. ~/.bash_profile
 
-  green "New functions and aliases installed"
+  green "New functions and aliases installed, to start using them type:\nsource ~/.bash_profile\n"
   # blue "type 'my_commands' to check them out!"
 }
 
@@ -268,6 +296,13 @@ setup_binaries() {
   cp -v ./bin/* "${bin_dir}"
   chmod +x "${bin_dir}/"*
 }
+
+__script_ended_handler() {
+  echo "Trhe script has endedn"
+  rm -rf "${PIPFILE_LIST}"
+}
+
+trap "__script_ended_handler" SIGINT
 
 mode=${1:-all}
 case "${mode}" in

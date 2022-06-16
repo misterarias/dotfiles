@@ -1,0 +1,115 @@
+#!/bin/bash
+realpath() {
+    [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+}
+
+layout_pyenv() {
+  unset PYENV_VERSION
+  # Because each python version is prepended to the PATH, add them in reverse order
+  for ((j = $#; j >= 1; j--)); do
+    local python_version=${!j}
+    local pyenv_python=$(pyenv root)/versions/${python_version}/bin/python
+    if [[ ! -x "$pyenv_python" ]]; then
+      log_error "Error: $pyenv_python can't be executed."
+      return 1
+    fi
+
+    unset PYTHONHOME
+    local ve=$($pyenv_python -c "import pkgutil; print('venv' if pkgutil.find_loader('venv') else ('virtualenv' if pkgutil.find_loader('virtualenv') else ''))")
+
+    case $ve in
+      "venv")
+        VIRTUAL_ENV=$(direnv_layout_dir)/python-$python_version
+        export VIRTUAL_ENV
+        if [[ ! -d $VIRTUAL_ENV ]]; then
+          $pyenv_python -m venv "$VIRTUAL_ENV"
+        fi
+        PATH_add "$VIRTUAL_ENV"/bin
+        ;;
+      "virtualenv")
+        layout_python "$pyenv_python"
+        ;;
+      *)
+        log_error "Error: neither venv nor virtualenv are available to ${pyenv_python}."
+        return 1
+        ;;
+    esac
+
+    # e.g. Given "use pyenv 3.6.9 2.7.16", PYENV_VERSION becomes "3.6.9:2.7.16"
+    [[ -z "${PYENV_VERSION-}" ]] && PYENV_VERSION=$python_version || PYENV_VERSION="${python_version}:$PYENV_VERSION"
+  done
+
+  export PYENV_VERSION
+}
+
+# use a certain pyenv version
+use_python() {
+    if [ -n "$(which pyenv)" ]; then
+        local pyversion=$1
+        pyenv local ${pyversion}
+    fi
+}
+
+layout_virtualenv() {
+    local pyversion=$1
+    local pvenv=$2
+    local pvenv_version="${pvenv}-${pyversion}"
+    [ -d "$(pyenv root)/versions/${pvenv_version}" ] && return
+
+    if [ -n "$(which pyenv virtualenv)" ]; then
+        pyenv virtualenv --quiet ${pyversion} ${pvenv_version}
+    fi
+    pyenv local --unset
+}
+
+layout_activate() {
+    [ -n "$(which pyenv)" ] && \
+      source "$(pyenv root)/versions/$1/bin/activate"
+}
+
+layout_poetry() {
+  if [[ ! -f pyproject.toml ]]; then
+    log_error 'No pyproject.toml found. Use `poetry new` or `poetry init` to create one first.'
+    exit 2
+  fi
+
+  # create venv if it doesn't exist
+  poetry run true
+
+  export VIRTUAL_ENV="$(poetry env info --path)"
+  export POETRY_ACTIVE=1
+  PATH_add "$VIRTUAL_ENV/bin"
+}
+
+__get_local_bin_path() {
+  echo "/tmp/.envrc/$(basename "$PWD")/bin"
+}
+
+__validate_local_bin_path() {
+  # create temporary path if it does not exist
+  tmp_bin_path="$(__get_local_bin_path)"
+  mkdir -p "${tmp_bin_path}"
+  [[ "${PATH}" != *"${tmp_bin_path}"* ]] && \
+    PATH_add "${tmp_bin_path}"
+}
+
+__add_fun_to_local_path() {
+
+  __validate_local_bin_path
+  tmp_bin_path="$(__get_local_bin_path)"
+  fun_name="${tmp_bin_path}/${1}" ; shift
+  fun_code="$*"
+
+  cat > "${fun_name}" <<EOF
+#!/bin/bash
+${fun_code}
+EOF
+  chmod +x "${fun_name}"
+}
+
+define() {
+  fun_name=$1 ;shift
+  fun_code="$*"
+  __add_fun_to_local_path "${fun_name}" "${fun_code}"
+  echo "Successfully defined session command: $(basename "${fun_name}")"
+}

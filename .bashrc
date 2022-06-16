@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
 # vi: ft=sh ts=2 sw=2
 # shellcheck source=/dev/null
+
+# Nice defaults
+export PS1="$ "
+export PROMPT_COMMAND=
+
 [ -f ~/.bash_local_aliases ] && . ~/.bash_local_aliases
+
+# DO NOT VERSION THIS!!! THANKS
+[ -f ~/.bash_private_vars ] && source ~/.bash_private_vars
 
 # Locale select
 export LANG="es_ES.UTF-8"
@@ -19,7 +27,7 @@ export CLICOLOR=1
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 export LESS="--RAW-CONTROL-CHARS"
 
-# DDAMNDED WARNING
+# DAMNDED WARNING
 export BASH_SILENCE_DEPRECATION_WARNING=1
 
 # I want cores
@@ -36,13 +44,11 @@ export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 export PATH="$HOME/.cargo/bin:$PATH"
 
 # Pyenv goodness
-# export PYENV_ROOT=${HOME}/.venvs # pyenv local does not seem to work
 #export PYENV_ROOT=${HOME}/.venvs/shims
-
-eval "$(pyenv init -)"
-if which pyenv-virtualenv-init > /dev/null; then eval "$(pyenv virtualenv-init -)"; fi
-export PATH="${PYENV_ROOT}:${PATH}"
-export PIPENV_PYTHON="$PYENV_ROOT/python"
+command -v pyenv > /dev/null && eval "$(pyenv init -)"
+command -v pyenv-virtualenv-init > /dev/null && eval "$(pyenv virtualenv-init -)"
+#export PATH="${PYENV_ROOT}:${PATH}"
+#export PIPENV_PYTHON="$PYENV_ROOT/python"
 
 # Enable bash to cycle through completions (https://superuser.com/a/59198)
 [[ $- = *i* ]] && bind TAB:menu-complete

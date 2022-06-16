@@ -9,3 +9,16 @@ alias.cp cherry-pick
 alias.unstage reset HEAD --
 alias.last log -1 HEAD
 core.excludesfile ~/.gitignore
+alias.posh "! git push -u origin $(git symbolic-ref HEAD --short)"
+alias.fush "! git push -f"
+alias.chkb "! git checkout -b"
+alias.rbm "! git rebase -i origin/master"
+alias.rbd "!git rebase -i origin/develop"
+alias.br "!git for-each-ref --count=50 --sort=-committerdate --format='%(refname:short) - %(contents:subject) - %(authorname) (%(color:green)%(committerdate:relative)%(color:reset))'"
+alias.brs "!git for-each-ref --count=50 --sort=-committerdate --format='%(refname:short)' | grep -v origin"
+alias.co "!git checkout $(git brs | fzf --preview 'git log --color {}')"
+alias.sync "!git fetch origin && git remote prune origin && :"
+alias.stat "!git diff --stat $(git merge-base HEAD \"${REVIEW_BASE:-develop}\")"
+alias.statp "!git diff --patch --stat $(git merge-base HEAD \"${REVIEW_BASE:-develop}\")"
+alias.modified "!git status --short | grep '^ M' | cut -d' ' -f3- | xargs"
+

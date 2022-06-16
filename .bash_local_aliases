@@ -16,15 +16,15 @@ GREENCOLOR_BOLD=$GREENCOLOR$BOLD
 ENDCOLOR=$(tput sgr0)
 
 green() {
-  echo -e "${GREENCOLOR_BOLD}$*${ENDCOLOR}\n"
+  echo -e "${GREENCOLOR_BOLD}$*${ENDCOLOR}"
 }
 
 blue() {
-  echo -e "${BLUECOLOR_BOLD}$*${ENDCOLOR}\n"
+  echo -e "${BLUECOLOR_BOLD}$*${ENDCOLOR}"
 }
 
 red() {
-  echo -e "${REDCOLOR_BOLD}$*${ENDCOLOR}\n"
+  echo -e "${REDCOLOR_BOLD}$*${ENDCOLOR}"
 }
 
 # enable ansible 2.x
@@ -734,6 +734,3 @@ file.unbackup() {
       mv "${_file}" "${_file//.bkp}" && echo "Restored ${_file//.bkp}"
   done
 }
-
-# DO NOT VERSION THESE THANKS
-[ -f ~/.bash_private_vars ] && source ~/.bash_private_vars
