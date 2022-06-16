@@ -84,12 +84,6 @@ fi
 # This introduces the SIGINT trap error: eval "$(direnv hook bash)"
 [ -f "${HOME}/.ghcup/env" ] && . "${HOME}/.ghcup/env" # ghcup-env
 
-# brew install fuck
-eval "$(thefuck --alias)"
-
-# brew install fzf
-[ -f ~/.fzf.bash ] && . ~/.fzf.bash
-
 # To use 'gtools' as normal, i.e make instead of gmake
 PATH="/usr/local/opt/make/libexec/gnubin:$PATH"
 

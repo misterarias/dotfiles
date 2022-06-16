@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#set -o errexit
+set -o errexit
 set -o nounset
 set -o pipefail
 
@@ -30,39 +30,70 @@ dotfiles_link() {
   ln -sf "$local_dotfile" "$system_dotfile"
 }
 
+__install_git() {
+  # ¿ubuntu not likey? if command -v git > /dev/null ; then
+  if [ -n "$(which git)" ] ; then
+    return
+  elif is.mac ; then
+    brew install git;
+  elif is.debian ; then
+    sudo apt install -y git
+  elif is.arch ; then
+    sudo pacman -S --noconfirm  git
+  else
+    error "Don't know how to install 'git'"
+  fi
+}
+
 setup_git() {
+  __install_git
   __install_git_delta
+  __install_autocompletion
+
   green "Setting up some git defaults..."
   while read -r line ; do
-
-    blue "$line"
     section=$(echo "$line" | cut -d" " -f1)
     value=$(echo "$line" | cut -d" " -f2-)
 
     git config --global "$section" "$value"
   done < .gitconfig
-  dotfiles_link .gitignore ~/.gitignore
-
-  is.mac && \
-    green "Installing Mac git completion" && \
-    brew install git bash-completion
 
   # This is now configured in core.excludesfile
-  printf "\n%s\n" "Remember to execute: ${GREENCOLOR_BOLD}git config --global user.email <YOUR_EMAIL>${ENDCOLOR}"
+  dotfiles_link .gitignore ~/.gitignore
+
+  green "Remember to execute: ${GREENCOLOR_BOLD}git config --global user.email <YOUR_EMAIL>${ENDCOLOR}"
 }
 
 setup_vim() {
-  ! command -v vim > /dev/null &&
-    red "You don't have VIM installed.... you suck" && return
+  if [ -z "$(which vim)" ] ; then
+    if is.mac ; then
+      brew install vim;
+    elif is.debian ; then
+      sudo apt install -y vim
+    elif is.arch ; then
+      sudo pacman -S --noconfirm  vim
+    else
+      error "Don't know how to install 'vim'"
+    fi
+  fi
 
-  VIMDIR=~/.vim
+  VIMDIR="${HOME}/.vim"
   green "Setting up VIM in ${VIMDIR}..."
-  rm -rf "${VIMDIR}/bundle"
   mkdir -p "${VIMDIR}/tmp" "${VIMDIR}/backup" "${VIMDIR}/colors" > /dev/null 2>&1
   cp .vim/colors/monokai.vim "${VIMDIR}/colors/"
-  git clone https://github.com/gmarik/Vundle.vim ${VIMDIR}/bundle/Vundle.vim
   dotfiles_link .vimrc ~/.vimrc
-  vim +PluginInstall +qall
+
+  __install_git
+  vim_bundle_root="${VIMDIR}/bundle/Vundle.vim"
+  if [ ! -d "${vim_bundle_root}" ] ; then
+    rm -rf "${vim_bundle_root}"
+    git clone https://github.com/gmarik/Vundle.vim "${vim_bundle_root}"
+    vim +PluginInstall +qall
+    green "VIM Bundles installed"
+  else
+    vim +PluginUpdate +PluginClean +qall
+    green "VIM Bundles updated"
+  fi
 }
 
 __install_git_delta() {
@@ -70,36 +101,39 @@ __install_git_delta() {
     if is.mac ; then
       brew install git-delta
      elif is.debian ; then
-      sudo apt install -y git-delta
+       # Fuck U Ubuntu....
+       curl -kL -o delta.deb https://github.com/dandavison/delta/releases/download/0.13.0/git-delta-musl_0.13.0_amd64.deb
+       dpkg -i delta.deb && rm delta.deb
     elif is.arch ; then
       sudo pacman -S --noconfirm  git-delta
     else
       error "Don't know how to install delta"
     fi
+  else
+    blue "Not reinstalling git-delta"
   fi
-  git config --global core.pager delta
 
+  git config --global core.pager delta
   ! grep -q '[delta "interactive"]' ~/.gitconfig && cat >> ~/.gitconfig <<EOF
 [interactive]
-    diffFilter = delta --color-only --features=interactive
+  diffFilter = delta --color-only --features=interactive
 
 [delta]
-    features = decorations
+  features = decorations
 
 [delta "interactive"]
-    keep-plus-minus-markers = false
+  keep-plus-minus-markers = false
 
 [delta "decorations"]
-    commit-decoration-style = blue ol
-    commit-style = raw
-    file-style = omit
-    hunk-header-decoration-style = blue box
-    hunk-header-file-style = red
-    hunk-header-line-number-style = "#067a00"
-    hunk-header-style = file line-number syntax
+  commit-decoration-style = blue ol
+  commit-style = raw
+  file-style = omit
+  hunk-header-decoration-style = blue box
+  hunk-header-file-style = red
+  hunk-header-line-number-style = "#067a00"
+  hunk-header-style = file line-number syntax
 EOF
-
-  green "Git 'delta' installed successfully"
+    green "Git 'delta' installed successfully"
 }
 
 __install_bat() {
@@ -109,6 +143,9 @@ __install_bat() {
     brew install bat
    elif is.debian ; then
     sudo apt install -y bat
+    # Due to Ubuntu installing this as batcat instead
+    mkdir -p ~/.local/bin
+    ln -sf "$(which batcat)" ~/.local/bin/bat
   elif is.arch ; then
     sudo pacman -S --noconfirm  bat
   else
@@ -116,8 +153,22 @@ __install_bat() {
   fi
 }
 
+__install_curl() {
+  if command -v curl >/dev/null ;then
+    return
+  elif is.mac ; then
+    brew install curl
+   elif is.debian ; then
+    sudo apt install -y curl
+  elif is.arch ; then
+    sudo pacman -S --noconfirm curl
+  else
+    error "Don't know how to install curl"
+  fi
+}
+
 __install_fd() {
-  if command -v fd >/dev/null ;then
+  if command -v fd >/dev/null ; then
     return
   elif is.mac ; then
     brew install fd
@@ -128,17 +179,29 @@ __install_fd() {
   else
     error "Don't know how to install fd"
   fi
+
+  if command -v fdfind > /dev/null ; then
+    mkdir -p ~/.local/bin
+    ln -sf "$(which fdfind)" ~/.local/bin/fd
+  fi
 }
 
 __install_pyenv() {
   if ! command -v pyenv >/dev/null ; then
+    __install_git
+
     if is.mac ; then
       brew install pyenv
       brew install pyenv-virtualenv
     else
-      curl https://pyenv.run | bash
+      __install_curl
+      rm -rf "${HOME}/.pyenv"
+      curl -qsfL https://pyenv.run | bash
       export PATH="${HOME}/.pyenv/bin:$PATH"
-      git clone https://github.com/pyenv/pyenv-virtualenv.git "$(pyenv root)/plugins/pyenv-virtualenv"
+
+      pyenv_virtualenv_root="$(pyenv root)/plugins/pyenv-virtualenv"
+      rm -rf "${pyenv_virtualenv_root}"
+      git clone -q https://github.com/pyenv/pyenv-virtualenv.git "${pyenv_virtualenv_root}"
     fi
   fi
 }
@@ -178,9 +241,11 @@ __install_autocompletion() {
       blue "Bash completion already active" && return
     brew install bash-completion
   elif is.debian ; then
-    sudo apt install  bash-completion
+    if [[ -r "/etc/profile.d/bash_completion.sh" ]] ; then
+      sudo apt install  bash-completion
+    fi
   elif is.arch ; then
-    sudo pacman -S bash-completion
+    sudo pacman -S --noconfirm bash-completion
   else
     error "Don't know how to install bash completion"
   fi
@@ -193,7 +258,8 @@ __install_direnv() {
     elif is.debian ; then
       sudo apt install direnv
     elif is.arch ; then
-      curl -sfL https://direnv.net/install.sh | bash
+      __install_curl
+      curl -qsfL https://direnv.net/install.sh | bash
     else
       error "Don't know how to install direnv"
       return
@@ -214,12 +280,30 @@ __install_powerline_shell() {
   powerline_config_dir="${HOME}/.config/powerline-shell"
   green "Setting up direnv main file in ${powerline_config_dir}"
   mkdir -p "${powerline_config_dir}"
-  ln -f files/powerline-shell/* ~/.config/powerline-shell/
+  ln -sf files/powerline-shell/* ~/.config/powerline-shell/
 
   ! is.mac && __install_acpi
 }
 
+__install_python() {
+  if command -v python3 > /dev/null && command -v pip > /dev/null ; then
+    blue "Not reinstalling python3 and PIP" && return
+  fi
+
+  if is.mac ; then
+    brew install python@3 pip
+  elif is.debian ; then
+    sudo apt install -y python3 pip
+  elif is.arch ; then
+    sudo pacman -S --noconfirm python3 python-pip
+  else
+    error "Don't know how to install 'git'"
+  fi
+}
+
 __prepare_pip() {
+  __install_python
+
   green "Updating PIP now..."
   pip install --upgrade --quiet pip
   pip list --no-color > "${PIPFILE_LIST}"
@@ -253,32 +337,29 @@ setup_dotfiles() {
 }
 
 setup_ruby() {
-  [ ! -f ~/.irbrc ] && return
   green "Setting up some Ruby defaults..."
-  ! grep -q 'irb/completion' ~/.irbrc && \
+  if ! grep -q 'irb/completion' ~/.irbrc ; then
     echo "require 'irb/completion'" >> ~/.irbrc
+  fi
 }
 
 setup_postgres() {
-  [ ! -f ~/.psqlrc ] && return
   green "Setting up some PostgreSQL defaults..."
   dotfiles_link .psqlrc ~/.psqlrc
 }
 
 setup_configs() {
-  command -v terminator >/dev/null  && \
+  if command -v terminator >/dev/null ; then
     green "Setting my terminator config..." && \
     mkdir -p "$HOME/.config/terminator" && \
     dotfiles_link .config/terminator/config "$HOME/.config/terminator/config"
+  fi
 }
 
-# Lots of fancy functions here:
-# shellcheck source=/dev/null
-source .bash_local_aliases
 
 setup_all() {
-  setup_vim
   setup_dotfiles
+  setup_vim
   setup_git
   setup_postgres
   setup_ruby
@@ -297,40 +378,62 @@ setup_binaries() {
   chmod +x "${bin_dir}/"*
 }
 
-__script_ended_handler() {
-  echo "Trhe script has endedn"
-  rm -rf "${PIPFILE_LIST}"
+help() {
+  blue "setup.sh"
+  echo "One-time, not-interactive setup for optimal CLI - by Juan Arias"
+  echo ; echo "Args:"
+  echo "* [no args] - Default option, installs everything in one go"
+  echo "* vim       - installs my .vimrc file and most useful Plugins using Vundle (requires vim)"
+  echo "* dotfiles  - installs my .bash* files, including Prompt and Aliases"
+  echo "* git       - Some useful git aliases"
+  echo "* postgres  - Basically a simple .psqlrc file"
+  echo "* ruby      - Small improvement over default irb config"
+  echo "* configs   - For now, only some terminator tweaks (requires Linux && terminator)"
+  echo "* binaries  - Installs some useful binaries for everyday use"
+  echo "* test      - Runs locally installed test-battery"
+  echo "* help      - this message"
+  echo && exit 0
 }
 
-trap "__script_ended_handler" SIGINT
+__prerequisites() {
+  if is.mac ; then
+    if ! command -v brew > /dev/null ; then
+      error "Brew needs to be installed" && exit 1
+    fi
+  elif is.arch ; then
+    if ! command -v sudo > /dev/null || ! command -v which > /dev/null ; then
+      error "sudo and which need to be installed" && exit 1
+    fi
+  elif is.debian ; then
+    if ! command -v sudo > /dev/null || ! command -v which > /dev/null ; then
+      error "sudo and which need to be installed" && exit 1
+    fi
+  fi
+}
 
-mode=${1:-all}
-case "${mode}" in
-  all)      setup_all ;;
-  vim)      setup_vim ;;
-  dotfiles) setup_dotfiles ;;
-  git)      setup_git ;;
-  postgres) setup_postgres ;;
-  ruby)     setup_ruby ;;
-  configs)  setup_configs ;;
-  binaries) setup_binaries ;;
-  test)     run_tests;;
-  help|*)
-    blue "setup.sh"
-    echo "One-time, not-interactive setup for optimal CLI - by Juan Arias"
-    echo ; echo "Args:"
-    echo "* [no args] - Default option, installs everything in one go"
-    echo "* vim       - installs my .vimrc file and most useful Plugins using Vundle (requires vim)"
-    echo "* dotfiles  - installs my .bash* files, including Prompt and Aliases"
-    echo "* git       - Some useful git aliases"
-    echo "* postgres  - Basically a simple .psqlrc file"
-    echo "* ruby      - Small improvement over default irb config"
-    echo "* configs   - For now, only some terminator tweaks (requires Linux && terminator)"
-    echo "* binaries  - Installs some useful binaries for everyday use"
-    echo "* test      - Runs locally installed test-battery"
-    echo "* help      - this message"
-    echo && exit 0
-    ;;
-esac
 
-green "Everything is done, enjoy!"
+setup() {
+  # Lots of fancy functions here:
+  # shellcheck source=/dev/null
+  source .bash_local_aliases
+
+  __prerequisites
+
+  case "${1}" in
+    all)      setup_all ;;
+    vim)      setup_vim ;;
+    dotfiles) setup_dotfiles ;;
+    git)      setup_git ;;
+    postgres) setup_postgres ;;
+    ruby)     setup_ruby ;;
+    configs)  setup_configs ;;
+    binaries) setup_binaries ;;
+    test)     run_tests;;
+    help|*)   help ;;
+  esac
+
+  green "Everything is done, enjoy!"
+}
+
+mode="${1:-all}"
+setup "${mode}"

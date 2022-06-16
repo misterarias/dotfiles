@@ -525,21 +525,17 @@ newtabi(){
 # curl + jq in one
 jcurl() { curl -s -H 'Accept: application/json' "$@" | jq ; }
 
-# NEW FZF GOODNESS
-command -v fdfind >/dev/null && \
-  alias fd=fdfind
-
 if command -v fzf >/dev/null ; then
-  source ~/.fzf.bash
+
+  source ~/.fzf.bash || true
 
   # FZF Custom vars and functions
   export FZF_DEFAULT_OPTS="--layout=reverse --inline-info --height 40%"
   export FZF_DEFAULT_COMMAND='fd --type f'
 
   # fzf + preview
-  if [ -x $(which bat) ] ; then
-    __FZF_PREVIEW_CMD="--preview 'bat --color=always --style=plain --line-range=:200 {}'"
-    alias fzf.preview="fzf ${__FZF_PREVIEW_CMD}"
+  if [ -x "$(which bat)" ] ; then
+    alias fzf.preview="fzf --preview 'bat --color=always --style=plain --line-range=:200 {}'"
   fi
 
   # Automagically autocomplete repo names and 'cd' into them. Needs a proper base repo dir. Depends on fzf and fd
@@ -601,18 +597,6 @@ if command -v fzf >/dev/null ; then
     fi
     [ -n "${matches}" ] && vim "${matches}"
   }
-else
-  fzf() {
-  cat << EOF
-  'fzf' command not found: it is very useful and I need it.
-  Please install fzf and suggested additions:
-
-  * fzf:  https://github.com/junegunn/fzf
-  * fd:   https://github.com/sharkdp/fd
-  * bat:  https://github.com/sharkdp/bat
-EOF
-  }
-  fzf
 fi
 
 # Alias for awsume

@@ -21,4 +21,3 @@ alias.sync "!git fetch origin && git remote prune origin && :"
 alias.stat "!git diff --stat $(git merge-base HEAD \"${REVIEW_BASE:-develop}\")"
 alias.statp "!git diff --patch --stat $(git merge-base HEAD \"${REVIEW_BASE:-develop}\")"
 alias.modified "!git status --short | grep '^ M' | cut -d' ' -f3- | xargs"
-
