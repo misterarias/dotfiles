@@ -36,11 +36,10 @@ Plugin 'vim-airline/vim-airline'
 Plugin 'vim-airline/vim-airline-themes'
 " GIT integration
 " Plugin 'tpope/vim-fugitive'
-" YouCompleteMe
-"Plugin 'ycm-core/YouCompleteMe'
 "Plugin 'davidhalter/jedi-vim'
 Plugin 'martinda/Jenkinsfile-vim-syntax.git'
 Plugin 'alfredodeza/coveragepy.vim'
+Plugin 'rust-lang/rust.vim'
 
 
 " All of your Plugins must be added before the following line

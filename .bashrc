@@ -40,9 +40,6 @@ export PSQL_EDITOR='vim -c"set syntax=sql"'
 # Pycharm bug when using gevent
 export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 
-# Rust Package manager
-export PATH="$HOME/.cargo/bin:$PATH"
-
 # Pyenv goodness
 #export PYENV_ROOT=${HOME}/.venvs/shims
 command -v pyenv > /dev/null && eval "$(pyenv init -)"
@@ -89,3 +86,9 @@ PATH="/usr/local/opt/make/libexec/gnubin:$PATH"
 
 # GIT completion, among others
 is.mac && [[ -r "/usr/local/etc/profile.d/bash_completion.sh" ]] && . "/usr/local/etc/profile.d/bash_completion.sh"
+
+# Rust Package manager + env
+if [ -d "${HOME}/.cargo" ] ; then
+  export PATH="$HOME/.cargo/bin:$PATH"
+  . "$HOME/.cargo/env"
+fi
