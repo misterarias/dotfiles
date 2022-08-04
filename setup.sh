@@ -5,28 +5,30 @@ set -o nounset
 set -o pipefail
 
 # Copies of system files will be kept here
-BACKUP_FOLDER="${HOME}/backup"
+BACKUP_FOLDER="${HOME}/.backup"
+[ ! -d "$BACKUP_FOLDER" ] && mkdir -p "$BACKUP_FOLDER"
 
 # Temporary crap
 PIPFILE_LIST="$(mktemp -d)/piplistfile"
 
 # return the absolute path of a local file
-dotfiles_absolute() {
+abspath() {
   local file=$1
   echo "$(cd "$(dirname "$file")" && pwd)/$(basename "$file")"
 }
 
 # Easily choose the link method between a symbolic link or a copy
 dotfiles_link() {
-  local local_dotfile system_dotfile
-  local_dotfile=$(dotfiles_absolute "$1")
-  system_dotfile="$2"
-
-  [ ! -d "$BACKUP_FOLDER" ] && mkdir -p "$BACKUP_FOLDER"
+  local_dotfile="$(abspath "$1")"
+  system_dotfile="$(abspath "$2")"
+  system_dotfile_dir="$(dirname "${system_dotfile}")"
+  [ ! -d "${system_dotfile_dir}" ] && \
+    mkdir -p "${system_dotfile_dir}"
 
   # save a copy of the system file, if it is not a link already
-  readlink "$system_dotfile" >/dev/null && \
-    mv "$system_dotfile" "$BACKUP_FOLDER" > /dev/null 2>&1
+  if readlink "$system_dotfile" >/dev/null ; then
+    mv "$system_dotfile" "$BACKUP_FOLDER" > /dev/null 2>&1 || true
+  fi
   ln -sf "$local_dotfile" "$system_dotfile"
 }
 
@@ -268,7 +270,6 @@ __install_direnv() {
 
   direnv_dir="${HOME}/.config/direnv/"
   green "Setting up direnv main file in ${direnv_dir}"
-  mkdir -p "${direnv_dir}"
   dotfiles_link files/direnvrc "${direnv_dir}/.direnvrc"
 }
 
@@ -279,10 +280,9 @@ __install_powerline_shell() {
 
   powerline_config_dir="${HOME}/.config/powerline-shell"
   green "Setting up direnv main file in ${powerline_config_dir}"
-  mkdir -p "${powerline_config_dir}"
-  ln -sf files/powerline-shell/* ~/.config/powerline-shell/
+  dotfiles_link files/powerline-shell/config.json "${powerline_config_dir}/config.json"
 
-  ! is.mac && __install_acpi
+  if ! is.mac ; then  __install_acpi ; fi
 }
 
 __install_python() {
@@ -351,7 +351,6 @@ setup_postgres() {
 setup_configs() {
   if command -v terminator >/dev/null ; then
     green "Setting my terminator config..." && \
-    mkdir -p "$HOME/.config/terminator" && \
     dotfiles_link .config/terminator/config "$HOME/.config/terminator/config"
   fi
 }
