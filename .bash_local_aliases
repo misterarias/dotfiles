@@ -571,7 +571,7 @@ if command -v fzf >/dev/null ; then
     [ -z "$1" ] && error "Cannot search nothing...."
     local matches
 
-    matches=$(git grep "$@" | cut -d":" -f1 | sort -u | fzf.preview)
+    matches=$(git grep -i "$@" | cut -d":" -f1 | sort -u | fzf.preview)
     [ -z "${matches}" ] && error "No matches for '$*'" && return
     vim +/"$1" "${matches}"
   }
@@ -582,7 +582,7 @@ if command -v fzf >/dev/null ; then
 
     local matches
 
-    matches=$(git grep "$@" | cut -d":" -f1 | sort | xargs)
+    matches=$(git grep -i "$@" | cut -d":" -f1 | sort | xargs)
     [ -z "${matches}" ] && error "No matches for '$*'" && return
     vim +/"$1" ${matches}
   }
