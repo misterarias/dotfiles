@@ -2,6 +2,9 @@
 # vi: ft=sh ts=2 sw=2
 # shellcheck source=/dev/null
 
+# Set default shell mode to VIM, fuck emacs
+set -o vi
+
 # Nice defaults
 export PS1="$ "
 export PROMPT_COMMAND=
