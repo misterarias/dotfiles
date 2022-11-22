@@ -20,10 +20,10 @@ abspath() {
 # Easily choose the link method between a symbolic link or a copy
 dotfiles_link() {
   local_dotfile="$(abspath "$1")"
-  system_dotfile="$(abspath "$2")"
-  system_dotfile_dir="$(dirname "${system_dotfile}")"
+  system_dotfile_dir="$(dirname "$2")"
   [ ! -d "${system_dotfile_dir}" ] && \
     mkdir -p "${system_dotfile_dir}"
+  system_dotfile="$(abspath "$2")"
 
   # save a copy of the system file, if it is not a link already
   if readlink "$system_dotfile" >/dev/null ; then
@@ -279,8 +279,10 @@ __install_powerline_shell() {
     pip3 install powerline-shell
 
   powerline_config_dir="${HOME}/.config/powerline-shell"
-  green "Setting up direnv main file in ${powerline_config_dir}"
-  dotfiles_link files/powerline-shell/config.json "${powerline_config_dir}/config.json"
+  green "Setting up direnv main files in ${powerline_config_dir}"
+  for local_file in $(ls files/powerline-shell) ; do
+    dotfiles_link "files/powerline-shell/${local_file}" "${powerline_config_dir}/${local_file}"
+  done
 
   if ! is.mac ; then  __install_acpi ; fi
 }
