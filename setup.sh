@@ -105,7 +105,7 @@ __install_git_delta() {
      elif is.debian ; then
        # Fuck U Ubuntu....
        curl -kL -o delta.deb https://github.com/dandavison/delta/releases/download/0.13.0/git-delta-musl_0.13.0_amd64.deb
-       dpkg -i delta.deb && rm delta.deb
+       sudo dpkg -i delta.deb && rm delta.deb
     elif is.arch ; then
       sudo pacman -S --noconfirm  git-delta
     else
