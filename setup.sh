@@ -197,9 +197,14 @@ __install_pyenv() {
       brew install pyenv-virtualenv
     else
       __install_curl
+      # actually, all the recommended dependencies for building python
+      apt install build-essential libssl-dev zlib1g-dev \
+        libbz2-dev libreadline-dev libsqlite3-dev curl \
+        libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
       rm -rf "${HOME}/.pyenv"
       curl -qsfL https://pyenv.run | bash
       export PATH="${HOME}/.pyenv/bin:$PATH"
+      echo 'export PATH="${HOME}/.pyenv/bin:$PATH"' >> ~/.bashrc
 
       pyenv_virtualenv_root="$(pyenv root)/plugins/pyenv-virtualenv"
       rm -rf "${pyenv_virtualenv_root}"
