@@ -13,7 +13,7 @@ call vundle#begin()
 Plugin 'VundleVim/Vundle.vim'
 
 Plugin 'scrooloose/syntastic'
-Plugin 'Shougo/neocomplcache.vim'
+"Plugin 'Shougo/neocomplcache.vim'
 Plugin 'kien/ctrlp.vim'
 Plugin 'vim-scripts/bufkill.vim'
 Plugin 'vim-scripts/dbext.vim'
@@ -40,6 +40,8 @@ Plugin 'vim-airline/vim-airline-themes'
 Plugin 'martinda/Jenkinsfile-vim-syntax.git'
 Plugin 'alfredodeza/coveragepy.vim'
 Plugin 'rust-lang/rust.vim'
+Plugin 'speshak/vim-cfn'
+
 
 
 " All of your Plugins must be added before the following line
@@ -47,7 +49,7 @@ call vundle#end()            " required
 filetype plugin indent on    " required
 
 " test stuff
-au BufNewFile,BufRead *.json setl foldmethod=syntax
+"au BufNewFile,BufRead *.json setl foldmethod=syntax
 
 set encoding=utf8
 
@@ -74,6 +76,7 @@ au BufNewFile,BufRead *.psql.tmpl set filetype=sql
 
 " Custom formats
 au BufNewFile,BufRead *Jenkinsfile set filetype=groovy
+au BufNewFile,BufRead *.cf.yml set filetype=cloudformation
 
 " Set to auto read when a file is changed from the outside
 set autoread
@@ -199,7 +202,7 @@ func! DeleteTrailingWS()
   %s/\s\+$//ge
   exe "normal `z"
 endfunc
-autocmd BufWrite * :call DeleteTrailingWS()
+"autocmd BufWrite * :call DeleteTrailingWS()
 
 " Remove the Windows ^M - when the encodings gets messed up
 noremap <Leader>m mmHmt:%s/<C-V><cr>//ge<cr>'tzt'm
@@ -247,6 +250,8 @@ let g:syntastic_error_symbol = "🔥"
 let g:syntastic_warning_symbol = "🌧 "
 let g:syntastic_style_error_symbol = "🔥"
 let g:syntastic_style_warning_symbol = "🌧 "
+let g:syntastic_cloudformation_checkers = ['cfn_lint']
+
 
 " Completion stuff
 let g:neocomplcache_enable_at_startup=1
@@ -323,7 +328,7 @@ let g:ansible_unindent_after_newline=1
 let g:ctrlp_cmd = 'CtrlP'
 let g:ctrlp_mruf_case_sensitive = 1
 let g:ctrlp_show_hidden = 0
-let g:ctrlp_custom_ignore = '\v[\/](node_modules|build|\.(git|hg|svn))$'
+let g:ctrlp_custom_ignore = '\v[\/](node_modules|build|target|out|\.(git|hg|svn))$'
 
 " Open file in chrome
 nmap <silent> <leader>gc :!/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome %<CR>
