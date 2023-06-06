@@ -3,50 +3,58 @@ set nocompatible              " be iMproved, required
 " clear all weird mappings before loading
 mapclear
 
-filetype off                  " required
+let data_dir = has('nvim') ? stdpath('data') . '/site' : '~/.vim'
+if empty(glob(data_dir . '/autoload/plug.vim'))
+  silent execute '!curl -fLo '.data_dir.'/autoload/plug.vim --create-dirs  https://raw.githubusercontent.com/junegunn/vim-plug/master/plug.vim'
+  autocmd VimEnter * PlugInstall --sync | source $MYVIMRC
+endif
 
-" set the runtime path to include Vundle and initialize
-set rtp+=~/.vim/bundle/Vundle.vim
-call vundle#begin()
+call plug#begin('~/.vim/bundle')
 
-" let Vundle manage Vundle, required
-Plugin 'VundleVim/Vundle.vim'
+" Install your UIs
+Plug 'Shougo/ddc-ui-native'
 
-Plugin 'scrooloose/syntastic'
-"Plugin 'Shougo/neocomplcache.vim'
-Plugin 'kien/ctrlp.vim'
-Plugin 'vim-scripts/bufkill.vim'
-Plugin 'vim-scripts/dbext.vim'
-"Plugin 'derekwyatt/vim-scala'
-"Plugin 'git://git.code.sf.net/p/vim-latex/vim-latex'
-"Plugin 'othree/html5.vim'
-Plugin 'scrooloose/nerdtree' | Plugin 'Xuyuanp/nerdtree-git-plugin'
+" Install your sources
+Plug 'Shougo/ddc-source-around'
+
+" Install your filters
+Plug 'Shougo/ddc-matcher_head'
+Plug 'Shougo/ddc-sorter_rank'
+
+Plug 'junegunn/vim-plug'
+Plug 'scrooloose/syntastic'
+Plug 'Shougo/ddc.vim'
+Plug 'vim-denops/denops.vim'
+Plug 'kien/ctrlp.vim'
+Plug 'vim-scripts/bufkill.vim'
+Plug 'vim-scripts/dbext.vim'
+"Plug 'derekwyatt/vim-scala'
+"Plug 'git://git.code.sf.net/p/vim-latex/vim-latex'
+"Plug 'othree/html5.vim'
+Plug 'scrooloose/nerdtree' | Plug 'Xuyuanp/nerdtree-git-plugin'
 " TO work with React this two are useful
-"Plugin 'pangloss/vim-javascript'
-"Plugin 'mxw/vim-jsx'
-Plugin 'sheerun/vim-polyglot'
-Plugin 'pearofducks/ansible-vim'
+"Plug 'pangloss/vim-javascript'
+"Plug 'mxw/vim-jsx'
+Plug 'sheerun/vim-polyglot'
+Plug 'pearofducks/ansible-vim'
 " Write environment
-"Plugin 'junegunn/goyo.vim'
+"Plug 'junegunn/goyo.vim'
 " Markdown pluginS - https://github.com/plasticboy/vim-markdown
-"Plugin 'godlygeek/tabular'
-"Plugin 'plasticboy/vim-markdown'
+"Plug 'godlygeek/tabular'
+"Plug 'plasticboy/vim-markdown'
 " Better status bar
-Plugin 'vim-airline/vim-airline'
-Plugin 'vim-airline/vim-airline-themes'
+Plug 'vim-airline/vim-airline'
+Plug 'vim-airline/vim-airline-themes'
 " GIT integration
-" Plugin 'tpope/vim-fugitive'
-"Plugin 'davidhalter/jedi-vim'
-Plugin 'martinda/Jenkinsfile-vim-syntax.git'
-Plugin 'alfredodeza/coveragepy.vim'
-Plugin 'rust-lang/rust.vim'
-Plugin 'speshak/vim-cfn'
+" Plug 'tpope/vim-fugitive'
+"Plug 'davidhalter/jedi-vim'
+Plug 'martinda/Jenkinsfile-vim-syntax'
+Plug 'alfredodeza/coveragepy.vim'
+Plug 'rust-lang/rust.vim'
+Plug 'speshak/vim-cfn'
+Plug 'hashivim/vim-terraform'
 
-
-
-" All of your Plugins must be added before the following line
-call vundle#end()            " required
-filetype plugin indent on    " required
+call plug#end()
 
 " test stuff
 "au BufNewFile,BufRead *.json setl foldmethod=syntax
@@ -357,3 +365,50 @@ let g:airline#extensions#tabline#enabled = 1
 " Show just the filename
 let g:airline#extensions#tabline#fnamemod = ':t'
 
+" New DDC autocompleter
+call ddc#custom#patch_global('ui', 'native')
+
+" Use around source.
+" https://github.com/Shougo/ddc-source-around
+call ddc#custom#patch_global('sources', ['around'])
+
+" Use matcher_head and sorter_rank.
+" https://github.com/Shougo/ddc-matcher_head
+" https://github.com/Shougo/ddc-sorter_rank
+call ddc#custom#patch_global('sourceOptions', #{
+      \ _: #{
+      \   matchers: ['matcher_head'],
+      \   sorters: ['sorter_rank']},
+      \ })
+
+" Change source options
+call ddc#custom#patch_global('sourceOptions', #{
+      \   around: #{ mark: 'A' },
+      \ })
+call ddc#custom#patch_global('sourceParams', #{
+      \   around: #{ maxSize: 500 },
+      \ })
+
+" Customize settings on a filetype
+call ddc#custom#patch_filetype(['c', 'cpp'], 'sources',
+      \ ['around', 'clangd'])
+call ddc#custom#patch_filetype(['c', 'cpp'], 'sourceOptions', #{
+      \   clangd: #{ mark: 'C' },
+      \ })
+call ddc#custom#patch_filetype('markdown', 'sourceParams', #{
+      \   around: #{ maxSize: 100 },
+      \ })
+
+" Mappings
+        
+" <TAB>: completion.
+inoremap <silent><expr> <TAB>
+\ pumvisible() ? '<C-n>' :
+\ (col('.') <= 1 <Bar><Bar> getline('.')[col('.') - 2] =~# '\s') ?
+\ '<TAB>' : ddc#map#manual_complete()
+
+" <S-TAB>: completion back.
+inoremap <expr><S-TAB>  pumvisible() ? '<C-p>' : '<C-h>'
+
+" Use ddc.
+call ddc#enable()

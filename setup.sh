@@ -86,16 +86,14 @@ setup_vim() {
   dotfiles_link .vimrc ~/.vimrc
 
   __install_git
-  vim_bundle_root="${VIMDIR}/bundle/Vundle.vim"
-  if [ ! -d "${vim_bundle_root}" ] ; then
-    rm -rf "${vim_bundle_root}"
-    git clone https://github.com/gmarik/Vundle.vim "${vim_bundle_root}"
-    vim +PluginInstall +qall
-    green "VIM Bundles installed"
-  else
-    vim +PluginUpdate +PluginClean +qall
-    green "VIM Bundles updated"
+  if [ -z "$(which deno)" ] ; then
+    if is.mac ; then
+      brew install deno
+    else
+      curl -fsSL https://deno.land/x/install/install.sh | sh
+    fi
   fi
+  green "Deno installed"
 }
 
 __install_git_delta() {
