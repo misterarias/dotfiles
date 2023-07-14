@@ -11,20 +11,22 @@ endif
 
 call plug#begin('~/.vim/bundle')
 
+Plug 'ycm-core/YouCompleteMe'
+
 " Install your UIs
-Plug 'Shougo/ddc-ui-native'
-
-" Install your sources
-Plug 'Shougo/ddc-source-around'
-
-" Install your filters
-Plug 'Shougo/ddc-matcher_head'
-Plug 'Shougo/ddc-sorter_rank'
+"Plug 'Shougo/ddc-ui-native'
+"
+"" Install your sources
+"Plug 'Shougo/ddc-source-around'
+"
+"" Install your filters
+"Plug 'Shougo/ddc-matcher_head'
+"Plug 'Shougo/ddc-sorter_rank'
 
 Plug 'junegunn/vim-plug'
 Plug 'scrooloose/syntastic'
-Plug 'Shougo/ddc.vim'
-Plug 'vim-denops/denops.vim'
+"Plug 'Shougo/ddc.vim'
+"Plug 'vim-denops/denops.vim'
 Plug 'kien/ctrlp.vim'
 Plug 'vim-scripts/bufkill.vim'
 Plug 'vim-scripts/dbext.vim'
@@ -47,12 +49,13 @@ Plug 'vim-airline/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
 " GIT integration
 " Plug 'tpope/vim-fugitive'
-"Plug 'davidhalter/jedi-vim'
+"Plug 'davidhalter/jedi-vim'   " Remember to globally install Jedi 
 Plug 'martinda/Jenkinsfile-vim-syntax'
 Plug 'alfredodeza/coveragepy.vim'
 Plug 'rust-lang/rust.vim'
 Plug 'speshak/vim-cfn'
 Plug 'hashivim/vim-terraform'
+
 
 call plug#end()
 
@@ -247,7 +250,7 @@ let g:syntastic_scala_checkers = ['scalac']
 let g:syntastic_sh_checkers = ['shellcheck'] " Package manager
 let g:syntastic_sql_checkers = ['sqlint'] " Ruby gem
 let g:syntastic_yaml_checkers = ['yamllint'] " PIP
-let g:syntastic_python_checkers=['flake8'] "PIP - TODO use mypy
+let g:syntastic_python_checkers=['mypy', 'flake8'] "PIP - TODO use mypy
 let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_aggregate_errors = 1
 let g:syntastic_auto_loc_list = 1
@@ -255,7 +258,7 @@ let g:syntastic_check_on_open = 0
 let g:syntastic_check_on_wq = 0
 let g:syntastic_auto_jump = 0
 let g:syntastic_error_symbol = "🔥"
-let g:syntastic_warning_symbol = "🌧 "
+"let g:syntastic_warning_symbol = "⛈️ "
 let g:syntastic_style_error_symbol = "🔥"
 let g:syntastic_style_warning_symbol = "🌧 "
 let g:syntastic_cloudformation_checkers = ['cfn_lint']
@@ -327,7 +330,7 @@ let g:scala_scaladoc_indent = 1
 let g:jsx_ext_required = 0
 
 " Search highlighting
-"hi Search ctermbg=DarkYellow ctermfg=Yellow
+hi Search ctermbg=DarkYellow ctermfg=Yellow
 
 " YAML Ansible
 let g:ansible_unindent_after_newline=1
@@ -364,51 +367,3 @@ let t_Co=256
 let g:airline#extensions#tabline#enabled = 1
 " Show just the filename
 let g:airline#extensions#tabline#fnamemod = ':t'
-
-" New DDC autocompleter
-call ddc#custom#patch_global('ui', 'native')
-
-" Use around source.
-" https://github.com/Shougo/ddc-source-around
-call ddc#custom#patch_global('sources', ['around'])
-
-" Use matcher_head and sorter_rank.
-" https://github.com/Shougo/ddc-matcher_head
-" https://github.com/Shougo/ddc-sorter_rank
-call ddc#custom#patch_global('sourceOptions', #{
-      \ _: #{
-      \   matchers: ['matcher_head'],
-      \   sorters: ['sorter_rank']},
-      \ })
-
-" Change source options
-call ddc#custom#patch_global('sourceOptions', #{
-      \   around: #{ mark: 'A' },
-      \ })
-call ddc#custom#patch_global('sourceParams', #{
-      \   around: #{ maxSize: 500 },
-      \ })
-
-" Customize settings on a filetype
-call ddc#custom#patch_filetype(['c', 'cpp'], 'sources',
-      \ ['around', 'clangd'])
-call ddc#custom#patch_filetype(['c', 'cpp'], 'sourceOptions', #{
-      \   clangd: #{ mark: 'C' },
-      \ })
-call ddc#custom#patch_filetype('markdown', 'sourceParams', #{
-      \   around: #{ maxSize: 100 },
-      \ })
-
-" Mappings
-        
-" <TAB>: completion.
-inoremap <silent><expr> <TAB>
-\ pumvisible() ? '<C-n>' :
-\ (col('.') <= 1 <Bar><Bar> getline('.')[col('.') - 2] =~# '\s') ?
-\ '<TAB>' : ddc#map#manual_complete()
-
-" <S-TAB>: completion back.
-inoremap <expr><S-TAB>  pumvisible() ? '<C-p>' : '<C-h>'
-
-" Use ddc.
-call ddc#enable()

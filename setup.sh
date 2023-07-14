@@ -94,6 +94,10 @@ setup_vim() {
     fi
   fi
   green "Deno installed"
+
+  # Python libs for Python (requieres Python3 support for VIM)
+  pip install flake8 jedi mypy
+
 }
 
 __install_git_delta() {
