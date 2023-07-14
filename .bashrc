@@ -3,7 +3,7 @@
 # shellcheck source=/dev/null
 
 # Set default shell mode to VIM, fuck emacs
-set -o vi
+set -o emacs  # sorry pal
 
 # Nice defaults
 export PS1="$ "
@@ -19,9 +19,6 @@ export LANG="es_ES.UTF-8"
 
 # My local binaries path
 export PATH="$HOME/.local/bin:$PATH"
-
-# brew doctor
-export PATH="/usr/local/sbin:$PATH"
 
 # At the very least, colours in MAC
 export CLICOLOR=1
@@ -83,15 +80,3 @@ fi
 
 # This introduces the SIGINT trap error: eval "$(direnv hook bash)"
 [ -f "${HOME}/.ghcup/env" ] && . "${HOME}/.ghcup/env" # ghcup-env
-
-# To use 'gtools' as normal, i.e make instead of gmake
-PATH="/usr/local/opt/make/libexec/gnubin:$PATH"
-
-# GIT completion, among others
-is.mac && [[ -r "/usr/local/etc/profile.d/bash_completion.sh" ]] && . "/usr/local/etc/profile.d/bash_completion.sh"
-
-# Rust Package manager + env
-if [ -d "${HOME}/.cargo" ] ; then
-  export PATH="$HOME/.cargo/bin:$PATH"
-  . "$HOME/.cargo/env"
-fi

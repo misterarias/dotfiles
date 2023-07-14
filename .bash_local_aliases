@@ -27,25 +27,6 @@ red() {
   echo -e "${REDCOLOR_BOLD}$*${ENDCOLOR}"
 }
 
-# enable ansible 2.x
-alias ansible.enable.27='_ansible_enable 2.7 2.7.18'
-alias ansible.enable.4.0='_ansible_enable 4.0 4.0.0a4'
-alias ansible.enable.29='_ansible_enable 2.9 2.9.20'
-_ansible_enable() {
-  local ansible_version pip_version
-  ansible_version=$1
-  pyenv_name="ansible-${ansible_version}"
-  pip_version="${2:-${ansible_version}.0}"
-
-  #echo "[INFO] Venv for Ansible ${ansible_version} not found, creating a new one now..."
-
-  python_version="$(pyenv versions | grep -e '^\s*[23]\.' | cut -d '/' -f1 | sort -u | tr -d ' ' | head -1)"
-  venv.create "${python_version}" "${pyenv_name}"
-  pip install "ansible==${pip_version}"
-}
-
-# disable Ansible
-alias ansible.disable='deactivate'
 
 # re-source all aliases
 alias alias.source='source ${HOME}/.bashrc && echo "Successfully sourced ${HOME}/.bashrc"'
@@ -540,12 +521,11 @@ if command -v fzf >/dev/null ; then
 
   # Automagically autocomplete repo names and 'cd' into them. Needs a proper base repo dir. Depends on fzf and fd
   repo() {
+    local regex
     base_dir="${_REPO_AUTOCOMPLETE_BASE_DIR}"
-    # regex is a valid dir ---> probably comes from autocompletion _repo
     [ -d "$*" ] && cd "$*" && return
-    #regex="$(eval echo  \$$(($#)))" || regex="."
     [ $# -gt 0 ] && regex=$(echo "$*" | sed -E 's# +#.*#g')
-    [ -d "${base_dir}/${regex}" ] && cd "${base_dir}/${regex}" && return
+    [ "${regex}" != "" ] && [ -d "${base_dir}/${regex}" ] && cd "${base_dir}/${regex}" && return
 
     repo="$(fd --maxdepth 2 --type d . "${base_dir}" | grep -i "${regex}" | fzf --preview 'bat --color=always --language=md --style=plain --line-range=:40 {}/README.md')"
     if [ -z "${repo}" ] ; then error "No results" ; else cd "${repo}" ; fi
@@ -633,10 +613,11 @@ _pipenv_venv_create() {
 layout pipenv
 unset PS1
 EOF
+  pipenv install
   direnv allow
   echo "[INFO] Successfully created direnv configuration for $(which pipenv)"
 }
-alias envrc.pipenv='_poetry_venv_create'
+alias envrc.pipenv='_pipenv_venv_create'
 
 # Enable a poetry-powered virtualenv via direnv
 _poetry_venv_create() {
@@ -702,6 +683,7 @@ release.minor() {
   git perrete
 }
 
+# move a list of files into backups of themselves
 file.backup() {
   for _file in "$@" ; do
     [[ "${_file}" == *".bkp" ]] && \
@@ -710,6 +692,8 @@ file.backup() {
       mv "${_file}" "${_file}.bkp" && echo "Backed up file into ${_file}.bkp"
   done
 }
+
+# undoes file.backup, restoring a list of backups into the original name
 file.unbackup() {
   for _file in "$@" ; do
     [[ "${_file}" != *".bkp" ]] && \
@@ -718,3 +702,62 @@ file.unbackup() {
       mv "${_file}" "${_file//.bkp}" && echo "Restored ${_file//.bkp}"
   done
 }
+
+# move downloaded torrent files into shared torrent directory
+torrent.mv() {
+  local torrent_dir="/Volumes/video/.torrents"
+  [ ! -d "${torrent_dir}" ] && error "Shared folder ${torrent_dir} not available..."
+  mv -v ~/Downloads/*.torrent "${torrent_dir}"
+}
+
+# enable ansible 2.x
+alias ansible.enable.7='_ansible_enable 7.0 7.0.0'
+alias ansible.enable.4.0='_ansible_enable 4.0 4.0.0a4'
+alias ansible.enable.29='_ansible_enable 2.9 2.9.20'
+_ansible_enable() {
+  local ansible_version pip_version
+  ansible_version=$1
+  pyenv_name="ansible-${ansible_version}"
+  pip_version="${2:-${ansible_version}.0}"
+
+  #echo "[INFO] Venv for Ansible ${ansible_version} not found, creating a new one now..."
+
+  python_version="$(pyenv versions | grep -e '^\s*[23]\.' | cut -d '/' -f1 | sort -u | tr -d ' ' | head -1)"
+  envrc.venv "${python_version}" "${pyenv_name}"
+
+  # delete old versions, if any
+  grep -v 'ansible==' requirements.txt > tmp
+  echo "ansible==${pip_version}" >> tmp && mv tmp requirements.txt
+  pip install -r requirements.txt
+}
+
+# disable Ansible
+alias ansible.disable='deactivate'
+
+# Flush DNS
+alias dns.flush='sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder'
+
+# GIT completion, among others
+is.mac && [[ -r "/usr/local/etc/profile.d/bash_completion.sh" ]] && . "/usr/local/etc/profile.d/bash_completion.sh"
+
+# Rust Package manager + env
+if [ -d "${HOME}/.cargo" ] ; then
+  export PATH="$HOME/.cargo/bin:$PATH"
+  . "$HOME/.cargo/env"
+fi
+
+export GROOVY_HOME=/usr/local/opt/groovy/libexec
+
+export PATH="/usr/local/opt/openjdk@8/bin:$PATH"
+export CPPFLAGS="$CPPFLAGS -I/usr/local/opt/openjdk@8/include"
+
+#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+export SDKMAN_DIR="$HOME/.sdkman"
+[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
+
+# brew doctor
+export PATH="/usr/local/sbin:$PATH"
+
+# To use 'gtools' as normal, i.e make instead of gmake
+PATH="/usr/local/opt/make/libexec/gnubin:$PATH"
+
