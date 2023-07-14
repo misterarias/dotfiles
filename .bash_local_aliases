@@ -735,29 +735,7 @@ _ansible_enable() {
 alias ansible.disable='deactivate'
 
 # Flush DNS
-alias dns.flush='sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder'
+is.mac && alias dns.flush='sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder'
 
 # GIT completion, among others
 is.mac && [[ -r "/usr/local/etc/profile.d/bash_completion.sh" ]] && . "/usr/local/etc/profile.d/bash_completion.sh"
-
-# Rust Package manager + env
-if [ -d "${HOME}/.cargo" ] ; then
-  export PATH="$HOME/.cargo/bin:$PATH"
-  . "$HOME/.cargo/env"
-fi
-
-export GROOVY_HOME=/usr/local/opt/groovy/libexec
-
-export PATH="/usr/local/opt/openjdk@8/bin:$PATH"
-export CPPFLAGS="$CPPFLAGS -I/usr/local/opt/openjdk@8/include"
-
-#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
-export SDKMAN_DIR="$HOME/.sdkman"
-[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"
-
-# brew doctor
-export PATH="/usr/local/sbin:$PATH"
-
-# To use 'gtools' as normal, i.e make instead of gmake
-PATH="/usr/local/opt/make/libexec/gnubin:$PATH"
-
