@@ -45,8 +45,8 @@ Plug 'pearofducks/ansible-vim'
 "Plug 'godlygeek/tabular'
 "Plug 'plasticboy/vim-markdown'
 " Better status bar
-Plug 'vim-airline/vim-airline'
-Plug 'vim-airline/vim-airline-themes'
+"Plug 'vim-airline/vim-airline'
+"Plug 'vim-airline/vim-airline-themes'
 " GIT integration
 " Plug 'tpope/vim-fugitive'
 "Plug 'davidhalter/jedi-vim'   " Remember to globally install Jedi 
@@ -55,6 +55,9 @@ Plug 'alfredodeza/coveragepy.vim'
 Plug 'rust-lang/rust.vim'
 Plug 'speshak/vim-cfn'
 Plug 'hashivim/vim-terraform'
+
+" Has to enabled on connected account
+Plug 'github/copilot.vim'
 
 
 call plug#end()
@@ -360,10 +363,18 @@ map <leader>tp :tabprevious<CR>
 map <leader>tc :tabclose<CR>
 
 " vim-airline configuration
-let g:airline_theme = 'dark' "'powerlineish'
-let g:airline_powerline_fonts = 1
-let t_Co=256
-" Enable the list of buffers
-let g:airline#extensions#tabline#enabled = 1
-" Show just the filename
-let g:airline#extensions#tabline#fnamemod = ':t'
+"let g:airline_theme = 'dark' "'powerlineish'
+"let g:airline_powerline_fonts = 1
+"let t_Co=256
+"" Enable the list of buffers
+"let g:airline#extensions#tabline#enabled = 1
+"" Show just the filename
+"let g:airline#extensions#tabline#fnamemod = ':t'
+
+"" Enable copilot in all buffers
+let b:copilot_enabled=v:true
+
+" Enable powerline (installed from pip)
+python3 from powerline.vim import setup as powerline_setup
+python3 powerline_setup()
+python3 del powerline_setup

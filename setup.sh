@@ -1,7 +1,7 @@
 #!/bin/bash
 
 set -o errexit
-set -o nounset
+#set -o nounset
 set -o pipefail
 
 # Copies of system files will be kept here
@@ -96,7 +96,7 @@ setup_vim() {
   green "Deno installed"
 
   # Python libs for Python (requieres Python3 support for VIM)
-  pip install flake8 jedi mypy
+  pip3 install flake8 jedi mypy
 
 }
 
@@ -246,9 +246,7 @@ __install_acpi() {
 
 __install_autocompletion() {
   if is.mac ; then
-    [[ -r "/usr/local/etc/profile.d/bash_completion.sh" ]] && \
-      blue "Bash completion already active" && return
-    brew install bash-completion
+    [[ -r "/usr/local/etc/profile.d/bash_completion.sh" ]] || brew install bash-completion
   elif is.debian ; then
     if [[ -r "/etc/profile.d/bash_completion.sh" ]] ; then
       sudo apt install  bash-completion
@@ -280,22 +278,24 @@ __install_direnv() {
   dotfiles_link files/direnvrc "${direnv_dir}/.direnvrc"
 }
 
-__install_powerline_shell() {
+__install_powerline() {
   # Powerline package and config
   grep -q powerline-shell < "${PIPFILE_LIST}" ||
-    pip3 install powerline-shell
+    pip3 install powerline-status
 
-  powerline_config_dir="${HOME}/.config/powerline-shell"
-  green "Setting up direnv main files in ${powerline_config_dir}"
-  for local_file in $(ls files/powerline-shell) ; do
-    dotfiles_link "files/powerline-shell/${local_file}" "${powerline_config_dir}/${local_file}"
-  done
+  # For now, default config is enough
+  #powerline_config_dir="${HOME}/.config/powerline"
+  #green "Setting up direnv main files in ${powerline_config_dir}"
+  #for local_file in $(ls files/powerline-shell) ; do
+  #  dotfiles_link "files/powerline-shell/${local_file}" "${powerline_config_dir}/${local_file}"
+  #done
 
-  if ! is.mac ; then  __install_acpi ; fi
+  # TODO: Install a battery indicator
+  #if ! is.mac ; then  __install_acpi ; fi
 }
 
 __install_python() {
-  if command -v python3 > /dev/null && command -v pip > /dev/null ; then
+  if command -v python3 > /dev/null && command -v pip3 > /dev/null ; then
     blue "Not reinstalling python3 and PIP" && return
   fi
 
@@ -314,8 +314,8 @@ __prepare_pip() {
   __install_python
 
   green "Updating PIP now..."
-  pip install --upgrade --quiet pip
-  pip list --no-color > "${PIPFILE_LIST}"
+  pip3 install --upgrade --quiet pip
+  pip3 list --no-color > "${PIPFILE_LIST}"
 }
 
 setup_dotfiles() {
@@ -328,7 +328,7 @@ setup_dotfiles() {
   __install_pyenv
   __install_autocompletion
   __install_direnv
-  __install_powerline_shell
+  __install_powerline
 
   dotfiles_link .bashrc ~/.bashrc
   dotfiles_link .bash_local_aliases ~/.bash_local_aliases
@@ -379,7 +379,7 @@ setup_all() {
 setup_binaries() {
   green "Copying 'useful' binaries..."
 
-  # I like this, it's the same used by 'pip install --user'
+  # I like this, it's the same used by 'pip3 install --user'
   bin_dir="${HOME}/.local/bin"
   mkdir -p "${bin_dir}"
   cp -v ./bin/* "${bin_dir}"
