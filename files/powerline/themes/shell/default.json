@@ -1,0 +1,56 @@
+{
+    "cursor_space": 50,
+    "segments": {
+        "above": [
+            {
+                "left": [
+                    {
+                        "function": "powerline.segments.shell.mode"
+                    },
+                    {
+                        "function": "powerline.segments.common.time.date",
+                        "args": {
+                            "istime": true,
+                            "format": "%H:%M:%S.%f"
+                        }
+                    },
+                    {
+                        "function": "powerline.segments.common.bat.battery",
+                        "args": {
+                            "gamify": false
+                        }
+                    },
+                    {
+                        "function": "powerline.segments.common.env.virtualenv"
+                    },
+                    {
+                        "function": "powerline.segments.shell.cwd"
+                    },
+                    {
+                        "function": "powerline.segments.common.vcs.branch",
+                        "args": {
+                            "status_colors": true
+                        }
+                    }
+                ],
+                "right": [
+                ]
+            }
+        ], 
+        "left": [
+            {
+                "function": "powerline.segments.shell.mode"
+            },
+            {
+                "function": "powerline.segments.shell.last_pipe_status",
+                "priority": 10
+            },
+            {
+                "function": "powerline.segments.common.time.date",
+                "args": {
+                    "format": "$"
+                }
+            }
+        ]
+    }
+}

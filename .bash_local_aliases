@@ -28,6 +28,13 @@ red() {
 }
 
 
+# Enable Pyenv in current shell
+enable.pyenv() {
+  command -v pyenv > /dev/null && eval "$(pyenv init -)"
+  command -v pyenv-virtualenv-init > /dev/null && eval "$(pyenv virtualenv-init -)"
+  blue "Successfully loaded pyenv"
+}
+
 # re-source all aliases
 alias alias.source='source ${HOME}/.bashrc && echo "Successfully sourced ${HOME}/.bashrc"'
 alias bash.source='alias.source'
@@ -638,7 +645,7 @@ alias envrc.poetry='_poetry_venv_create'
 _venv_create() {
   __envrc_assert || return
   version=$1
-  __enable_pyenv
+  enable.pyenv
   valid_versions="$(__pyenv_versions)"
   [ -z "$version" ] && error "No python version specified as parameter. Valid versions:\n${valid_versions}" && return
   [ -z "$(echo "${valid_versions}" | grep -o "${version}")" ] && \
@@ -723,7 +730,7 @@ _ansible_enable() {
   pip_version="${2:-${ansible_version}.0}"
 
   #echo "[INFO] Venv for Ansible ${ansible_version} not found, creating a new one now..."
-  __enable_pyenv
+  enable.pyenv
   python_version="$(pyenv versions | grep -e '^\s*[23]\.' | cut -d '/' -f1 | sort -u | tr -d ' ' | head -1)"
   envrc.venv "${python_version}" "${pyenv_name}"
 

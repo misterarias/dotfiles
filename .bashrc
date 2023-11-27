@@ -9,7 +9,12 @@ set -o emacs  # sorry pal
 export PS1="$ "
 export PROMPT_COMMAND=
 
+# If left empty, pyenv is not loaded by default, freeing up resources
+export __ENABLE_PYENV=
+
 [ -f ~/.bash_local_aliases ] && . ~/.bash_local_aliases
+
+if [ -n "${__ENABLE_PYENV}" ] ; then  enable.pyenv ; else  green "pyenv disabled by environment variable, type enable.pyenv to enable locally" ; fi
 
 # DO NOT VERSION THIS!!! THANKS
 [ -f ~/.bash_private_vars ] && source ~/.bash_private_vars
@@ -55,15 +60,6 @@ export PSQL_EDITOR='vim -c"set syntax=sql"'
 # Pycharm bug when using gevent
 export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 
-# Pyenv goodness
-#export PYENV_ROOT=${HOME}/.venvs/shims
-__ENABLE_PYENV=
-__enable_pyenv() {
-  command -v pyenv > /dev/null && eval "$(pyenv init -)"
-  command -v pyenv-virtualenv-init > /dev/null && eval "$(pyenv virtualenv-init -)"
-}
-if [ -n "${__ENABLE_PYENV}" ] ; then  __enable_pyenv ; else  green "pyenv disabled by environment variable, type __enable_pyenv to enable locally" ; fi
-
 # Enable bash to cycle through completions (https://superuser.com/a/59198)
 [[ $- = *i* ]] && bind TAB:menu-complete
 
@@ -72,9 +68,10 @@ bind "set show-all-if-ambiguous on"
 bind "set completion-ignore-case on"
 bind "set menu-complete-display-prefix on"
 
-ENABLE_RAW_POWERLINE=1
+export ENABLE_RAW_POWERLINE=1
 if [ -n "${ENABLE_RAW_POWERLINE}" ] ; then
   export POWERLINE_ROOT="/usr/local/lib/python3.11/site-packages/powerline"
+  #export POWERLINE_ROOT="$HOME/.local/pipx/venvs/powerline-status/lib/python3.9/site-packages/powerline"
   powerline-daemon -q
   export POWERLINE_BASH_CONTINUATION=1
   export POWERLINE_BASH_SELECT=1

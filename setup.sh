@@ -231,19 +231,6 @@ __install_fzf() {
   __install_bat
 }
 
-# batt management
-__install_acpi() {
-  if command -v acpi >/dev/null ;then
-    return
-  elif is.debian ; then
-    sudo apt install acpi
-  elif is.arch ; then
-    sudo pacman -S --noconfirm acpi
-  else
-    error "Don't know how to install acpi"
-  fi
-}
-
 __install_autocompletion() {
   if is.mac ; then
     [[ -r "/usr/local/etc/profile.d/bash_completion.sh" ]] || brew install bash-completion
@@ -289,9 +276,6 @@ __install_powerline() {
   #for local_file in $(ls files/powerline-shell) ; do
   #  dotfiles_link "files/powerline-shell/${local_file}" "${powerline_config_dir}/${local_file}"
   #done
-
-  # TODO: Install a battery indicator
-  #if ! is.mac ; then  __install_acpi ; fi
 }
 
 __install_python() {
