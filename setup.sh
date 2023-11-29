@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -o errexit
+#set -o errexit
 #set -o nounset
 set -o pipefail
 
@@ -37,7 +37,7 @@ __install_git() {
   if [ -n "$(which git)" ] ; then
     return
   elif is.mac ; then
-    brew install git;
+    error "Install git using XCode Developer tools"
   elif is.debian ; then
     sudo apt install -y git
   elif is.arch ; then
@@ -69,7 +69,7 @@ setup_git() {
 setup_vim() {
   if [ -z "$(which vim)" ] ; then
     if is.mac ; then
-      brew install vim;
+      error "Install vim from source or link it properly -it comes preinstalled."
     elif is.debian ; then
       sudo apt install -y vim
     elif is.arch ; then
@@ -88,7 +88,7 @@ setup_vim() {
   __install_git
   if [ -z "$(which deno)" ] ; then
     if is.mac ; then
-      brew install deno
+      pip install deno
     else
       curl -fsSL https://deno.land/x/install/install.sh | sh
     fi
@@ -103,7 +103,12 @@ setup_vim() {
 __install_git_delta() {
   if ! command -v delta >/dev/null ; then
     if is.mac ; then
-      brew install git-delta
+      delta_version="0.15.0"
+      delta_pkg="delta-${delta_version}-x86_64-apple-darwin"
+      curl -L "https://github.com/dandavison/delta/releases/download/${delta_version}/${delta_pkg}.tar.gz" | tar -xvzf -
+      mv delta*/delta ~/.local/bin/delta
+      chmod +x ~/.local/bin/delta
+      rm -rf "${delta_pkg}"
      elif is.debian ; then
        # Fuck U Ubuntu....
        curl -kL -o delta.deb https://github.com/dandavison/delta/releases/download/0.13.0/git-delta-musl_0.13.0_amd64.deb
@@ -144,7 +149,7 @@ __install_bat() {
   if command -v bat >/dev/null ;then
     return
   elif is.mac ; then
-    brew install bat
+    pip install bat
    elif is.debian ; then
     sudo apt install -y bat
     # Due to Ubuntu installing this as batcat instead
@@ -161,7 +166,7 @@ __install_curl() {
   if command -v curl >/dev/null ;then
     return
   elif is.mac ; then
-    brew install curl
+    echo "Install curl somehow but WOW you have fucked up"
    elif is.debian ; then
     sudo apt install -y curl
   elif is.arch ; then
@@ -175,7 +180,7 @@ __install_fd() {
   if command -v fd >/dev/null ; then
     return
   elif is.mac ; then
-    brew install fd
+    pip install fd
    elif is.debian ; then
     sudo apt install -y fd-find
   elif is.arch ; then
@@ -195,8 +200,9 @@ __install_pyenv() {
     __install_git
 
     if is.mac ; then
-      brew install pyenv
-      brew install pyenv-virtualenv
+      [ ! -d ~/.pyenv ] && curl https://pyenv.run | bash
+      eval "$(~/.pyenv/bin/pyenv init -)"
+      #git clone https://github.com/pyenv/pyenv-virtualenv.git $(pyenv root)/plugins/pyenv-virtualenv
     else
       __install_curl
       # actually, all the recommended dependencies for building python
@@ -218,7 +224,8 @@ __install_pyenv() {
 __install_fzf() {
   if ! command -v fzf >/dev/null ; then
     if is.mac ; then
-      brew install fzf
+      [ ! -d ~/.fzf ] && git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
+      ~/.fzf/install --all
     elif is.debian ; then
       sudo apt install fzf
     elif is.arch ; then
@@ -233,7 +240,7 @@ __install_fzf() {
 
 __install_autocompletion() {
   if is.mac ; then
-    [[ -r "/usr/local/etc/profile.d/bash_completion.sh" ]] || brew install bash-completion
+    [[ -r "/usr/local/etc/profile.d/bash_completion.sh" ]] || pip install bash-completion
   elif is.debian ; then
     if [[ -r "/etc/profile.d/bash_completion.sh" ]] ; then
       sudo apt install  bash-completion
@@ -243,12 +250,13 @@ __install_autocompletion() {
   else
     error "Don't know how to install bash completion"
   fi
+  curl -sL https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash > ~/.git-completion.bash
 }
 
 __install_direnv() {
   if ! command -v direnv >/dev/null ; then
     if is.mac ;then
-      brew install direnv
+      curl -sfL https://direnv.net/install.sh | bash
     elif is.debian ; then
       sudo apt install direnv
     elif is.arch ; then
@@ -268,14 +276,15 @@ __install_direnv() {
 __install_powerline() {
   # Powerline package and config
   grep -q powerline-shell < "${PIPFILE_LIST}" ||
-    pip3 install powerline-status
+    pip install powerline-status
+
 
   # For now, default config is enough
-  #powerline_config_dir="${HOME}/.config/powerline"
-  #green "Setting up direnv main files in ${powerline_config_dir}"
-  #for local_file in $(ls files/powerline-shell) ; do
-  #  dotfiles_link "files/powerline-shell/${local_file}" "${powerline_config_dir}/${local_file}"
-  #done
+  powerline_config_dir="${HOME}/.config/powerline"
+  green "Setting up direnv main files in ${powerline_config_dir}"
+  for local_file in $(ls files/powerline) ; do
+    dotfiles_link "files/powerline/${local_file}" "${powerline_config_dir}/${local_file}"
+  done
 }
 
 __install_python() {
@@ -284,7 +293,7 @@ __install_python() {
   fi
 
   if is.mac ; then
-    brew install python@3 pip
+    pip install --upgrade pip
   elif is.debian ; then
     sudo apt install -y python3 pip
   elif is.arch ; then
@@ -389,9 +398,7 @@ help() {
 
 __prerequisites() {
   if is.mac ; then
-    if ! command -v brew > /dev/null ; then
-      error "Brew needs to be installed" && exit 1
-    fi
+    echo "MAC installation now happens in userland - no sudo required"
   elif is.arch ; then
     if ! command -v sudo > /dev/null || ! command -v which > /dev/null ; then
       error "sudo and which need to be installed" && exit 1

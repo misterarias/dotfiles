@@ -25,6 +25,15 @@ export LANG="es_ES.UTF-8"
 # My local binaries path
 export PATH="$HOME/.local/bin:$PATH"
 
+# Allow system PIP packages to be found
+export PATH="$HOME/Library/Python/3.9/bin:$PATH"
+
+# MacVIM's own vim
+export PATH="~/Apps/MacVim.app/Contents/bin:$PATH"
+
+# Add non-sudo homebrew path
+export PATH="$HOME/.homebrew/bin:$PATH"
+
 # At the very least, colours in MAC
 export CLICOLOR=1
 
@@ -68,10 +77,12 @@ bind "set show-all-if-ambiguous on"
 bind "set completion-ignore-case on"
 bind "set menu-complete-display-prefix on"
 
+# git autocompletion
+source ~/.git-completion.bash
+
 export ENABLE_RAW_POWERLINE=1
 if [ -n "${ENABLE_RAW_POWERLINE}" ] ; then
-  export POWERLINE_ROOT="/usr/local/lib/python3.11/site-packages/powerline"
-  #export POWERLINE_ROOT="$HOME/.local/pipx/venvs/powerline-status/lib/python3.9/site-packages/powerline"
+  export POWERLINE_ROOT="$(pip show powerline-status | grep Location | awk '{print $2}')/powerline"
   powerline-daemon -q
   export POWERLINE_BASH_CONTINUATION=1
   export POWERLINE_BASH_SELECT=1
@@ -103,3 +114,9 @@ fi
 
 # This introduces the SIGINT trap error: eval "$(direnv hook bash)"
 [ -f "${HOME}/.ghcup/env" ] && . "${HOME}/.ghcup/env" # ghcup-env
+
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
