@@ -96,7 +96,7 @@ setup_vim() {
   green "Deno installed"
 
   # Python libs for Python (requieres Python3 support for VIM)
-  pip3 install flake8 jedi mypy
+  pip install flake8 jedi mypy
 
 }
 
@@ -276,8 +276,7 @@ __install_direnv() {
 __install_powerline() {
   # Powerline package and config
   grep -q powerline-shell < "${PIPFILE_LIST}" ||
-    pip install powerline-status
-
+    pip install powerline-status powerline_gitstatus
 
   # For now, default config is enough
   powerline_config_dir="${HOME}/.config/powerline"
@@ -288,12 +287,12 @@ __install_powerline() {
 }
 
 __install_python() {
-  if command -v python3 > /dev/null && command -v pip3 > /dev/null ; then
-    blue "Not reinstalling python3 and PIP" && return
+  if ! command -v python3 > /dev/null || ! command -v pip3 > /dev/null ; then
+    red "Not installing python3 and PIP for you dude, go figure it out..." && exit 1
   fi
 
   if is.mac ; then
-    pip install --upgrade pip
+    echo "Python should be installed already"
   elif is.debian ; then
     sudo apt install -y python3 pip
   elif is.arch ; then
@@ -307,7 +306,7 @@ __prepare_pip() {
   __install_python
 
   green "Updating PIP now..."
-  pip3 install --upgrade --quiet pip
+  pip install --upgrade  pip
   pip3 list --no-color > "${PIPFILE_LIST}"
 }
 
@@ -372,7 +371,7 @@ setup_all() {
 setup_binaries() {
   green "Copying 'useful' binaries..."
 
-  # I like this, it's the same used by 'pip3 install --user'
+  # I like this, it's the same used by 'pip install --user'
   bin_dir="${HOME}/.local/bin"
   mkdir -p "${bin_dir}"
   cp -v ./bin/* "${bin_dir}"
