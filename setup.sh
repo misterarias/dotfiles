@@ -226,8 +226,26 @@ __install_fzf() {
       [ ! -d ~/.fzf ] && git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
       ~/.fzf/install --all
   fi
+  dotfiles_link .fzf.bash ~/.fzf.bash
+  dotfiles_link files/.fzf/bin/fzf-preview.sh ~/.fzf/bin/fzf-preview.sh
+
+  __install_kitty
   __install_fd
   __install_bat
+}
+
+__install_kitty() {
+    if ! command -v kitty >/dev/null ; then
+        if is.mac ; then
+            brew install kitty
+        elif is.debian ; then
+            sudo apt install -y kitty
+        elif is.arch ; then
+            sudo pacman -S --noconfirm kitty
+        else
+            error "Don't know how to install kitty"
+        fi
+    fi
 }
 
 __install_autocompletion() {
@@ -320,7 +338,6 @@ setup_dotfiles() {
     dotfiles_link .bash_private_vars ~/.bash_private_vars && \
     printf "\nCreated sample %s file, edit it and modify %s var to enable 'repo' command autocompletion.\n" "${BLUECOLOR_BOLD}~/.bash_private_vars${ENDCOLOR}" "${REDCOLOR}_REPO_AUTOCOMPLETE_BASE_DIR${ENDCOLOR}"
 
-  dotfiles_link .fzf.bash ~/.fzf.bash
 
   # shellcheck source=/dev/null
   #. ~/.bash_profile
