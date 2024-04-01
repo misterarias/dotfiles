@@ -30,6 +30,7 @@ dotfiles_link() {
     mv "$system_dotfile" "$BACKUP_FOLDER" > /dev/null 2>&1 || true
   fi
   ln -sf "$local_dotfile" "$system_dotfile"
+  blue "${local_dotfile} ---> ${system_dotfile}"
 }
 
 __install_git() {
@@ -177,22 +178,21 @@ __install_curl() {
 }
 
 __install_fd() {
-  if command -v fd >/dev/null ; then
-    return
-  elif is.mac ; then
-    pip install fd --break-system-packages
-   elif is.debian ; then
-    sudo apt install -y fd-find
-  elif is.arch ; then
-    sudo pacman -S --noconfirm  fd
-  else
-    error "Don't know how to install fd"
-  fi
-
-  if command -v fdfind > /dev/null ; then
-    mkdir -p ~/.local/bin
-    ln -sf "$(which fdfind)" ~/.local/bin/fd
-  fi
+    if ! command -v fd >/dev/null ; then
+        if is.mac ; then
+            pip install fd --break-system-packages
+        elif is.debian ; then
+            sudo apt install -y fd-find
+        elif is.arch ; then
+            sudo pacman -S --noconfirm  fd
+        else
+            error "Don't know how to install fd"
+        fi
+        if command -v fdfind > /dev/null ; then
+            mkdir -p ~/.local/bin
+            ln -sf "$(which fdfind)" ~/.local/bin/fd
+        fi
+    fi
 
   # link local fd ignore file
   dotfiles_link .fdignore ~/.fdignore
@@ -232,21 +232,21 @@ __install_fzf() {
   dotfiles_link .fzf.bash ~/.fzf.bash
   dotfiles_link files/.fzf/bin/fzf-preview.sh ~/.fzf/bin/fzf-preview.sh
 
-  __install_kitty
+  __install_imgcat
   __install_fd
   __install_bat
 }
 
-__install_kitty() {
-    if ! command -v kitty >/dev/null ; then
+__install_imgcat() {
+    if ! command -v imgcat >/dev/null ; then
         if is.mac ; then
-            brew install kitty
+            brew install imgcat
         elif is.debian ; then
-            sudo apt install -y kitty
+            sudo apt install -y imgcat
         elif is.arch ; then
-            sudo pacman -S --noconfirm kitty
+            sudo pacman -S --noconfirm imgcat
         else
-            error "Don't know how to install kitty"
+            error "Don't know how to install imgcat"
         fi
     fi
 }

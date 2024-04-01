@@ -525,17 +525,19 @@ if command -v fzf >/dev/null ; then
   source ~/.fzf.bash || true
 
   # FZF Custom vars and functions
-  export FZF_DEFAULT_OPTS="--inline-info"
-  export FZF_DEFAULT_OPTS=${FZF_DEFAULT_OPTS}' --height 50%'
-  #export FZF_DEFAULT_OPTS=${FZF_DEFAULT_OPTS}' --layout=reverse'
-  export FZF_COLOR="\
-      --color=fg:#4d4d4c,bg:#eeeeee,hl:#d7005f \
+  FZF_DEFAULT_OPTS="--inline-info"
+  FZF_DEFAULT_OPTS=${FZF_DEFAULT_OPTS}' --height 60%'
+  FZF_COLOR="\
+    --color=fg:#4d4d4c,bg:#eeeeee,hl:#d7005f \
     --color=fg+:#4d4d4c,bg+:#e8e8e8,hl+:#d7005f \
     --color=info:#4271ae,prompt:#8959a8,pointer:#d7005f \
     --color=marker:#4271ae,spinner:#4271ae,header:#4271ae\
-      "
+  "
   export FZF_DEFAULT_OPTS="${FZF_DEFAULT_OPTS} ${FZF_COLOR}"
   export FZF_DEFAULT_COMMAND="fd --type f  --color=auto -H"
+  __FZF_PREVIEW_COMMAND() {
+    fzf --preview 'fzf-preview.sh {}' --preview-window 'right,border-rounded,70%,<40(up,40%,border-bottom)'
+  }
 
   # filetype-based handler
   __open() {
@@ -549,7 +551,7 @@ if command -v fzf >/dev/null ; then
 
   # time-based finders
   __finder() {
-    $FZF_DEFAULT_COMMAND --changed-within "$1" . $HOME | fzf --preview 'fzf-preview.sh {}'  # $FZF_DEFAULT_OPTS
+    $FZF_DEFAULT_COMMAND --changed-within "$1" . $HOME | __FZF_PREVIEW_COMMAND
   }
   alias c.h='__open $(__finder 1h)'
   alias c.d='__open $(__finder 1d)'
@@ -568,7 +570,7 @@ if command -v fzf >/dev/null ; then
     [ $# -gt 0 ] && regex=$(echo "$*" | sed -E 's# +#.*#g')
     [ "${regex}" != "" ] && [ -d "${base_dir}/${regex}" ] && cd "${base_dir}/${regex}" && return
 
-    repo="$(__list_repos | grep -i "${regex}" | fzf $FZF_DEFAULT_OPTS --preview 'fzf-preview.sh {}')"
+    repo="$(__list_repos | grep -i "${regex}" | __FZF_PREVIEW_COMMAND)"
     if [ -z "${repo}" ] ; then error "No results" ; else cd "${repo}" ; fi
   }
 
@@ -582,7 +584,8 @@ if command -v fzf >/dev/null ; then
     if [ -d "${base_dir}/${regex}" ] ; then
         COMPREPLY=$( compgen -W "${base_dir}/${regex}" )
     elif __list_repos | grep -iq "${regex}"  ; then
-        COMPREPLY=$( compgen -W "$(fd --maxdepth 2 --type d . "${base_dir}" | grep -i "${regex}" | fzf)"  )
+        #COMPREPLY=$( compgen -W "$(fd --maxdepth 2 --type d . "${base_dir}" | grep -i "${regex}" | fzf)"  )
+        COMPREPLY=$( compgen -W "$(__list_repos | grep i "${regex}")" )
     fi
   }
   complete -F _repo repo
