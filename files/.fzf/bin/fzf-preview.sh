@@ -7,8 +7,6 @@
 # - https://github.com/sharkdp/bat
 # - https://github.com/hpjansson/chafa
 # - https://iterm2.com/utilities/imgcat
-
-
 __preview_dir() {
     local dir=$1
     [ -f "${dir}/README.md" ] && bat --style=numbers --color=always "${dir}/README.md" && return
@@ -61,7 +59,7 @@ if [ -d "${file}" ] ; then
     exit
 fi
 
-type=$(file --dereference --mime -- "$file")
+type="$(file --dereference --mime "$file")"
 if [[ ! $type =~ image/ ]]; then
     if [[ $type =~ =binary ]]; then
         file "${file}"
@@ -102,8 +100,7 @@ elif command -v imgcat > /dev/null; then
     # NOTE: We should use https://iterm2.com/utilities/it2check to check if the
     # user is running iTerm2. But for the sake of simplicity, we just assume
     # that's the case here.
-    imgcat -W "${dim%%x*}" -H "${dim##*x}" "$file"
-
+    imgcat --width "${dim%%x*}" --height "${dim##*x}" "$file"
 # 4. Cannot find any suitable method to preview the image
 else
     file "$file"

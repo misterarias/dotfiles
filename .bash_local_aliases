@@ -543,8 +543,8 @@ if command -v fzf >/dev/null ; then
     file=${1/#\~\//$HOME/}
     [ -d "$file" ] && cd "$file" && return
     [ ! -f "$file" ] && error "$file is not a valid file"
-    if [[ ! $type =~ image/ ]] && [[ ! $type =~ =binary ]]; then vim $file ; else file $file ; fi
-    file $file
+    type="$(file --dereference --mime "$file")"
+    if [[ ! $type =~ image/ ]] && [[ ! $type =~ =binary ]]; then vim "$file" ; else file "$file" ; fi
   }
 
   # time-based finders
@@ -556,16 +556,8 @@ if command -v fzf >/dev/null ; then
   alias c.w='__open $(__finder 7d)'
   alias c.m='__open $(__finder 30d)'
 
-  # fzf + preview
-  ##if [ -x "$(which bat)" ] ; then
-  ##  alias fzf.preview="fzf --preview 'file {} ; bat --color=always --style=plain --line-range=:200 {}'"
-  ##else
-  ##  red "No 'bat' found in PATH, defaulting fzf preview"
-  ##  alias fzf.preview="fzf --preview 'cat {}'"
-  ##fi
-
   __list_repos() {
-    fd -H --maxdepth 2 --type d . "$_REPO_AUTOCOMPLETE_BASE_DIR/"
+    fd -H --maxdepth 2 --min-depth 2 --type d . "$_REPO_AUTOCOMPLETE_BASE_DIR/"
   }
 
   # Automagically autocomplete repo names and 'cd' into them. Needs a proper base repo dir. Depends on fzf and fd
