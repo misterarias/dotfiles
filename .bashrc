@@ -25,11 +25,14 @@ export PATH="$HOME/.local/bin:$PATH"
 # Allow system PIP packages to be found
 export PATH="$HOME/Library/Python/3.9/bin:$PATH"
 
-# MacVIM's own vim
-export PATH="~/Apps/MacVim.app/Contents/bin:$PATH"
-
-# Add non-sudo homebrew path
-export PATH="$HOME/.homebrew/bin:$PATH"
+# Add (non-sudo) homebrew path
+#export PATH="$HOME/.homebrew/bin:$PATH"
+export HOMEBREW_PREFIX="/opt/homebrew";
+export HOMEBREW_CELLAR="/opt/homebrew/Cellar";
+export HOMEBREW_REPOSITORY="/opt/homebrew";
+export PATH="/opt/homebrew/bin:/opt/homebrew/sbin${PATH+:$PATH}";
+export MANPATH="/opt/homebrew/share/man${MANPATH+:$MANPATH}:";
+export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}";
 
 # At the very least, colours in MAC
 export CLICOLOR=1
@@ -118,8 +121,11 @@ fi
 # This introduces the SIGINT trap error: eval "$(direnv hook bash)"
 [ -f "${HOME}/.ghcup/env" ] && . "${HOME}/.ghcup/env" # ghcup-env
 
-[ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+# The next line updates PATH for the Google Cloud SDK.
+if [ -f '/Users/e053375/Downloads/google-cloud-sdk/path.bash.inc' ]; then . '/Users/e053375/Downloads/google-cloud-sdk/path.bash.inc'; fi
+
+# The next line enables shell command completion for gcloud.
+if [ -f '/Users/e053375/Downloads/google-cloud-sdk/completion.bash.inc' ]; then . '/Users/e053375/Downloads/google-cloud-sdk/completion.bash.inc'; fi
+
+test -e "${HOME}/.iterm2_shell_integration.bash" && source "${HOME}/.iterm2_shell_integration.bash"

@@ -11,7 +11,8 @@ endif
 
 call plug#begin('~/.vim/bundle')
 
-Plug 'ycm-core/YouCompleteMe'
+" Copilot wins dude
+"Plug 'ycm-core/YouCompleteMe'
 
 " Install your UIs
 "Plug 'Shougo/ddc-ui-native'

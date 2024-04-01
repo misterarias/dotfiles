@@ -279,7 +279,7 @@ git() {
     repo_ssh="$1" ; [ -z "${repo_ssh}" ] && \
       repo_ssh="$(git remote get-url --push origin)"
     #echo "${repo_ssh}" | sed -Ee 's#.*\.com(:[0-9]*/|:|/)##g' -e 's#\.git$##g' | tr '/' ' '
-    echo "${repo_ssh}" | sed -E 's#^.*@globaldevtools.bbva.com:7999/(.*)/(.*).git#\1 \2#g'
+    echo "${repo_ssh}" | sed -E 's#^.*:7999/(.*)/(.*).git#\1 \2#g'
   }
 
   _get_github_repo_n_project() {
@@ -788,5 +788,19 @@ alias ansible.disable='deactivate'
 # Flush DNS
 is.mac && alias dns.flush='sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder'
 
-# GIT completion, among others
-is.mac && [[ -r "/usr/local/etc/profile.d/bash_completion.sh" ]] && . "/usr/local/etc/profile.d/bash_completion.sh"
+# GIT completion, among others ('brew install bash-completion')
+#is.mac && [[ -r "/usr/local/etc/profile.d/bash_completion.sh" ]] && . "/usr/local/etc/profile.d/bash_completion.sh"
+is.mac && [[ -r "/opt/homebrew/etc/profile.d/bash_completion.sh" ]] && . "/opt/homebrew/etc/profile.d/bash_completion.sh"
+
+# local brew openforti
+#alias openforti="~/.homebrew/opt/openfortivpn/bin/openfortivpn -c ~/.homebrew/etc/openfortivpn/openfortivpn/config"
+
+# MacVIM's own vim
+#alias vim="~/Applications/MacVim.app/Contents/MacOS/Vim"
+alias vi='vim'
+
+# Useful for everything: bash, git, postgres...
+export EDITOR=vim
+export VISUAL_EDITOR=vim
+export PSQL_EDITOR='vim -c"set syntax=sql"'
+
