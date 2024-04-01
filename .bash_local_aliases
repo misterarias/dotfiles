@@ -615,9 +615,9 @@ if command -v fzf >/dev/null ; then
   fim() {
     local matches
     if [ $# -gt 0 ] ; then
-      matches=$(fd --type file "$1" | fzf.preview)
+      matches=$(fd --type file "$1" | __FZF_PREVIEW_COMMAND)
     else
-      matches="$(fzf.preview)"
+      matches="$(__FZF_PREVIEW_COMMAND)"
     fi
     [ -n "${matches}" ] && vim "${matches}"
   }

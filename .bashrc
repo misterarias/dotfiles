@@ -14,7 +14,7 @@ export PROMPT_COMMAND=
 export __ENABLE_PYENV=
 
 # If left empty, npm is not loaded by default, freeing up resources
-export __ENABLE_NPM=1
+export __ENABLE_NPM=
 
 # Locale select
 export LANG="es_ES.UTF-8"

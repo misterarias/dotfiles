@@ -100,7 +100,7 @@ elif command -v imgcat > /dev/null; then
     # NOTE: We should use https://iterm2.com/utilities/it2check to check if the
     # user is running iTerm2. But for the sake of simplicity, we just assume
     # that's the case here.
-    imgcat --width "${dim%%x*}" --height "${dim##*x}" "$file"
+    imgcat --height "${dim##*x}" "$file"
 # 4. Cannot find any suitable method to preview the image
 else
     file "$file"
