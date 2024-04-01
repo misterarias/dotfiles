@@ -82,7 +82,7 @@ fi
 [ -f ~/.bash_private_vars ] && source ~/.bash_private_vars
 
 if [ -n "${__ENABLE_PYENV}" ] ; then  enable.pyenv ; else  green "pyenv disabled by environment variable, type enable.pyenv to enable locally" ; fi
-if [ -n "${__ENABLE_NPM}" ] ; then  enable.npm ; else  green "npm disabled by environment variable, type enable.npm to enable locally" ; fi
+if [ -n "${__ENABLE_NPM}" ] ; then enable.npm ; else  green "npm disabled by environment variable, type enable.npm to enable locally" ; fi
 
 # Enable bash to cycle through completions (https://superuser.com/a/59198)
 #[[ $- = *i* ]] && bind TAB:menu-complete
@@ -120,8 +120,6 @@ if [ -f '/Users/e053375/Downloads/google-cloud-sdk/path.bash.inc' ]; then . '/Us
 # The next line enables shell command completion for gcloud.
 if [ -f '/Users/e053375/Downloads/google-cloud-sdk/completion.bash.inc' ]; then . '/Users/e053375/Downloads/google-cloud-sdk/completion.bash.inc'; fi
 
-# MAC ONLY - remove from mac
-test -e "${HOME}/.iterm2_shell_integration.bash" && source "${HOME}/.iterm2_shell_integration.bash"
-
 # bash autocompletion
-is.debian && source /etc/bash_completion
+is.debian && [[ -r /etc/bash_completion ]] && source /etc/bash_completion
+is.mac && [[ -r "/opt/homebrew/etc/profile.d/bash_completion.sh" ]] && . "/opt/homebrew/etc/profile.d/bash_completion.sh"

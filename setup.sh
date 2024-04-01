@@ -88,6 +88,14 @@ setup_vim() {
     dotfiles_link .vimrc ~/.vimrc
 
     __install_git
+    #__install_deno
+
+    # Python libs for Python (requieres Python3 support for VIM)
+    python3 -m pip install flake8 jedi mypy --break-system-packages
+}
+
+# Now useless Vim plugin
+__install_deno() {
     if [ -z "$(which deno)" ] ; then
         if is.mac ; then
             pip install deno --break-system-packages
@@ -96,9 +104,6 @@ setup_vim() {
         fi
     fi
     green "Deno installed"
-
-  # Python libs for Python (requieres Python3 support for VIM)
-  pip install flake8 jedi mypy --break-system-packages
 }
 
 __install_git_delta() {
@@ -254,11 +259,9 @@ __install_imgcat() {
 
 __install_autocompletion() {
     if is.mac ; then
-        [[ -r "/usr/local/etc/profile.d/bash_completion.sh" ]] || pip install bash-completion 
+        [[ -r "/usr/local/etc/profile.d/bash_completion.sh" ]] || brew install bash-completion
     elif is.debian ; then
-        if [[ -r "/etc/profile.d/bash_completion.sh" ]] ; then
-            sudo apt install  bash-completion
-        fi
+        [[ -r "/etc/profile.d/bash_completion.sh" ]] ||  sudo apt install  bash-completion
     elif is.arch ; then
         sudo pacman -S --noconfirm bash-completion
     else
