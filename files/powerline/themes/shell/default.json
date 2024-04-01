@@ -5,6 +5,12 @@
             {
                 "left": [
                     {
+                        "function": "powerline.segments.common.net.hostname",
+                        "args": {
+                            "only_if_ssh": true
+                        }
+                    },
+                    {
                         "function": "powerline.segments.common.time.date",
                         "args": {
                             "istime": true,
@@ -37,10 +43,6 @@
                             "status_colors": true
                         }
                     }
-                ],
-                "right": [
-
-
                 ]
             }
         ], 
