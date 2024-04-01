@@ -5,14 +5,15 @@
             {
                 "left": [
                     {
-                        "function": "powerline.segments.shell.mode"
-                    },
-                    {
                         "function": "powerline.segments.common.time.date",
                         "args": {
                             "istime": true,
                             "format": "%H:%M:%S.%f"
                         }
+                    },
+                    {
+                        "function": "powerline.segments.shell.jobnum",
+                        "priority": 20
                     },
                     {
                         "function": "powerline.segments.common.bat.battery",
@@ -24,7 +25,11 @@
                         "function": "powerline.segments.common.env.virtualenv"
                     },
                     {
-                        "function": "powerline.segments.shell.cwd"
+                        "function": "powerline.segments.shell.cwd",
+                        "args": {
+                            "dir_limit_depth": 2,
+                            "use_path_separator": true
+                        }
                     },
                     {
                         "function": "powerline.segments.common.vcs.branch",
@@ -34,6 +39,8 @@
                     }
                 ],
                 "right": [
+
+
                 ]
             }
         ], 

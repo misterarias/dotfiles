@@ -169,18 +169,22 @@ hi Search ctermbg=DarkYellow ctermfg=Yellow
 " highlight iCursor guifg=white guibg=steelblue
 
 " 1 tab == X spaces
-set shiftwidth=2
-set tabstop=2
-set sts=2
+set shiftwidth=4
+set tabstop=4
+set sts=4
 set expandtab
 set list
 set listchars=tab:␉·,trail:␠
 
 " More space in certain files (TODO maybe all...)
-autocmd Filetype xml setlocal ts=4 sts=4 sw=4
-autocmd Filetype python setlocal ts=4 sts=4 sw=4
-autocmd Filetype groovy setlocal ts=4 sts=4 sw=4
-autocmd FileType json :set ts=4 sts=4 sts=4
+"autocmd Filetype * setlocal ts=4 sts=4 sw=4
+"autocmd Filetype python setlocal ts=4 sts=4 sw=4
+"autocmd Filetype groovy setlocal ts=4 sts=4 sw=4
+"autocmd FileType json :set ts=4 sts=4 sts=4
+"autocmd FileType json :set ts=4 sts=4 sts=4
+
+" Map weird types
+au BufNewFile,BufRead *.gs set filetype=javascript
 
 set ai "Auto indent
 set si "Smart indent
@@ -190,9 +194,6 @@ map <C-n> :bnext<CR>
 map <C-b> :bp<CR>
 map <C-c> :BW<CR>
 
-" Testing: change workspace to current file's location
-"set autochdir
-"autocmd BufEnter * silent! lcd %:p:h
 
 " Super needed in order for multiple buffers to work properly
 set laststatus=2
@@ -341,8 +342,8 @@ let g:ansible_unindent_after_newline=1
 " CtrlP custom settings
 let g:ctrlp_cmd = 'CtrlP'
 let g:ctrlp_mruf_case_sensitive = 1
-let g:ctrlp_show_hidden = 0
-let g:ctrlp_custom_ignore = '\v[\/](node_modules|build|target|out|\.(git|hg|svn))$'
+let g:ctrlp_show_hidden = 1
+let g:ctrlp_custom_ignore = '\v[\/](Library|Libraries|Applications|node_modules|build|target|out|\.(git|hg|svn))$'
 
 " Open file in chrome
 nmap <silent> <leader>gc :!/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome %<CR>
@@ -373,12 +374,15 @@ map <leader>tc :tabclose<CR>
 
 "" Enable copilot in all buffers
 let b:copilot_enabled=v:true
+let g:copilot_proxy = '127.0.0.1:8999'  "'proxyvip.igrupobbva:8080'
+let g:copilot_proxy_strict_ssl = v:false
 
-" Enable powerline (installed from pipx)
+
+" Enable powerline (installed from /opt/homebrew/Cellar/python\@3.12/3.12.2_1/bin/pip3 install powerline-status --break-system-packages.)
+let g:Powerline_symbols = 'unicode'
 python3 from powerline.vim import setup as powerline_setup
 python3 powerline_setup()
 python3 del powerline_setup
 set laststatus=2 " Always display the statusline in all windows
 set showtabline=2 " Always display the tabline, even if there is only one tab
 set noshowmode " Hide the default mode text (e.g. -- INSERT -- below the statusline)
-

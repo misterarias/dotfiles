@@ -1,16 +1,23 @@
 {
-	"name": "Default color scheme for shell prompts",
-	"groups": {
-		"hostname":         { "fg": "brightyellow", "bg": "mediumorange", "attrs": [] },
-		"environment":      { "fg": "white", "bg": "darkestgreen", "attrs": [] },
-		"mode":             { "fg": "darkestgreen", "bg": "brightgreen", "attrs": ["bold"] },
-		"attached_clients": { "fg": "white", "bg": "darkestgreen", "attrs": [] }
-	},
-	"mode_translations": {
-		"vicmd": {
-			"groups": {
-				"mode": {"fg": "darkestcyan", "bg": "white", "attrs": ["bold"]}
-			}
-		}
-	}
+    "name": "Default color scheme for shell prompts",
+    "groups": {
+        "hostname":         { "fg": "brightyellow", "bg": "mediumorange", "attrs": [] },
+        "environment":      { "fg": "white", "bg": "darkestgreen", "attrs": [] },
+        "mode":             { "fg": "darkestgreen", "bg": "brightgreen", "attrs": ["bold"] },
+        "attached_clients": { "fg": "white", "bg": "darkestgreen", "attrs": [] },
+        "battery":                    { "fg": "gray8", "bg": "gray0", "attrs": [] },
+        "battery_gradient":           { "fg": "white_red", "bg": "gray0", "attrs": [] },
+        "battery_full":               { "fg": "red", "bg": "gray0", "attrs": [] },
+        "battery_empty":              { "fg": "white", "bg": "gray0", "attrs": [] },
+        "exectime":               "time",
+        "exectime_gradient":      { "fg": "green_yellow_orange_red", "bg": "gray2", "attrs": ["bold"] },
+        "exectime_gradient_bg":   { "fg": "black", "bg": "green_yellow_orange_red", "attrs": ["bold"] }
+    },
+    "mode_translations": {
+        "vicmd": {
+            "groups": {
+                "mode": {"fg": "darkestcyan", "bg": "white", "attrs": ["bold"]}
+            }
+        }
+    }
 }

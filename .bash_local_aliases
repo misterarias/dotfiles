@@ -27,12 +27,25 @@ red() {
   echo -e "${REDCOLOR_BOLD}$*${ENDCOLOR}"
 }
 
+# BSD ls colors
+export LSCOLORS=Ehfxcxdxbxegedabagacad
 
 # Enable Pyenv in current shell
 enable.pyenv() {
+  [ -z "${PYENV_ROOT}" ] && export PYENV_ROOT="$HOME/.pyenv"
+  [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
+  ! command -v pyenv > /dev/null && error "Pyenv is not installed in your system" && return 1
+
   command -v pyenv > /dev/null && eval "$(pyenv init -)"
   command -v pyenv-virtualenv-init > /dev/null && eval "$(pyenv virtualenv-init -)"
   blue "Successfully loaded pyenv"
+}
+
+# Enable NVM in current shell
+enable.npm() {
+  export NVM_DIR="$HOME/.nvm"
+  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+  [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 }
 
 # re-source all aliases
@@ -254,8 +267,8 @@ git() {
   _get_repo_n_project() {
     remote="$1" ; [ -z "${remote}" ] && \
       remote=$(git remote get-url --push origin)
-    if echo "${remote}" | grep -q "${GITLAB_REPO}" ; then
-      _get_gitlab_repo_and_project "$@"
+    if echo "${remote}" | grep -q "github.com" ; then
+      _get_github_repo_n_project "$@"
     else
       _get_bb_repo_n_project "$@"
     fi
@@ -269,19 +282,18 @@ git() {
     echo "${repo_ssh}" | sed -E 's#^.*@globaldevtools.bbva.com:7999/(.*)/(.*).git#\1 \2#g'
   }
 
-  # Returns a two-item array!!
-  _get_gitlab_repo_and_project() {
+  _get_github_repo_n_project() {
     repo_ssh="$1" ; [ -z "${repo_ssh}" ] && \
       repo_ssh="$(git remote get-url --push origin)"
-    echo "${repo_ssh}" | grep -Eio '[0-9a-z]+\/[0-9a-z_-]+\.git$' | sed -e 's/.git$//' | tr '/' ' '
+    echo "${repo_ssh}" | sed -E 's#^.*github.com[:/](.*)/(.*).git#\1 \2#g'
   }
 
   _get_repo_url() {
     repo_and_project=($( _get_repo_n_project "$1" ))
     remote="$1" ; [ -z "${remote}" ] && \
       remote=$(git remote get-url --push origin)
-    if echo "${remote}" | grep -q "${GITLAB_REPO}" ; then
-      printf "https://${GITLAB_REPO}/%s/%s" "${repo_and_project[0]}" "${repo_and_project[1]}"
+    if echo "${remote}" | grep -q "github.com" ; then
+      printf "https://github.com/%s/%s" "${repo_and_project[0]}" "${repo_and_project[1]}"
     else
       printf "${BITBUCKET_REPO}/projects/%s/repos/%s" "${repo_and_project[0]}" "${repo_and_project[1]}"
     fi
@@ -340,7 +352,8 @@ git() {
       sys.open "${project_url}"
       ;;
     klone*)
-      shift; repo=$1 ; [ -z "${repo}" ] && return "$(command git clone "$@")"
+      shift; repo=$1 ; [ -z "${repo}" ] &&  \
+        command git clone --help  && return
       parts=($( _get_repo_n_project "${repo}" ))
       target_dir="$HOME/Stuff/${parts[0]}/${parts[1]}"
       [ ! -d "${target_dir}" ] && command git clone "${repo}" "${target_dir}"
@@ -503,28 +516,57 @@ alias docker.last='docker ps -l -q'
 alias ll='ls -lah'
 alias la='ls -ah'
 
-# Open a new iTerm tab and execute command
-newtabi(){
-  is.mac && osascript \
-    -e 'tell application "iTerm2" to tell current window to set newWindow to (create tab with default profile)'\
-    -e "tell application \"iTerm2\" to tell current session of newWindow to write text \"${*}\""
-}
-
 # curl + jq in one
 jcurl() { curl -s -H 'Accept: application/json' "$@" | jq ; }
 
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash
 if command -v fzf >/dev/null ; then
 
   source ~/.fzf.bash || true
 
   # FZF Custom vars and functions
-  export FZF_DEFAULT_OPTS="--layout=reverse --inline-info --height 40%"
-  export FZF_DEFAULT_COMMAND='fd --type f'
+  export FZF_DEFAULT_OPTS="--inline-info"
+  export FZF_DEFAULT_OPTS=${FZF_DEFAULT_OPTS}' --height 50%'
+  #export FZF_DEFAULT_OPTS=${FZF_DEFAULT_OPTS}' --layout=reverse'
+  export FZF_COLOR="\
+      --color=fg:#4d4d4c,bg:#eeeeee,hl:#d7005f \
+    --color=fg+:#4d4d4c,bg+:#e8e8e8,hl+:#d7005f \
+    --color=info:#4271ae,prompt:#8959a8,pointer:#d7005f \
+    --color=marker:#4271ae,spinner:#4271ae,header:#4271ae\
+      "
+  export FZF_DEFAULT_OPTS="${FZF_DEFAULT_OPTS} ${FZF_COLOR}"
+  export FZF_DEFAULT_COMMAND="fd --type f  --color=auto -H"
+
+  # filetype-based handler
+  __open() {
+    [ -z "$1" ] && error "No file to open" && return
+    file=${1/#\~\//$HOME/}
+    [ -d "$file" ] && cd "$file" && return
+    [ ! -f "$file" ] && error "$file is not a valid file"
+    if [[ ! $type =~ image/ ]] && [[ ! $type =~ =binary ]]; then vim $file ; else file $file ; fi
+    file $file
+  }
+
+  # time-based finders
+  __finder() {
+    $FZF_DEFAULT_COMMAND --changed-within "$1" . $HOME | fzf --preview 'fzf-preview.sh {}'  # $FZF_DEFAULT_OPTS
+  }
+  alias c.h='__open $(__finder 1h)'
+  alias c.d='__open $(__finder 1d)'
+  alias c.w='__open $(__finder 7d)'
+  alias c.m='__open $(__finder 30d)'
 
   # fzf + preview
-  if [ -x "$(which bat)" ] ; then
-    alias fzf.preview="fzf --preview 'bat --color=always --style=plain --line-range=:200 {}'"
-  fi
+  ##if [ -x "$(which bat)" ] ; then
+  ##  alias fzf.preview="fzf --preview 'file {} ; bat --color=always --style=plain --line-range=:200 {}'"
+  ##else
+  ##  red "No 'bat' found in PATH, defaulting fzf preview"
+  ##  alias fzf.preview="fzf --preview 'cat {}'"
+  ##fi
+
+  __list_repos() {
+    fd -H --maxdepth 2 --type d . "$_REPO_AUTOCOMPLETE_BASE_DIR/"
+  }
 
   # Automagically autocomplete repo names and 'cd' into them. Needs a proper base repo dir. Depends on fzf and fd
   repo() {
@@ -534,7 +576,7 @@ if command -v fzf >/dev/null ; then
     [ $# -gt 0 ] && regex=$(echo "$*" | sed -E 's# +#.*#g')
     [ "${regex}" != "" ] && [ -d "${base_dir}/${regex}" ] && cd "${base_dir}/${regex}" && return
 
-    repo="$(fd --maxdepth 2 --type d . "${base_dir}" | grep -i "${regex}" | fzf --preview 'bat --color=always --language=md --style=plain --line-range=:40 {}/README.md')"
+    repo="$(__list_repos | grep -i "${regex}" | fzf $FZF_DEFAULT_OPTS --preview 'fzf-preview.sh {}')"
     if [ -z "${repo}" ] ; then error "No results" ; else cd "${repo}" ; fi
   }
 
@@ -547,7 +589,7 @@ if command -v fzf >/dev/null ; then
     regex="${regex// /.*}"
     if [ -d "${base_dir}/${regex}" ] ; then
         COMPREPLY=$( compgen -W "${base_dir}/${regex}" )
-    elif fd --maxdepth 2 --type d . "${base_dir}" | grep -iq "${regex}"  ; then
+    elif __list_repos | grep -iq "${regex}"  ; then
         COMPREPLY=$( compgen -W "$(fd --maxdepth 2 --type d . "${base_dir}" | grep -i "${regex}" | fzf)"  )
     fi
   }
