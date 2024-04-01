@@ -75,18 +75,14 @@ if [ -n "${ENABLE_RAW_POWERLINE}" ] ; then
   export POWERLINE_BASH_SELECT=1
   _POWERLINE_EXECTIME_TIMER_START="$(date +%s)"
   . "${POWERLINE_ROOT}/bindings/bash/powerline.sh"
-  # POWERLINE_EXTENSIONS="${HOME}/.config/powerline/extensions"
-  #. "${POWERLINE_EXTENSIONS}/powerline-exectime/bindings/bash/powerline-exectime.sh"
 fi
 
 [ -f ~/.bash_local_aliases ] && . ~/.bash_local_aliases
+# DO NOT VERSION THIS!!! THANKS
+[ -f ~/.bash_private_vars ] && source ~/.bash_private_vars
 
 if [ -n "${__ENABLE_PYENV}" ] ; then  enable.pyenv ; else  green "pyenv disabled by environment variable, type enable.pyenv to enable locally" ; fi
 if [ -n "${__ENABLE_NPM}" ] ; then  enable.npm ; else  green "npm disabled by environment variable, type enable.npm to enable locally" ; fi
-
-
-# DO NOT VERSION THIS!!! THANKS
-[ -f ~/.bash_private_vars ] && source ~/.bash_private_vars
 
 # Enable bash to cycle through completions (https://superuser.com/a/59198)
 #[[ $- = *i* ]] && bind TAB:menu-complete
@@ -115,12 +111,8 @@ if ! [[ "${PROMPT_COMMAND:-}" =~ _direnv_hook ]]; then
   PROMPT_COMMAND="_direnv_hook${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 fi
 
-## Should not be needed if the above works
-# eval "$(direnv hook bash)"
-
 # This introduces the SIGINT trap error: eval "$(direnv hook bash)"
 [ -f "${HOME}/.ghcup/env" ] && . "${HOME}/.ghcup/env" # ghcup-env
-
 
 # The next line updates PATH for the Google Cloud SDK.
 if [ -f '/Users/e053375/Downloads/google-cloud-sdk/path.bash.inc' ]; then . '/Users/e053375/Downloads/google-cloud-sdk/path.bash.inc'; fi
@@ -128,5 +120,8 @@ if [ -f '/Users/e053375/Downloads/google-cloud-sdk/path.bash.inc' ]; then . '/Us
 # The next line enables shell command completion for gcloud.
 if [ -f '/Users/e053375/Downloads/google-cloud-sdk/completion.bash.inc' ]; then . '/Users/e053375/Downloads/google-cloud-sdk/completion.bash.inc'; fi
 
+# MAC ONLY - remove from mac
 test -e "${HOME}/.iterm2_shell_integration.bash" && source "${HOME}/.iterm2_shell_integration.bash"
 
+# bash autocompletion
+is.debian && source /etc/bash_completion
