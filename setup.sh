@@ -193,6 +193,9 @@ __install_fd() {
     mkdir -p ~/.local/bin
     ln -sf "$(which fdfind)" ~/.local/bin/fd
   fi
+
+  # link local fd ignore file
+  dotfiles_link .fdignore ~/.fdignore
 }
 
 __install_pyenv() {
@@ -316,7 +319,7 @@ __prepare_pip() {
   __install_python
 
   green "Updating PIP now..."
-  pip install --upgrade  pip
+  #pip install --upgrade  pip
   pip3 list --no-color > "${PIPFILE_LIST}"
 }
 
@@ -383,8 +386,10 @@ setup_binaries() {
   # I like this, it's the same used by 'pip install --user'
   bin_dir="${HOME}/.local/bin"
   mkdir -p "${bin_dir}"
-  cp -v ./bin/* "${bin_dir}"
-  chmod +x "${bin_dir}/"*
+  for local_bin in $(ls files/bin) ; do
+      rm -f "${bin_dir}/${local_bin}"
+      dotfiles_link "files/bin/${local_bin}" "${bin_dir}/${local_bin}"
+  done
 }
 
 help() {

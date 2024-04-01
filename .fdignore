@@ -1,0 +1,17 @@
+~/Library
+Library/*
+Applications/*
+.local/share/*
+.local/share*
+.local/state*
+.local/pipx*
+.local/*iterm*
+.vscode/*
+.vim/*
+.cache/*
+node_modules
+.git/*
+*.pyc
+.iterm2/*
+.cisco/*
+.DS_Store
