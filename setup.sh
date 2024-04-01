@@ -88,7 +88,7 @@ setup_vim() {
   __install_git
   if [ -z "$(which deno)" ] ; then
     if is.mac ; then
-      pip install deno
+      pip install deno --break-system-packages
     else
       curl -fsSL https://deno.land/x/install/install.sh | sh
     fi
@@ -96,7 +96,7 @@ setup_vim() {
   green "Deno installed"
 
   # Python libs for Python (requieres Python3 support for VIM)
-  pip install flake8 jedi mypy
+  pip install flake8 jedi mypy --break-system-packages
 
 }
 
@@ -149,7 +149,7 @@ __install_bat() {
   if command -v bat >/dev/null ;then
     return
   elif is.mac ; then
-    pip install bat
+    pip install bat --break-system-packages
    elif is.debian ; then
     sudo apt install -y bat
     # Due to Ubuntu installing this as batcat instead
@@ -180,7 +180,7 @@ __install_fd() {
   if command -v fd >/dev/null ; then
     return
   elif is.mac ; then
-    pip install fd
+    pip install fd --break-system-packages
    elif is.debian ; then
     sudo apt install -y fd-find
   elif is.arch ; then
@@ -223,16 +223,8 @@ __install_pyenv() {
 
 __install_fzf() {
   if ! command -v fzf >/dev/null ; then
-    if is.mac ; then
       [ ! -d ~/.fzf ] && git clone --depth 1 https://github.com/junegunn/fzf.git ~/.fzf
       ~/.fzf/install --all
-    elif is.debian ; then
-      sudo apt install fzf
-    elif is.arch ; then
-      sudo pacman -S --noconfirm  fzf
-    else
-      error "Don't know how to install fzf"
-    fi
   fi
   __install_fd
   __install_bat
@@ -240,7 +232,7 @@ __install_fzf() {
 
 __install_autocompletion() {
   if is.mac ; then
-    [[ -r "/usr/local/etc/profile.d/bash_completion.sh" ]] || pip install bash-completion
+    [[ -r "/usr/local/etc/profile.d/bash_completion.sh" ]] || pip install bash-completion 
   elif is.debian ; then
     if [[ -r "/etc/profile.d/bash_completion.sh" ]] ; then
       sudo apt install  bash-completion
@@ -276,7 +268,7 @@ __install_direnv() {
 __install_powerline() {
   # Powerline package and config
   grep -q powerline-shell < "${PIPFILE_LIST}" ||
-    pip install powerline-status powerline_gitstatus
+    pip install powerline-status powerline_gitstatus --break-system-packages
 
   # For now, default config is enough
   powerline_config_dir="${HOME}/.config/powerline"

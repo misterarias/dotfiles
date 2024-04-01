@@ -67,8 +67,8 @@ export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 
 export ENABLE_RAW_POWERLINE=1
 if [ -n "${ENABLE_RAW_POWERLINE}" ] ; then
-  #POWERLINE_ROOT="$(pip show powerline-status | grep Location | awk '{print $2}')/powerline"
-  POWERLINE_ROOT="/Users/e053375/.pyenv/versions/3.12.0/lib/python3.12/site-packages/powerline"
+  POWERLINE_ROOT="$(pip show powerline-status | grep Location | awk '{print $2}')/powerline"
+  #POWERLINE_ROOT="/Users/e053375/.pyenv/versions/3.12.0/lib/python3.12/site-packages/powerline"
   export POWERLINE_ROOT
   powerline-daemon -q
   export POWERLINE_BASH_CONTINUATION=1
@@ -129,3 +129,4 @@ if [ -f '/Users/e053375/Downloads/google-cloud-sdk/path.bash.inc' ]; then . '/Us
 if [ -f '/Users/e053375/Downloads/google-cloud-sdk/completion.bash.inc' ]; then . '/Users/e053375/Downloads/google-cloud-sdk/completion.bash.inc'; fi
 
 test -e "${HOME}/.iterm2_shell_integration.bash" && source "${HOME}/.iterm2_shell_integration.bash"
+
