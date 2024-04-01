@@ -2,3 +2,4 @@
 .env.pro
 .env.dev
 .credentials
+.bash_private_vars
