@@ -3,3 +3,4 @@
 .env.dev
 .credentials
 .bash_private_vars
+.DS_Store
