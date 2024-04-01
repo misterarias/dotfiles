@@ -584,8 +584,8 @@ if command -v fzf >/dev/null ; then
     if [ -d "${base_dir}/${regex}" ] ; then
         COMPREPLY=$( compgen -W "${base_dir}/${regex}" )
     elif __list_repos | grep -iq "${regex}"  ; then
-        #COMPREPLY=$( compgen -W "$(fd --maxdepth 2 --type d . "${base_dir}" | grep -i "${regex}" | fzf)"  )
-        COMPREPLY=$( compgen -W "$(__list_repos | grep i "${regex}")" )
+        COMPREPLY=$( compgen -W "$(fd --maxdepth 2 --type d . "${base_dir}" | grep -i "${regex}" | __FZF_PREVIEW_COMMAND)"  )
+        #COMPREPLY=$( compgen -W "$(__list_repos | grep i "${regex}" | __FZF_PREVIEW_COMMAND)" )
     fi
   }
   complete -F _repo repo
