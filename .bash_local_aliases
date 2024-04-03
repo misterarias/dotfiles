@@ -34,11 +34,12 @@ export LSCOLORS=Ehfxcxdxbxegedabagacad
 enable.pyenv() {
   [ -z "${PYENV_ROOT}" ] && export PYENV_ROOT="$HOME/.pyenv"
   [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-  ! command -v pyenv > /dev/null && error "Pyenv is not installed in your system" && return 1
-
-  command -v pyenv > /dev/null && eval "$(pyenv init -)"
-  command -v pyenv-virtualenv-init > /dev/null && eval "$(pyenv virtualenv-init -)"
-  #blue "Successfully loaded pyenv"
+  if command -v pyenv > /dev/null ; then
+    eval "$(pyenv init -)"
+    eval "$(pyenv virtualenv-init -)"
+  else
+    error "Pyenv is not installed in your system"
+  fi
 }
 
 # Enable NVM in current shell
@@ -49,7 +50,7 @@ enable.npm() {
 }
 
 # re-source all aliases
-alias alias.source='source ${HOME}/.bashrc && echo "Successfully sourced ${HOME}/.bashrc"'
+alias alias.source='__source ${HOME}/.bashrc && echo "Successfully sourced ${HOME}/.bashrc"'
 alias bash.source='alias.source'
 
 # Edit aliases fast -and reenable faster.
@@ -66,7 +67,7 @@ sys.export() {
   ignored_lines=0
   while IFS= read -r line ; do
     key=$(echo "${line}" | cut -d'=' -f1 | tr -d ' ')
-    [[ "$key" =~ ^#.* ]] && ignored_lines=$(( ignored_lines + 1 )) && echo "Ignoring '${line}'" && continue
+    [[ "$key" =~ ^#.* ]] && ignored_lines=$(( ignored_lines + 1 )) && echo "Ignoring '${key}'" && continue
 
     value=$(echo "${line}" | cut -d'=' -f2- | tr -d '"' | tr -d "'")
     value=$(eval echo "${value}") # in case it is an env var itself
@@ -130,19 +131,9 @@ sys.renamer() {
 error() { red "[ERROR] $*" ; }
 
 # 'Darwin' for Mac, 'Linux' or similar elsewhere
-is.mac() { [[ $OSTYPE =~ darwin.* ]] ; }
-
-is.debian() {
-  command -v apt > /dev/null
-}
-
-is.arch() {
-  command -v pacman > /dev/null
-}
-
-_get_bash_completion() {
-  is.mac && echo "/usr/local/etc/bash_completion" || echo "/etc/bash_completion"
-}
+is.mac() { [ $(uname) == "Darwin" ] ; }
+is.debian() { [ $(uname) == "Linux" ] && [ -f /etc/debian_version ] ; }
+is.arch() { [ $(uname) == "Linux" ] && [ -f /etc/arch-release ] ; }
 
 _despawn() {
   local service=$1
@@ -519,109 +510,9 @@ alias la='ls -ah'
 # curl + jq in one
 jcurl() { curl -s -H 'Accept: application/json' "$@" | jq ; }
 
-[ -f ~/.fzf.bash ] && source ~/.fzf.bash
-if command -v fzf >/dev/null ; then
 
-  source ~/.fzf.bash || true
-
-  # FZF Custom vars and functions
-  FZF_DEFAULT_OPTS="--inline-info"
-  FZF_DEFAULT_OPTS=${FZF_DEFAULT_OPTS}' --height 60%'
-  FZF_COLOR="\
-    --color=fg:#4d4d4c,bg:#eeeeee,hl:#d7005f \
-    --color=fg+:#4d4d4c,bg+:#e8e8e8,hl+:#d7005f \
-    --color=info:#4271ae,prompt:#8959a8,pointer:#d7005f \
-    --color=marker:#4271ae,spinner:#4271ae,header:#4271ae\
-  "
-  export FZF_DEFAULT_OPTS="${FZF_DEFAULT_OPTS} ${FZF_COLOR}"
-  export FZF_DEFAULT_COMMAND="fd --type f  --color=auto -H"
-  __FZF_PREVIEW_COMMAND() {
-    fzf --preview 'fzf-preview.sh {}' --preview-window 'right,border-rounded,70%,<40(up,40%,border-bottom)'
-  }
-
-  # filetype-based handler
-  __open() {
-    [ -z "$1" ] && error "No file to open" && return
-    file=${1/#\~\//$HOME/}
-    [ -d "$file" ] && cd "$file" && return
-    [ ! -f "$file" ] && error "$file is not a valid file"
-    type="$(file --dereference --mime "$file")"
-    if [[ ! $type =~ image/ ]] && [[ ! $type =~ =binary ]]; then vim "$file" ; else file "$file" ; fi
-  }
-
-  # time-based finders
-  __finder() {
-    $FZF_DEFAULT_COMMAND --changed-within "$1" . $HOME | __FZF_PREVIEW_COMMAND
-  }
-  alias c.h='__open $(__finder 1h)'
-  alias c.d='__open $(__finder 1d)'
-  alias c.w='__open $(__finder 7d)'
-  alias c.m='__open $(__finder 30d)'
-
-  __list_repos() {
-    fd -H --maxdepth 2 --min-depth 2 --type d . "$_REPO_AUTOCOMPLETE_BASE_DIR/"
-  }
-
-  # Automagically autocomplete repo names and 'cd' into them. Needs a proper base repo dir. Depends on fzf and fd
-  repo() {
-    local regex
-    base_dir="${_REPO_AUTOCOMPLETE_BASE_DIR}"
-    [ -d "$*" ] && cd "$*" && return
-    [ $# -gt 0 ] && regex=$(echo "$*" | sed -E 's# +#.*#g')
-    [ "${regex}" != "" ] && [ -d "${base_dir}/${regex}" ] && cd "${base_dir}/${regex}" && return
-
-    repo="$(__list_repos | grep -i "${regex}" | __FZF_PREVIEW_COMMAND)"
-    if [ -z "${repo}" ] ; then error "No results" ; else cd "${repo}" ; fi
-  }
-
-  _repo() {
-    _get_comp_words_by_ref cur prev
-
-    base_dir="${_REPO_AUTOCOMPLETE_BASE_DIR}"
-    [ "${prev}" = "repo" ] && prev=""
-    regex="${prev} ${cur}"
-    regex="${regex// /.*}"
-    if [ -d "${base_dir}/${regex}" ] ; then
-        COMPREPLY=$( compgen -W "${base_dir}/${regex}" )
-    elif __list_repos | grep -iq "${regex}"  ; then
-        COMPREPLY=$( compgen -W "$(fd --maxdepth 2 --type d . "${base_dir}" | grep -i "${regex}" | __FZF_PREVIEW_COMMAND)"  )
-        #COMPREPLY=$( compgen -W "$(__list_repos | grep i "${regex}" | __FZF_PREVIEW_COMMAND)" )
-    fi
-  }
-  complete -F _repo repo
-
-  # git greps and offers vim to open a result
-  ggrep() {
-    [ -z "$1" ] && error "Cannot search nothing...."
-    local matches
-
-    matches=$(git grep -i "$@" | cut -d":" -f1 | sort -u | fzf.preview)
-    [ -z "${matches}" ] && error "No matches for '$*'" && return
-    vim +/"$1" "${matches}"
-  }
-
-  # git greps and opens all results
-  gopen() {
-    [ -z "$1" ] && error "Cannot search nothing...."
-
-    local matches
-
-    matches=$(git grep -i "$@" | cut -d":" -f1 | sort | xargs)
-    [ -z "${matches}" ] && error "No matches for '$*'" && return
-    vim +/"$1" ${matches}
-  }
-
-  # Vim + fzf
-  fim() {
-    local matches
-    if [ $# -gt 0 ] ; then
-      matches=$(fd --type file "$1" | __FZF_PREVIEW_COMMAND)
-    else
-      matches="$(__FZF_PREVIEW_COMMAND)"
-    fi
-    [ -n "${matches}" ] && vim "${matches}"
-  }
-fi
+# alias used to relad fzf config
+alias fzf.reload='__load_fzf'
 
 # Alias for awsume
 alias awsume=". awsume"
@@ -782,10 +673,6 @@ alias ansible.disable='deactivate'
 
 # Flush DNS
 is.mac && alias dns.flush='sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder'
-
-# GIT completion, among others ('brew install bash-completion')
-#is.mac && [[ -r "/usr/local/etc/profile.d/bash_completion.sh" ]] && . "/usr/local/etc/profile.d/bash_completion.sh"
-is.mac && [[ -r "/opt/homebrew/etc/profile.d/bash_completion.sh" ]] && . "/opt/homebrew/etc/profile.d/bash_completion.sh"
 
 # local brew openforti
 #alias openforti="~/.homebrew/opt/openfortivpn/bin/openfortivpn -c ~/.homebrew/etc/openfortivpn/openfortivpn/config"

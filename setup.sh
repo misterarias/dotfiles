@@ -259,7 +259,7 @@ __install_imgcat() {
 
 __install_autocompletion() {
     if is.mac ; then
-        [[ -r "/usr/local/etc/profile.d/bash_completion.sh" ]] || brew install bash-completion
+        [ ! -f /opt/homebrew/etc/profile.d/bash_completion.sh ] && brew install bash-completion@2
     elif is.debian ; then
         [[ -r "/etc/profile.d/bash_completion.sh" ]] ||  sudo apt install  bash-completion
     elif is.arch ; then
