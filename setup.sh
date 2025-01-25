@@ -52,7 +52,6 @@ __install_git() {
 setup_git() {
     __install_git
     __install_git_delta
-    __install_autocompletion
 
     green "Setting up some git defaults..."
     while read -r line ; do
@@ -204,29 +203,30 @@ __install_fd() {
 }
 
 __install_pyenv() {
-    if ! command -v pyenv >/dev/null ; then
-        __install_git
+    if command -v pyenv >/dev/null ; then
+        return
+    fi
+    __install_git
 
-        if is.mac ; then
-            [ ! -d ~/.pyenv ] && curl https://pyenv.run | bash
-            eval "$(~/.pyenv/bin/pyenv init -)"
-            #git clone https://github.com/pyenv/pyenv-virtualenv.git $(pyenv root)/plugins/pyenv-virtualenv
-        else
-            __install_curl
-            # actually, all the recommended dependencies for building python
-            apt install build-essential libssl-dev zlib1g-dev \
-                libbz2-dev libreadline-dev libsqlite3-dev curl \
-                libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
+    if is.mac ; then
+        [ ! -d ~/.pyenv ] && curl https://pyenv.run | bash
+        eval "$(~/.pyenv/bin/pyenv init -)"
+        #git clone https://github.com/pyenv/pyenv-virtualenv.git $(pyenv root)/plugins/pyenv-virtualenv
+    else
+        __install_curl
+        # actually, all the recommended dependencies for building python
+        apt install build-essential libssl-dev zlib1g-dev \
+            libbz2-dev libreadline-dev libsqlite3-dev curl \
+            libncursesw5-dev xz-utils tk-dev libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev
 
-            rm -rf "${HOME}/.pyenv"
-            curl -qsfL https://pyenv.run | bash
-            export PATH="${HOME}/.pyenv/bin:$PATH"
-            echo 'export PATH="${HOME}/.pyenv/bin:$PATH"' >> ~/.bashrc
+        rm -rf "${HOME}/.pyenv"
+        curl -qsfL https://pyenv.run | bash
+        export PATH="${HOME}/.pyenv/bin:$PATH"
+        echo 'export PATH="${HOME}/.pyenv/bin:$PATH"' >> ~/.bashrc
 
-            pyenv_virtualenv_root="$(pyenv root)/plugins/pyenv-virtualenv"
-            rm -rf "${pyenv_virtualenv_root}"
-            git clone -q https://github.com/pyenv/pyenv-virtualenv.git "${pyenv_virtualenv_root}"
-        fi
+        pyenv_virtualenv_root="$(pyenv root)/plugins/pyenv-virtualenv"
+        rm -rf "${pyenv_virtualenv_root}"
+        git clone -q https://github.com/pyenv/pyenv-virtualenv.git "${pyenv_virtualenv_root}"
     fi
 }
 
@@ -267,7 +267,8 @@ __install_autocompletion() {
     else
         error "Don't know how to install bash completion"
     fi
-    curl -sL https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash > ~/.git-completion.bash
+    [ ! -f ~/.git-completion.bash ] &&
+        curl -v -sL https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash > ~/.git-completion.bash
 }
 
 __install_direnv() {
@@ -290,17 +291,27 @@ __install_direnv() {
     dotfiles_link files/direnvrc "${direnv_dir}/.direnvrc"
 }
 
-__install_powerline() {
-    # Powerline package and config
-    grep -q powerline-shell < "${PIPFILE_LIST}" ||
-        pip install powerline-status powerline_gitstatus --break-system-packages
+__install_status_bar() {
+    # We now use starship: https://starship.rs/guide/
+    if command -v starship &>/dev/null ; then
+        return
+    fi
 
+    if is.mac ; then
+        brew install starship
+    elif is.debian ; then
+        curl -sS https://starship.rs/install.sh | sh
+        # sudo apt install -y starship
+    elif is.arch ; then
+        sudo pacman -S --noconfirm starship
+    else
+        error "Don't know how to install starship"
+    fi
 
-    # For now, default config is enough
-    powerline_config_dir="${HOME}/.config/powerline"
-    green "Setting up direnv main files in ${powerline_config_dir}"
+    powerline_config_dir="${HOME}/.config/"
+    green "Setting up starship main files in ${powerline_config_dir}"
     rm "${powerline_config_dir}"
-    dotfiles_link "files/powerline" "${powerline_config_dir}"
+    dotfiles_link "files/starship.toml" "${powerline_config_dir}"
 }
 
 __install_python() {
@@ -337,7 +348,7 @@ setup_dotfiles() {
   __install_pyenv
   __install_autocompletion
   __install_direnv
-  __install_powerline
+  __install_status_bar
 
   dotfiles_link .bashrc ~/.bashrc
   dotfiles_link .bash_local_aliases ~/.bash_local_aliases

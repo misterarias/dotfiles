@@ -34,28 +34,61 @@ export LSCOLORS=Ehfxcxdxbxegedabagacad
 enable.pyenv() {
   [ -z "${PYENV_ROOT}" ] && export PYENV_ROOT="$HOME/.pyenv"
   [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
-  if command -v pyenv > /dev/null ; then
-    eval "$(pyenv init -)"
-    eval "$(pyenv virtualenv-init -)"
-  else
+  if ! command -v pyenv > /dev/null ; then
     error "Pyenv is not installed in your system"
+    return
   fi
+
+  ## Lazy-load pyenv when a relevant command is run
+  #_pyenv_lazyload() {
+  #  [ ! -z "${_PYENV_LAZYLOAD}" ] && return
+  #  export _PYENV_LAZYLOAD=1
+  #  unset -f pyenv
+  #  #eval "$(pyenv init --path)"
+  #  eval "$(pyenv init -)"
+  #  #eval "$(pyenv virtualenv-init -)"
+  #}
+
+  ## Alias pyenv to the lazy loader
+  #alias pyenv="_pyenv_lazyload; pyenv"
+
+  green "[pyenv] init pyenv"
+  eval "$(pyenv init -)"
+  # Tip from https://github.com/pyenv/pyenv-virtualenv/issues/259#issuecomment-1731123922
+  #eval "$(pyenv virtualenv-init - | sed s/precmd/chpwd/g)"
+  green "[pyenv] init pyenv virtualenv"
+  eval "$(pyenv virtualenv-init -)"
 }
 
 # Enable NVM in current shell
 enable.npm() {
-  export NVM_DIR="$HOME/.nvm"
-  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-  [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+  if [ -z "$NVM_DIR" ]; then
+    export NVM_DIR="$HOME/.nvm"
+  fi
+
+  _nvm_lazyload() {
+    [ ! -z "${__NVM_LAZYLOAD}" ] && return
+    export __NVM_LAZYLOAD=1
+
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+
+    # Optionally load bash_completion only when required
+    if [ -n "$BASH_COMPLETION" ] && [ -s "$NVM_DIR/bash_completion" ]; then
+      . "$NVM_DIR/bash_completion"
+    fi
+  }
+
+  alias nvm="_nvm_lazyload; nvm"
+  alias npm="_nvm_lazyload; npm"
+  alias node="_nvm_lazyload; node"
 }
 
 # re-source all aliases
-alias alias.source='__source ${HOME}/.bashrc && echo "Successfully sourced ${HOME}/.bashrc"'
-alias bash.source='alias.source'
+alias bash.reload='__TIMINGS_ENABLED=1 __source ${HOME}/.bashrc || unset __TIMINGS_ENABLED'
 
 # Edit aliases fast -and reenable faster.
-alias bash.edit='vim "${HOME}/.bash_profile" "${HOME}/.bashrc" && bash.source'
-alias alias.edit='vim "${HOME}/.bash_local_aliases" "${HOME}/.bash_private_vars" && alias.source'
+alias bash.edit='vim "${HOME}/.bashrc" && bash.reload'
+alias alias.edit='vim -O "${HOME}/.bash_local_aliases" "${HOME}/.bash_private_vars" && bash.reload'
 
 # exports entries in a key=value file
 sys.export() {
@@ -135,31 +168,6 @@ is.mac() { [ $(uname) == "Darwin" ] ; }
 is.debian() { [ $(uname) == "Linux" ] && [ -f /etc/debian_version ] ; }
 is.arch() { [ $(uname) == "Linux" ] && [ -f /etc/arch-release ] ; }
 
-_despawn() {
-  local service=$1
-  local service_name="spawned_${service//\//_}"
-  local ids=$(docker ps -a | grep "${service_name}" | awk '{print $1}')
-  [ -n "$ids" ] && \
-    printf "Killing old '%s': %s\n" "$1" "$(docker rm -f "${ids}")"
-}
-
-_spawn() {
-  # Service name MUST match image name
-  local service=$1
-  local service_name="spawned_${service//\//_}"
-  shift
-
-  # ports and stuff
-  #args=$*
-
-  # first kill old one, if any
-  _despawn "${service}" || true
-
-  # And spawn a new service
-  printf "Spawning new '%s': %s'\n" "${service}" "$(docker run -d --rm  --name "${service_name}" "$@" "$service")"
-}
-
-
 # Free some Docker disk space
 docker.free_space() {
   green "Pruning all unused images with docker itself..."
@@ -217,7 +225,7 @@ vim() {
       command echo "Lo que tu quieres es el 'git', negro.... en fin... que el día que me muera...." && read -r
       command git "$@"
       ;;
-    git*)
+    git\ *)
       shift;
       command echo "Casi seguro que se te fué la olla again, vamos a pasar del vim ese.... me muero y no te educo..."
       command git "$@" ;;
@@ -267,26 +275,42 @@ git() {
 
   # Returns a two-item array!!
   _get_bb_repo_n_project() {
-    repo_ssh="$1" ; [ -z "${repo_ssh}" ] && \
-      repo_ssh="$(git remote get-url --push origin)"
-    #echo "${repo_ssh}" | sed -Ee 's#.*\.com(:[0-9]*/|:|/)##g' -e 's#\.git$##g' | tr '/' ' '
-    echo "${repo_ssh}" | sed -E 's#^.*:7999/(.*)/(.*).git#\1 \2#g'
+    repo_url="$1" ; [ -z "${repo_url}" ] && \
+      repo_url="$(git remote get-url --push origin)"
+    if echo "${repo_url}" | grep -q "https://" ; then
+      echo "${repo_url}" | sed 's#.*scm/\(.*\)/\(.*\)\.git#\1 \2#'
+    elif echo "${repo_url}" | grep -q "ssh://" ; then
+      echo "${repo_url}" | sed -E 's#^.*:7999/(.*)/(.*).git#\1 \2#g'
+    fi
   }
 
   _get_github_repo_n_project() {
-    repo_ssh="$1" ; [ -z "${repo_ssh}" ] && \
-      repo_ssh="$(git remote get-url --push origin)"
-    echo "${repo_ssh}" | sed -E 's#^.*github.com[:/](.*)/(.*).git#\1 \2#g'
+    repo_url="$1" ; [ -z "${repo_url}" ] && \
+      repo_url="$(git remote get-url --push origin)"
+    if echo "${repo_url}" | grep -q "https://" ; then
+      echo "${repo_url}" | sed 's#.*scm/\(.*\)/\(.*\)\.git#\1 \2#'
+    elif echo "${repo_url}" | grep -q "ssh://" ; then
+      echo "${repo_url}" | sed -E 's#^.*github.com[:/](.*)/(.*).git#\1 \2#g'
+    fi
   }
 
   _get_repo_url() {
-    repo_and_project=($( _get_repo_n_project "$1" ))
-    remote="$1" ; [ -z "${remote}" ] && \
-      remote=$(git remote get-url --push origin)
+    repo_and_project=($( _get_repo_n_project ))
+    remote=$(git remote get-url --push origin)
     if echo "${remote}" | grep -q "github.com" ; then
       printf "https://github.com/%s/%s" "${repo_and_project[0]}" "${repo_and_project[1]}"
     else
       printf "${BITBUCKET_REPO}/projects/%s/repos/%s" "${repo_and_project[0]}" "${repo_and_project[1]}"
+    fi
+  }
+
+  _get_browse_url() {
+    vcs_url=$(_get_repo_url)
+    file=$1
+    if echo "${remote}" | grep -q "github.com" ; then
+      error "Not implemented for Github yet"
+    else
+      printf "${vcs_url}/browse/%s" "${file}"
     fi
   }
 
@@ -339,8 +363,9 @@ git() {
     git*)
       shift ; git "$@" ;;
     open*)
-      shift ; project_url=$( _get_repo_url "$1" )
-      sys.open "${project_url}"
+      shift ;
+      [ -n $1 ] && sys.open $( _get_browse_url $1 ) && return
+      sys.open $( _get_repo_url )
       ;;
     klone*)
       shift; repo=$1 ; [ -z "${repo}" ] &&  \
@@ -349,6 +374,15 @@ git() {
       target_dir="$HOME/Stuff/${parts[0]}/${parts[1]}"
       [ ! -d "${target_dir}" ] && command git clone "${repo}" "${target_dir}"
       cd "${target_dir}" || return
+      ;;
+    branch*)
+      shift
+      if [ -n "${1}" ] ; then
+        command git branch "$@"
+      else
+        branch=$(git brs)
+        [ -n "${branch}" ] && command git checkout $branch
+      fi
       ;;
     *)
       command git "$@" ;;
@@ -430,69 +464,27 @@ mcd() {
 ! is.mac && alias ls='ls --color'
 alias grep='grep --color'
 
-# Fantastic when you are leaving the company and want to get all your job in one go
-alias git.pull_all='for dir in $(find . -type d -maxdepth 1) ; do (cd $dir && is.repo && git pull) ; done || true'
-alias git.clean_all='for dir in $(find . -type d -maxdepth 1) ; do (cd $dir && is.repo && git clean -dfx) ; done || true'
-alias git.leaving_today='git.clean_all && git.pull_all && tar -cjvf /tmp/leaving_new_york_never_easy.bz2 . && mv /tmp/leaving_new_york_never_easy.bz2 . && printf "\n\nDone\nCopy \"leaving_new_york_never_easy.bz2\" somewhere and RUN. FAST\n\n"'
-
-# so sweet
-alias cd..='cd ..'
-
 # Get you external IP fast
 alias ip.mine='dig +short myip.opendns.com @resolver1.opendns.com'
-
-# Get the owner of each branch, last commit and branch name
-alias git.owners='is.repo && for branch in `git branch -r | grep -v HEAD`;do echo -e `git show --format="%an ---> %ai %ar" $branch | head -n 1` \\t$branch; done | sort -r'
-
-# converters for files
-alias sys.iso_to_utf='iconv --from-code=iso-8859-1 --to-code=utf-8'
-alias sys.utf_to_iso='iconv --to-code=iso-8859-1 --from-code=utf-8'
 
 # with X only, paste output of command into clipboard: echo 'AAA' | ccp
 if is.mac ; then alias ccp='pbcopy' ; else alias ccp='xclip -selection clipboard' ; fi
 
-# Copy current path to clipboard - needs 'ccp'
-alias ccpath='pwd | ccp'
-
 # OSX override of AWK, if installed
 is.mac && [ -n "$(command -v gawk > /dev/null)" ] && alias awk='gawk'
-
-# Pushes production, develop, and all tags in one go
-alias super.push='git push origin prod  && git push --tags && git push origin develop'
-
-# Starts/stops a local Datascience notebook:  https://github.com/jupyter/docker-stacks/tree/master/datascience-notebook
-alias spawn.ds-notebook='_spawn jupyter/datascience-notebook -e JUPYTER_ENABLE_LAB=yes --workdir="/home/jovyan/work"  -v "$(pwd):/home/jovyan/work" -p 8888:8888 && sleep 3 && docker logs $(docker ps -l -q)'
-alias despawn.ds-notebook='_despawn jupyter/datascience-notebook'
-
-# Starts/stops a Jupyter notebook being run
-alias spawn.notebook='_spawn jupyter/all-spark-notebook  -v "$(pwd):/home/jovyan/work" -p 8888:8888'
-alias despawn.notebook='_despawn jupyter/all-spark-notebook'
-
-# Starts/stops a local redis instance
-alias spawn.redis='_spawn redis -p 6379:6379'
-alias despawn.redis='_despawn redis'
-
-# Starts/stops a memcached instance
-alias spawn.memcached='_spawn memcached -p 11211:11211'
-alias despawn.memcached='_despawn memcached'
 
 # VIM aliases, for great justice
 alias bim="echo 'LOL eres un mamón, es ''vi'' o ''vim'', no va con B... te lo paso por esta' && read && vim \$*"
 alias vin="echo 'VIN?? 'Vin' qué, Diesel??? Madre mía, que paciencia...' && read && vim \$*"
 
-# Random 32-char string
-alias rand.str="cat /dev/urandom | base64 | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1"
-
 # Some bash-debugging help
 debug.on() {
-  export PS4='+(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }'
+  PS4='$(date "+%s.%N")\011 '
+  export PS4="+${PS4}(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }"
 }
 
 # Turn off SUPER VERBOSE bash-debugging help
 alias debug.off='unset PS4'
-
-# Run locally installed npm binaries
-alias npm-exec='PATH=$(npm bin):$PATH'
 
 # Sudo edit /etc/hosts
 alias sys.hosts='sudo vim /etc/hosts'
@@ -500,19 +492,12 @@ alias sys.hosts='sudo vim /etc/hosts'
 # chdir to to a temporary location
 alias cdtmp='cd "$(mktemp -d)"'
 
-# ID of last container
-alias docker.last='docker ps -l -q'
-
 # various 'ls' aliases
 alias ll='ls -lah'
 alias la='ls -ah'
 
 # curl + jq in one
 jcurl() { curl -s -H 'Accept: application/json' "$@" | jq ; }
-
-
-# alias used to relad fzf config
-alias fzf.reload='__load_fzf'
 
 # Alias for awsume
 alias awsume=". awsume"
@@ -640,39 +625,32 @@ file.unbackup() {
   done
 }
 
-# move downloaded torrent files into shared torrent directory
-torrent.mv() {
-  local torrent_dir="/Volumes/video/.torrents"
-  [ ! -d "${torrent_dir}" ] && error "Shared folder ${torrent_dir} not available..."
-  mv -v ~/Downloads/*.torrent "${torrent_dir}"
+# open ipython with preloaded file
+df.load() {
+    # Check if a file argument is provided
+    if [ -z "$1" ]; then
+        echo "Usage: load_df <file>"
+        return 1
+    fi
+
+    # Get the file path
+    local file="$1"
+
+    # Determine the file type and generate the appropriate command
+    local ipython_cmd=""
+    if [[ "$file" == *.csv ]]; then
+        ipython_cmd="import pandas as pd; df = pd.read_csv('$file'); print('$file loaded as df')"
+    elif [[ "$file" == *.pkz ]]; then
+        ipython_cmd="import pandas as pd; df = pd.read_pickle('$file', compression='bz2'); print('$file loaded as df')"
+    else
+        echo "Unsupported file type. Only .csv and .pkl.bz2 are supported."
+        return 1
+    fi
+
+    # Open IPython and load the dataframe
+    ipython -i -c "$ipython_cmd"
 }
 
-# enable ansible 2.x
-alias ansible.enable.7='_ansible_enable 7.0 7.0.0'
-alias ansible.enable.4.0='_ansible_enable 4.0 4.0.0a4'
-alias ansible.enable.29='_ansible_enable 2.9 2.9.20'
-_ansible_enable() {
-  local ansible_version pip_version
-  ansible_version=$1
-  pyenv_name="ansible-${ansible_version}"
-  pip_version="${2:-${ansible_version}.0}"
-
-  #echo "[INFO] Venv for Ansible ${ansible_version} not found, creating a new one now..."
-  enable.pyenv
-  python_version="$(pyenv versions | grep -e '^\s*[23]\.' | cut -d '/' -f1 | sort -u | tr -d ' ' | head -1)"
-  envrc.venv "${python_version}" "${pyenv_name}"
-
-  # delete old versions, if any
-  grep -v 'ansible==' requirements.txt > tmp
-  echo "ansible==${pip_version}" >> tmp && mv tmp requirements.txt
-  pip install -r requirements.txt
-}
-
-# disable Ansible
-alias ansible.disable='deactivate'
-
-# Flush DNS
-is.mac && alias dns.flush='sudo dscacheutil -flushcache; sudo killall -HUP mDNSResponder'
 
 # local brew openforti
 #alias openforti="~/.homebrew/opt/openfortivpn/bin/openfortivpn -c ~/.homebrew/etc/openfortivpn/openfortivpn/config"
@@ -685,4 +663,3 @@ alias vi='vim'
 export EDITOR=vim
 export VISUAL_EDITOR=vim
 export PSQL_EDITOR='vim -c"set syntax=sql"'
-

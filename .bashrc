@@ -10,15 +10,6 @@ set -o vi
 export PS1="$ "
 export PROMPT_COMMAND=
 
-# Enable timing data for bashrc debugging
-export __TIMINGS_ENABLED=
-
-# If left empty, pyenv is not loaded by default, freeing up resources
-export __ENABLE_PYENV=
-
-# If left empty, npm is not loaded by default, freeing up resources
-export __ENABLE_NPM=
-
 # Locale select
 export LANG="es_ES.UTF-8"
 
@@ -79,42 +70,35 @@ __time_cmd() {
 }
 
 # I want cores
-ulimit -c unlimited
+# ulimit -c unlimited
 
 # Pycharm bug when using gevent
 export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 
-__load_powerline() {
-  # This is sloooow : POWERLINE_ROOT="$(pip show powerline-status | grep Location | awk '{print $2}')/powerline"
-  POWERLINE_ROOT="/Users/e053375/.pyenv/versions/3.12.0/lib/python3.12/site-packages/powerline"
-  export POWERLINE_ROOT
-  powerline-daemon -q &
-  export POWERLINE_BASH_CONTINUATION=1
-  export POWERLINE_BASH_SELECT=1
-  _POWERLINE_EXECTIME_TIMER_START="$(date +%s)"
-  . "${POWERLINE_ROOT}/bindings/bash/powerline.sh"
-}
-__time_cmd __load_powerline
-
 __load_fzf() {
-  [ -f ~/.fzf.bash ] && source ~/.fzf.bash
   if ! command -v fzf >/dev/null ; then return ; fi
 
+  preload_fzf() {
+    [ -n "${_FZF_LOADED}" ] && return
+    export _FZF_LOADED=1
+    [ -f ~/.fzf.bash ] && source ~/.fzf.bash
+  }
+  alias fzf='preload_fzf; fzf'
+
   # FZF Custom vars and functions
-  FZF_OPTS="--inline-info"
-  FZF_OPTS=${OPTS}' --height=~70%'
-  FZF_BORDER="--border=block"
+  FZF_OPTS="--layout=reverse"
+  FZF_OPTS="${FZF_OPTS}  --info=hidden"
+  FZF_OPTS="${FZF_OPTS} --height=60%"
+  FZF_BORDER="--border=none --margin=0,1"
   FZF_COLOR="\
-    --color=fg:#4d4d4c,bg:#eeeeee,hl:#d7005f \
-    --color=fg+:#4d4d4c,bg+:#e8e8e8,hl+:#d7005f \
-    --color=info:#4271ae,prompt:#8959a8,pointer:#d7005f \
-    --color=marker:#4271ae,spinner:#4271ae,header:#4271ae\
+    --color=dark \
+    --color=preview-bg:#e8e8e8 \
     "
-    export FZF_DEFAULT_OPTS="${FZF_OPTS} ${FZF_COLOR} ${FZF_BORDER}"
-    export FZF_DEFAULT_COMMAND="fd --type f  --color=auto -H"
-    __FZF_PREVIEW_COMMAND() {
-      fzf --preview '~/.fzf/bin/fzf-preview.sh {}' --preview-window 'right,border-none,60%,<70(up,50%,border-bottom)'
-    }
+  export FZF_DEFAULT_OPTS="${FZF_OPTS} ${FZF_COLOR} ${FZF_BORDER}"
+  export FZF_DEFAULT_COMMAND="fd --type f  --color=auto -H"
+  __FZF_PREVIEW_COMMAND() {
+    fzf $FZF_DEFAULT_OPTS --preview '~/.fzf/bin/fzf-preview.sh {}' --preview-window 'right,border-none,60%,<70(bottom,60%,border-top)'
+  }
 
   # filetype-based handler
   __open() {
@@ -125,6 +109,15 @@ __load_fzf() {
     type="$(file --dereference --mime "$file")"
     if [[ ! $type =~ image/ ]] && [[ ! $type =~ =binary ]]; then vim "$file" ; else file "$file" ; fi
   }
+
+  # vim's latest files
+  __vim_latest() {
+    local _FILE
+    _FILE="/tmp/.vim$RANDOM"
+    vim +":redir > ${_FILE} | oldfiles | redir END" +":q!"
+    __open $(cat $_FILE | grep -v '^$' | awk '{print $2}' | __FZF_PREVIEW_COMMAND) || rm  ${_FILE}
+  }
+  alias vim.latest='__vim_latest'
 
   # time-based finders
   __finder() {
@@ -198,50 +191,65 @@ __load_fzf() {
     [ -n "${matches}" ] && vim "${matches}"
   }
 }
-__time_cmd __load_fzf
 
 __source ~/.bash_local_aliases
 __source ~/.bash_private_vars
+##
+#if [ -n "${__ENABLE_POWERLINE}" ] ; then __time_cmd __load_powerline ; else green "Powerline disabled by environment variable, type enable.powerline to enable locally" ; fi
+if [ -n "${__ENABLE_FZF}" ]      ; then __time_cmd __load_fzf      ; else green "FZF disabled by environment variable, type enable.fzf to enable locally" ; fi
+#if [ -n "${__ENABLE_PYENV}" ]   ; then __time_cmd enable.pyenv  ; else green "pyenv disabled by environment variable, type enable.pyenv to enable locally" ; fi
+#if [ -n "${__ENABLE_NPM}" ]     ; then __time_cmd enable.npm    ; else green "npm disabled by environment variable, type enable.npm to enable locally" ; fi
+## __time_cmd enable.pyenv
+__time_cmd enable.npm
 
-if [ -n "${__ENABLE_PYENV}" ]   ; then __time_cmd enable.pyenv  ; else green "pyenv disabled by environment variable, type enable.pyenv to enable locally" ; fi
-if [ -n "${__ENABLE_NPM}" ]     ; then __time_cmd enable.npm    ; else green "npm disabled by environment variable, type enable.npm to enable locally" ; fi
-if [ -n "${__ENABLE_SDK_MAN}" ] ; then __time_cmd enable.sdkman ; else green "SDKMAN disabled by environment variable, type enable.sdkman to enable locally."  ; fi
+# if [ -n "${__ENABLE_SDK_MAN}" ] ; then __time_cmd enable.sdkman ; else green "SDKMAN disabled by environment variable, type enable.sdkman to enable locally."  ; fi
 
+##
 # Enable bash to cycle through completions (https://superuser.com/a/59198)
-#[[ $- = *i* ]] && bind TAB:menu-complete
-
-# Options for autocompletion
-#bind "set show-all-if-ambiguous on"
-#bind "set completion-ignore-case on"
-#bind "set menu-complete-display-prefix on"
+# [[ $- = *i* ]] && bind TAB:menu-complete
+##
+## # Options for autocompletion
+## #bind "set show-all-if-ambiguous on"
+## #bind "set completion-ignore-case on"
+## #bind "set menu-complete-display-prefix on"
 bind "set colored-completion-prefix on"
 bind "set colored-stats on"
-# Alternative would be ~/.inputrc
+## # Alternative would be ~/.inputrc
 bind '"\e[A": history-search-backward'
 bind '"\e[B": history-search-forward'
+##
 
 # Add this AFTER any prompt-manipulating extensions: https://direnv.net/docs/hook.html
 _direnv_hook() {
   local previous_exit_status=$?;
-  eval "$(direnv export bash)";
-  return $previous_exit_status;
+  direnv_out=$(direnv export bash)
+  if [[ -n $direnv_out ]]; then
+    eval "$direnv_out"
+  fi
+  return $previous_exit_status
 }
 
 if ! [[ "${PROMPT_COMMAND:-}" =~ _direnv_hook ]]; then
   PROMPT_COMMAND="_direnv_hook${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
 fi
-# This introduces the SIGINT trap error: eval "$(direnv hook bash)"
-#
-#__source "${HOME}/.ghcup/env" # ghcup-env
-#__source '/Users/e053375/Downloads/google-cloud-sdk/path.bash.inc'
-#__source '/Users/e053375/Downloads/google-cloud-sdk/completion.bash.inc' 
-
+## # This introduces the SIGINT trap error: eval "$(direnv hook bash)"
+## #
+## #__source "${HOME}/.ghcup/env" # ghcup-env
+## #__source '/Users/e053375/Downloads/google-cloud-sdk/path.bash.inc'
+## #__source '/Users/e053375/Downloads/google-cloud-sdk/completion.bash.inc'
+##
 # bash autocompletion
-if is.debian ; then 
+if is.debian ; then
   __source /etc/bash_completion
-elif is.mac ; then 
+elif is.mac ; then
   __source /opt/homebrew/etc/profile.d/bash_completion.sh
 fi
 
 # git autocompletion
 __source ~/.git-completion.bash
+
+# testing starship
+if command -v starship &> /dev/null ; then
+    eval "$(starship init bash)"
+fi
+

@@ -28,7 +28,7 @@ Plug 'junegunn/vim-plug'
 Plug 'scrooloose/syntastic'
 "Plug 'Shougo/ddc.vim'
 "Plug 'vim-denops/denops.vim'
-Plug 'kien/ctrlp.vim'
+Plug 'https://github.com/ctrlpvim/ctrlp.vim'
 Plug 'vim-scripts/bufkill.vim'
 Plug 'vim-scripts/dbext.vim'
 "Plug 'derekwyatt/vim-scala'
@@ -46,19 +46,21 @@ Plug 'pearofducks/ansible-vim'
 "Plug 'godlygeek/tabular'
 "Plug 'plasticboy/vim-markdown'
 " Better status bar
-"Plug 'vim-airline/vim-airline'
-"Plug 'vim-airline/vim-airline-themes'
+Plug 'vim-airline/vim-airline'
+Plug 'vim-airline/vim-airline-themes'
 " GIT integration
 " Plug 'tpope/vim-fugitive'
-"Plug 'davidhalter/jedi-vim'   " Remember to globally install Jedi 
+"Plug 'davidhalter/jedi-vim'   " Remember to globally install Jedi
 Plug 'martinda/Jenkinsfile-vim-syntax'
 Plug 'alfredodeza/coveragepy.vim'
 Plug 'rust-lang/rust.vim'
 Plug 'speshak/vim-cfn'
 Plug 'hashivim/vim-terraform'
 
-" Has to enabled on connected account
+" Has to enabled on connected accountirloine
 Plug 'github/copilot.vim'
+
+
 
 
 call plug#end()
@@ -218,7 +220,7 @@ func! DeleteTrailingWS()
   %s/\s\+$//ge
   exe "normal `z"
 endfunc
-"autocmd BufWrite * :call DeleteTrailingWS()
+autocmd BufWrite * :call DeleteTrailingWS()
 
 " Remove the Windows ^M - when the encodings gets messed up
 noremap <Leader>m mmHmt:%s/<C-V><cr>//ge<cr>'tzt'm
@@ -255,7 +257,7 @@ let g:syntastic_scala_checkers = ['scalac']
 let g:syntastic_sh_checkers = ['shellcheck'] " Package manager
 let g:syntastic_sql_checkers = ['sqlint'] " Ruby gem
 let g:syntastic_yaml_checkers = ['yamllint'] " PIP
-let g:syntastic_python_checkers=['mypy', 'flake8'] "PIP - TODO use mypy
+let g:syntastic_python_checkers=['flake8']  "   TODO: make mypy fast, 'mypy'] "PIP - TODO use mypy
 let g:syntastic_always_populate_loc_list = 1
 let g:syntastic_aggregate_errors = 1
 let g:syntastic_auto_loc_list = 1
@@ -263,7 +265,7 @@ let g:syntastic_check_on_open = 0
 let g:syntastic_check_on_wq = 0
 let g:syntastic_auto_jump = 0
 let g:syntastic_error_symbol = "🔥"
-"let g:syntastic_warning_symbol = "⛈️ "
+let g:syntastic_warning_symbol = "⛈️ "
 let g:syntastic_style_error_symbol = "🔥"
 let g:syntastic_style_warning_symbol = "🌧 "
 let g:syntastic_cloudformation_checkers = ['cfn_lint']
@@ -341,9 +343,12 @@ hi Search ctermbg=DarkYellow ctermfg=Yellow
 let g:ansible_unindent_after_newline=1
 
 " CtrlP custom settings
-let g:ctrlp_cmd = 'CtrlP'
+"let g:ctrlp_cmd = 'CtrlP'
 let g:ctrlp_mruf_case_sensitive = 1
+let g:ctrlp_working_path_mode = 'ra'
 let g:ctrlp_show_hidden = 1
+let g:ctrlp_user_command = 'fd --hidden --full-path %s'        " MacOSX/Linux
+"set wildignore+=*/.git/*,*/.hg/*,*/.svn/*        " Linux/MacOSX
 let g:ctrlp_custom_ignore = '\v[\/](Library|Libraries|Applications|node_modules|build|target|out|\.(git|hg|svn))$'
 
 " Open file in chrome
@@ -365,13 +370,13 @@ map <leader>tp :tabprevious<CR>
 map <leader>tc :tabclose<CR>
 
 " vim-airline configuration
-"let g:airline_theme = 'dark' "'powerlineish'
-"let g:airline_powerline_fonts = 1
-"let t_Co=256
+let g:airline_theme = 'dark' "'powerlineish'
+let g:airline_powerline_fonts = 1
+let t_Co=256
 "" Enable the list of buffers
-"let g:airline#extensions#tabline#enabled = 1
+let g:airline#extensions#tabline#enabled = 1
 "" Show just the filename
-"let g:airline#extensions#tabline#fnamemod = ':t'
+let g:airline#extensions#tabline#fnamemod = ':t'
 
 "" Enable copilot in all buffers
 let b:copilot_enabled=v:true
@@ -379,11 +384,11 @@ let g:copilot_proxy = '127.0.0.1:8999'  "'proxyvip.igrupobbva:8080'
 let g:copilot_proxy_strict_ssl = v:false
 
 
-" Enable powerline (installed from /opt/homebrew/Cellar/python\@3.12/3.12.2_1/bin/pip3 install powerline-status --break-system-packages.)
-let g:Powerline_symbols = 'unicode'
-python3 from powerline.vim import setup as powerline_setup
-python3 powerline_setup()
-python3 del powerline_setup
+" Enable powerline (installed from pip3 install powerline-status --break-system-packages.)
+"" let g:Powerline_symbols = 'unicode'
+"" python3 from powerline.vim import setup as powerline_setup
+"" python3 powerline_setup()
+"" python3 del powerline_setup
 set laststatus=2 " Always display the statusline in all windows
 set showtabline=2 " Always display the tabline, even if there is only one tab
 set noshowmode " Hide the default mode text (e.g. -- INSERT -- below the statusline)
