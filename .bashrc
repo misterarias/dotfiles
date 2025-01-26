@@ -17,16 +17,7 @@ export LANG="es_ES.UTF-8"
 export PATH="$HOME/.local/bin:$PATH"
 
 # Allow system PIP packages to be found
-export PATH="$HOME/Library/Python/3.9/bin:$PATH"
-
-# Add (non-sudo) homebrew path
-#export PATH="$HOME/.homebrew/bin:$PATH"
-export HOMEBREW_PREFIX="/opt/homebrew";
-export HOMEBREW_CELLAR="/opt/homebrew/Cellar";
-export HOMEBREW_REPOSITORY="/opt/homebrew";
-export PATH="/opt/homebrew/bin:/opt/homebrew/sbin${PATH+:$PATH}";
-export MANPATH="/opt/homebrew/share/man${MANPATH+:$MANPATH}:";
-export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}";
+# export PATH="$HOME/Library/Python/3.9/bin:$PATH"
 
 # At the very least, colours in MAC
 export CLICOLOR=1
@@ -45,8 +36,9 @@ __source() {
 }
 
 __get_timing_date() {
-  gdate '+%s.%N'
+  date '+%s.%N'
 }
+
 __get_timing_diff() {
   start_timer="$1"
   end_timer="$2"
@@ -75,7 +67,9 @@ __time_cmd() {
 # Pycharm bug when using gevent
 export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 
-__load_fzf() {
+enable.fzf() {
+  echo $PATH | grep -q fzf || export PATH="~/.fzf/bin:$PATH"
+
   if ! command -v fzf >/dev/null ; then return ; fi
 
   preload_fzf() {
@@ -192,17 +186,11 @@ __load_fzf() {
   }
 }
 
-__source ~/.bash_local_aliases
-__source ~/.bash_private_vars
-##
-#if [ -n "${__ENABLE_POWERLINE}" ] ; then __time_cmd __load_powerline ; else green "Powerline disabled by environment variable, type enable.powerline to enable locally" ; fi
-if [ -n "${__ENABLE_FZF}" ]      ; then __time_cmd __load_fzf      ; else green "FZF disabled by environment variable, type enable.fzf to enable locally" ; fi
-#if [ -n "${__ENABLE_PYENV}" ]   ; then __time_cmd enable.pyenv  ; else green "pyenv disabled by environment variable, type enable.pyenv to enable locally" ; fi
-#if [ -n "${__ENABLE_NPM}" ]     ; then __time_cmd enable.npm    ; else green "npm disabled by environment variable, type enable.npm to enable locally" ; fi
-## __time_cmd enable.pyenv
-__time_cmd enable.npm
+. ~/.bash_local_aliases
+. ~/.bash_private_vars
 
-# if [ -n "${__ENABLE_SDK_MAN}" ] ; then __time_cmd enable.sdkman ; else green "SDKMAN disabled by environment variable, type enable.sdkman to enable locally."  ; fi
+enable.npm
+enable.fzf
 
 ##
 # Enable bash to cycle through completions (https://superuser.com/a/59198)
@@ -253,3 +241,13 @@ if command -v starship &> /dev/null ; then
     eval "$(starship init bash)"
 fi
 
+# Add (non-sudo) homebrew path
+#export PATH="$HOME/.homebrew/bin:$PATH"
+if is.mac ; then
+  export HOMEBREW_PREFIX="/opt/homebrew";
+  export HOMEBREW_CELLAR="/opt/homebrew/Cellar";
+  export HOMEBREW_REPOSITORY="/opt/homebrew";
+  export PATH="/opt/homebrew/bin:/opt/homebrew/sbin${PATH+:$PATH}";
+  export MANPATH="/opt/homebrew/share/man${MANPATH+:$MANPATH}:";
+  export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}";
+fi

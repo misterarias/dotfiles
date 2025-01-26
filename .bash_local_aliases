@@ -84,7 +84,7 @@ enable.npm() {
 }
 
 # re-source all aliases
-alias bash.reload='__TIMINGS_ENABLED=1 __source ${HOME}/.bashrc || unset __TIMINGS_ENABLED'
+alias bash.reload='source ${HOME}/.bashrc'
 
 # Edit aliases fast -and reenable faster.
 alias bash.edit='vim "${HOME}/.bashrc" && bash.reload'

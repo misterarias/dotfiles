@@ -380,8 +380,8 @@ let g:airline#extensions#tabline#fnamemod = ':t'
 
 "" Enable copilot in all buffers
 let b:copilot_enabled=v:true
-let g:copilot_proxy = '127.0.0.1:8999'  "'proxyvip.igrupobbva:8080'
-let g:copilot_proxy_strict_ssl = v:false
+"let g:copilot_proxy = '127.0.0.1:8999'  "'proxyvip.igrupobbva:8080'
+"let g:copilot_proxy_strict_ssl = v:false
 
 
 " Enable powerline (installed from pip3 install powerline-status --break-system-packages.)
