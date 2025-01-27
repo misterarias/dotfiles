@@ -81,6 +81,9 @@ enable.npm() {
   alias nvm="_nvm_lazyload; nvm"
   alias npm="_nvm_lazyload; npm"
   alias node="_nvm_lazyload; node"
+
+  # TODO: Find something better than this crap
+  alias vim='_nvm_lazyload; vim'
 }
 
 # re-source all aliases

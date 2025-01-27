@@ -26,7 +26,7 @@ export CLICOLOR=1
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 export LESS="--RAW-CONTROL-CHARS"
 
-# DAMNDED WARNING
+# DAMNED WARNING
 export BASH_SILENCE_DEPRECATION_WARNING=1
 
 # source wrapper
@@ -189,17 +189,28 @@ enable.fzf() {
 . ~/.bash_local_aliases
 . ~/.bash_private_vars
 
+# Add (non-sudo) homebrew path
+#export PATH="$HOME/.homebrew/bin:$PATH"
+if is.mac ; then
+  export HOMEBREW_PREFIX="/opt/homebrew";
+  export HOMEBREW_CELLAR="/opt/homebrew/Cellar";
+  export HOMEBREW_REPOSITORY="/opt/homebrew";
+  export PATH="/opt/homebrew/bin:/opt/homebrew/sbin${PATH+:$PATH}";
+  export MANPATH="/opt/homebrew/share/man${MANPATH+:$MANPATH}:";
+  export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}";
+fi
+
 enable.npm
 enable.fzf
+enable.sdkman
 
-##
 # Enable bash to cycle through completions (https://superuser.com/a/59198)
 # [[ $- = *i* ]] && bind TAB:menu-complete
 ##
 ## # Options for autocompletion
-## #bind "set show-all-if-ambiguous on"
-## #bind "set completion-ignore-case on"
-## #bind "set menu-complete-display-prefix on"
+bind "set show-all-if-ambiguous on"
+bind "set completion-ignore-case on"
+bind "set menu-complete-display-prefix on"
 bind "set colored-completion-prefix on"
 bind "set colored-stats on"
 ## # Alternative would be ~/.inputrc
@@ -237,17 +248,4 @@ fi
 __source ~/.git-completion.bash
 
 # testing starship
-if command -v starship &> /dev/null ; then
-    eval "$(starship init bash)"
-fi
-
-# Add (non-sudo) homebrew path
-#export PATH="$HOME/.homebrew/bin:$PATH"
-if is.mac ; then
-  export HOMEBREW_PREFIX="/opt/homebrew";
-  export HOMEBREW_CELLAR="/opt/homebrew/Cellar";
-  export HOMEBREW_REPOSITORY="/opt/homebrew";
-  export PATH="/opt/homebrew/bin:/opt/homebrew/sbin${PATH+:$PATH}";
-  export MANPATH="/opt/homebrew/share/man${MANPATH+:$MANPATH}:";
-  export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}";
-fi
+command -v starship &> /dev/null && eval "$(starship init bash)"
