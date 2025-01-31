@@ -205,7 +205,7 @@ enable.fzf
 enable.sdkman
 
 # Enable bash to cycle through completions (https://superuser.com/a/59198)
-# [[ $- = *i* ]] && bind TAB:menu-complete
+[[ $- = *i* ]] && bind TAB:menu-complete
 ##
 ## # Options for autocompletion
 bind "set show-all-if-ambiguous on"
