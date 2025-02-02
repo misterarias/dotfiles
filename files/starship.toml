@@ -1,6 +1,17 @@
 # Get editor completions based on the config schema
 "$schema" = 'https://starship.rs/config-schema.json'
 
+format = """\
+$battery\
+$time\
+$directory\
+$git_branch\
+$git_status\
+$rust$python$golang$nodejs$custom\
+$line_break\
+$status$shell$character
+"""
+
 add_newline = true
 
 [time]
@@ -17,6 +28,12 @@ disabled = true
 
 [battery]
 disabled = false
+full_symbol = '🔋'
+charging_symbol = '⚡️'
+discharging_symbol = '💀'
+[[battery.display]]
+threshold = 30
+style = 'bold red'
 
 [directory]
 style = "fg:#e3e5e5 bg:#769ff0"
