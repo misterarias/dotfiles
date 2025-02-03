@@ -666,3 +666,6 @@ alias vi='vim'
 export EDITOR=vim
 export VISUAL_EDITOR=vim
 export PSQL_EDITOR='vim -c"set syntax=sql"'
+
+# SDKman enabler
+alias enable.sdkman='[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"'
