@@ -39,25 +39,10 @@ enable.pyenv() {
     return
   fi
 
-  ## Lazy-load pyenv when a relevant command is run
-  #_pyenv_lazyload() {
-  #  [ ! -z "${_PYENV_LAZYLOAD}" ] && return
-  #  export _PYENV_LAZYLOAD=1
-  #  unset -f pyenv
-  #  #eval "$(pyenv init --path)"
-  #  eval "$(pyenv init -)"
-  #  #eval "$(pyenv virtualenv-init -)"
-  #}
-
-  ## Alias pyenv to the lazy loader
-  #alias pyenv="_pyenv_lazyload; pyenv"
-
-  green "[pyenv] init pyenv"
   eval "$(pyenv init -)"
   # Tip from https://github.com/pyenv/pyenv-virtualenv/issues/259#issuecomment-1731123922
   #eval "$(pyenv virtualenv-init - | sed s/precmd/chpwd/g)"
-  green "[pyenv] init pyenv virtualenv"
-  eval "$(pyenv virtualenv-init -)"
+  #eval "$(pyenv virtualenv-init -)"
 }
 
 # Enable NVM in current shell
@@ -628,25 +613,38 @@ file.unbackup() {
   done
 }
 
+# installs Ipython and dependencies
+__verify_ipython() {
+  local packages=""
+  local pip_command="pipx"
+  [ -n "${VIRTUAL_ENV}" ] && pip_command="pip"
+  package_list=(ipython pandas openpyxl)
+  missing_packages=$($pip_command show ${package_list[@]} 2>&1 | grep -o "not found.*" | cut -d ':' -f2 | tr -d ',')
+  [ -n "${missing_packages}" ] && echo "Installing IPython and dependencies..." && \
+    $pip_command install ${missing_packages}
+}
+
 # open ipython with preloaded file
 df.load() {
     # Check if a file argument is provided
-    if [ -z "$1" ]; then
+    local file="$1"
+    if [ -z "$file" ]; then
         echo "Usage: load_df <file>"
         return 1
     fi
 
-    # Get the file path
-    local file="$1"
+    # check if ipython is installed, along with pandas and openpyxl
+    __verify_ipython
 
-    # Determine the file type and generate the appropriate command
     local ipython_cmd=""
     if [[ "$file" == *.csv ]]; then
-        ipython_cmd="import pandas as pd; df = pd.read_csv('$file'); print('$file loaded as df')"
+        ipython_cmd="import pandas as pd; df = pd.read_csv('$file'); print('CSV $file loaded as df')"
+    elif [[ "$file" == *.xlsx ]]; then
+        ipython_cmd="import pandas as pd; df = pd.read_excel('$file'); print('Excel $file loaded as df')"
     elif [[ "$file" == *.pkz ]]; then
-        ipython_cmd="import pandas as pd; df = pd.read_pickle('$file', compression='bz2'); print('$file loaded as df')"
+        ipython_cmd="import pandas as pd; df = pd.read_pickle('$file', compression='bz2'); print(Pickle $file loaded as df')"
     else
-        echo "Unsupported file type. Only .csv and .pkl.bz2 are supported."
+        echo "Unsupported file type"
         return 1
     fi
 

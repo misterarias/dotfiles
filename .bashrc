@@ -75,7 +75,9 @@ enable.fzf() {
   preload_fzf() {
     [ -n "${_FZF_LOADED}" ] && return
     export _FZF_LOADED=1
-    [ -f ~/.fzf.bash ] && source ~/.fzf.bash
+
+    #[ -f ~/.fzf.bash ] && source ~/.fzf.bash
+    eval "$(~/.fzf/bin/fzf --bash)"
   }
   alias fzf='preload_fzf; fzf'
 
@@ -203,9 +205,10 @@ fi
 enable.npm
 enable.fzf
 enable.sdkman
+enable.pyenv
 
 # Enable bash to cycle through completions (https://superuser.com/a/59198)
-[[ $- = *i* ]] && bind TAB:menu-complete
+#[[ $- = *i* ]] && bind TAB:menu-complete
 ##
 ## # Options for autocompletion
 bind "set show-all-if-ambiguous on"
