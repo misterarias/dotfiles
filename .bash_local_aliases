@@ -40,24 +40,23 @@ enable.pyenv() {
   fi
 
   ## Lazy-load pyenv when a relevant command is run
-  #_pyenv_lazyload() {
-  #  [ ! -z "${_PYENV_LAZYLOAD}" ] && return
-  #  export _PYENV_LAZYLOAD=1
-  #  unset -f pyenv
-  #  #eval "$(pyenv init --path)"
-  #  eval "$(pyenv init -)"
-  #  #eval "$(pyenv virtualenv-init -)"
-  #}
+  _pyenv_lazyload() {
+    [ ! -z "${_PYENV_LAZYLOAD}" ] && return
+    export _PYENV_LAZYLOAD=1
+    unset -f pyenv
+    #eval "$(pyenv init --path)"
+    eval "$(pyenv init -)"
+    #eval "$(pyenv virtualenv-init -)"
+    alias pyenv="_pyenv_lazyload; pyenv"
+  }
 
   ## Alias pyenv to the lazy loader
-  #alias pyenv="_pyenv_lazyload; pyenv"
+  alias pyenv="_pyenv_lazyload; pyenv"
 
-  green "[pyenv] init pyenv"
-  eval "$(pyenv init -)"
+  #eval "$(pyenv init -)"
   # Tip from https://github.com/pyenv/pyenv-virtualenv/issues/259#issuecomment-1731123922
   #eval "$(pyenv virtualenv-init - | sed s/precmd/chpwd/g)"
-  green "[pyenv] init pyenv virtualenv"
-  eval "$(pyenv virtualenv-init -)"
+  #eval "$(pyenv virtualenv-init -)"
 }
 
 # Enable NVM in current shell
