@@ -210,6 +210,7 @@ if is.mac ; then
   export INFOPATH="/opt/homebrew/share/info:${INFOPATH:-}";
 fi
 
+enable.pyenv
 enable.npm
 enable.fzf
 enable.sdkman

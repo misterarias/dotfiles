@@ -39,7 +39,21 @@ enable.pyenv() {
     return
   fi
 
-  eval "$(pyenv init -)"
+  ## Lazy-load pyenv when a relevant command is run
+  _pyenv_lazyload() {
+    [ ! -z "${_PYENV_LAZYLOAD}" ] && return
+    export _PYENV_LAZYLOAD=1
+    unset -f pyenv
+    #eval "$(pyenv init --path)"
+    eval "$(pyenv init -)"
+    #eval "$(pyenv virtualenv-init -)"
+    alias pyenv="_pyenv_lazyload; pyenv"
+  }
+
+  ## Alias pyenv to the lazy loader
+  alias pyenv="_pyenv_lazyload; pyenv"
+
+  #eval "$(pyenv init -)"
   # Tip from https://github.com/pyenv/pyenv-virtualenv/issues/259#issuecomment-1731123922
   #eval "$(pyenv virtualenv-init - | sed s/precmd/chpwd/g)"
   #eval "$(pyenv virtualenv-init -)"
@@ -667,3 +681,6 @@ alias vi='vim'
 export EDITOR=vim
 export VISUAL_EDITOR=vim
 export PSQL_EDITOR='vim -c"set syntax=sql"'
+
+# SDKman enabler
+alias enable.sdkman='[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"'
