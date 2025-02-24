@@ -70,30 +70,38 @@ export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 enable.fzf() {
   echo $PATH | grep -q fzf || export PATH="~/.fzf/bin:$PATH"
 
-  if ! command -v fzf >/dev/null ; then return ; fi
-
   preload_fzf() {
     [ -n "${_FZF_LOADED}" ] && return
     export _FZF_LOADED=1
-
-    #[ -f ~/.fzf.bash ] && source ~/.fzf.bash
-    eval "$(~/.fzf/bin/fzf --bash)"
+    unalias fzf
+    [ -f ~/.fzf.bash ] && source ~/.fzf.bash
   }
-  alias fzf='preload_fzf; fzf'
+  #alias fzf='preload_fzf; fzf'
+  [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
   # FZF Custom vars and functions
-  FZF_OPTS="--layout=reverse"
-  FZF_OPTS="${FZF_OPTS}  --info=hidden"
-  FZF_OPTS="${FZF_OPTS} --height=60%"
-  FZF_BORDER="--border=none --margin=0,1"
-  FZF_COLOR="\
-    --color=dark \
-    --color=preview-bg:#e8e8e8 \
-    "
+  _USE_FZF_CUSTOM_THEME=1
+  if [ "xx${_USE_FZF_CUSTOM_THEME}" = "xx1" ] ; then
+    FZF_OPTS="--layout=reverse"
+    FZF_OPTS="${FZF_OPTS} --info=hidden"
+    FZF_OPTS="${FZF_OPTS} --height=60%"
+    FZF_OPTS="${FZF_OPTS}"  # --preview-window 'right,border-none,60%,<70(bottom,60%,border-top)'"
+    FZF_BORDER="--border=none --margin=0,1"
+    FZF_COLOR="\
+      --color=dark \
+      --color=preview-bg:#e8e8e8 \
+      "
+  else
+    FZF_COLOR=""
+    FZF_BORDER=""
+    FZF_OPTS="--style full"
+  fi
   export FZF_DEFAULT_OPTS="${FZF_OPTS} ${FZF_COLOR} ${FZF_BORDER}"
+
   export FZF_DEFAULT_COMMAND="fd --type f  --color=auto -H"
   __FZF_PREVIEW_COMMAND() {
-    fzf $FZF_DEFAULT_OPTS --preview '~/.fzf/bin/fzf-preview.sh {}' --preview-window 'right,border-none,60%,<70(bottom,60%,border-top)'
+    fzf $FZF_DEFAULT_OPTS --preview 'fzf-preview.sh {}'
+    #fzf --style default  --preview 'fzf-preview.sh {}' --bind 'focus:transform-header:file --brief {}'
   }
 
   # filetype-based handler
@@ -136,7 +144,7 @@ enable.fzf() {
     [ $# -gt 0 ] && regex=$(echo "$*" | sed -E 's# +#.*#g')
     [ "${regex}" != "" ] && [ -d "${base_dir}/${regex}" ] && cd "${base_dir}/${regex}" && return
 
-    repo="$(__list_repos | grep -i "${regex}" | __FZF_PREVIEW_COMMAND)"
+    repo="$(__list_repos | grep -i "${regex}" | fzf --preview 'fzf-preview.sh {}/README.md')"
     if [ -z "${repo}" ] ; then error "No results" ; else cd "${repo}" ; fi
   }
 
