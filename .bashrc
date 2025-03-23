@@ -80,7 +80,7 @@ enable.fzf() {
   [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
   # FZF Custom vars and functions
-  _USE_FZF_CUSTOM_THEME=1
+  _USE_FZF_CUSTOM_THEME=
   if [ "xx${_USE_FZF_CUSTOM_THEME}" = "xx1" ] ; then
     FZF_OPTS="--layout=reverse"
     FZF_OPTS="${FZF_OPTS} --info=hidden"
@@ -102,6 +102,7 @@ enable.fzf() {
   __FZF_PREVIEW_COMMAND() {
     fzf $FZF_DEFAULT_OPTS --preview 'fzf-preview.sh {}'
     #fzf --style default  --preview 'fzf-preview.sh {}' --bind 'focus:transform-header:file --brief {}'
+    #fzf $FZF_DEFAULT_OPTS --preview 'fzf-preview.sh {}' --preview-window 'right,border-none,60%,<70(bottom,60%,border-top)'
   }
 
   # filetype-based handler
