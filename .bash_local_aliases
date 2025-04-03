@@ -404,6 +404,8 @@ aws.open() {
 # Opens something - an URL, a file.... (OS-independent)
 sys.open() {
   open_command=xdg-open ; is.mac && open_command=open
+  # check for wsl-open in WSL
+  [ -n "$(command -v wsl-open)" ] && open_command=wsl-open
   "${open_command}" "$@"
 }
 
@@ -425,7 +427,7 @@ web.whatsapp() {
 }
 
 # Search for something from the commmand line
-web.search() {
+q() {
   engine="Duck Duck GO"
   base_url="https://duckduckgo.com/?q="
   search_string="$*"

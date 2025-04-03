@@ -42,8 +42,8 @@ __get_timing_date() {
 __get_timing_diff() {
   start_timer="$1"
   end_timer="$2"
-  diff=$(echo "${end_timer} - ${start_timer}" | bc --leading-zeroes)
-  env LC_ALL=en_US.UTF-8 printf "%'.3f\n" "${diff}"
+  echo "scale=3; ${end_timer} - ${start_timer}" | bc | LC_NUMERIC=C awk '{printf "%.3f\n", $1}'
+  #env LC_ALL=en_US.UTF-8 printf "%'.3f\n" "${diff}"
 }
 
 __time_cmd() {
@@ -61,23 +61,22 @@ __time_cmd() {
   rm $_tmp_file
 }
 
-# I want cores
-# ulimit -c unlimited
-
 # Pycharm bug when using gevent
 export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 
 enable.fzf() {
+  [ ! -d  "$HOME/.fzf" ] && error "FZF does not seem to be installed"
+
   echo $PATH | grep -q fzf || export PATH="~/.fzf/bin:$PATH"
 
   preload_fzf() {
     [ -n "${_FZF_LOADED}" ] && return
     export _FZF_LOADED=1
     unalias fzf
-    [ -f ~/.fzf.bash ] && source ~/.fzf.bash
+    __source ~/.fzf.bash
   }
-  #alias fzf='preload_fzf; fzf'
-  [ -f ~/.fzf.bash ] && source ~/.fzf.bash
+  alias fzf='preload_fzf; fzf'
+  # [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
   # FZF Custom vars and functions
   _USE_FZF_CUSTOM_THEME=
