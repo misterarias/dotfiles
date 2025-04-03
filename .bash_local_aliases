@@ -424,17 +424,6 @@ web.whatsapp() {
   sys.open "https://web.whatsapp.com"
 }
 
-# Open Telegram web
-web.telegram() {
-  sys.open "https://web.telegram.org"
-}
-
-# URL Escape a string
-web.escape() {
-  ! command -v perl > /dev/null && error "PERL is not installed in your system" && return 1
-  perl -MURI::Escape -e 'print uri_escape($ARGV[0]);' "${1}"
-}
-
 # Search for something from the commmand line
 web.search() {
   engine="Duck Duck GO"

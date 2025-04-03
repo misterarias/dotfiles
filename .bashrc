@@ -100,7 +100,7 @@ enable.fzf() {
 
   export FZF_DEFAULT_COMMAND="fd --type f  --color=auto -H"
   __FZF_PREVIEW_COMMAND() {
-    fzf $FZF_DEFAULT_OPTS --preview 'fzf-preview.sh {}'
+    fzf $FZF_DEFAULT_OPTS --preview 'preview.sh {}'
     #fzf --style default  --preview 'fzf-preview.sh {}' --bind 'focus:transform-header:file --brief {}'
     #fzf $FZF_DEFAULT_OPTS --preview 'fzf-preview.sh {}' --preview-window 'right,border-none,60%,<70(bottom,60%,border-top)'
   }
@@ -138,14 +138,16 @@ enable.fzf() {
   }
 
   # Automagically autocomplete repo names and 'cd' into them. Needs a proper base repo dir. Depends on fzf and fd
-  repo() {
+  r() {
     local regex
     base_dir="${_REPO_AUTOCOMPLETE_BASE_DIR}"
     [ -d "$*" ] && cd "$*" && return
     [ $# -gt 0 ] && regex=$(echo "$*" | sed -E 's# +#.*#g')
     [ "${regex}" != "" ] && [ -d "${base_dir}/${regex}" ] && cd "${base_dir}/${regex}" && return
 
-    repo="$(__list_repos | grep -i "${regex}" | fzf --preview 'fzf-preview.sh {}/README.md')"
+    repo="$(__list_repos | grep -i "${regex}" | __FZF_PREVIEW_COMMAND)"
+    [ -z "${repo}" ] && error "No results" && return
+    #repo="$(__list_repos | grep -i "${regex}" | fzf --preview 'fzf-preview.sh {}/README.md')"
     if [ -z "${repo}" ] ; then error "No results" ; else cd "${repo}" ; fi
   }
 
@@ -162,7 +164,7 @@ enable.fzf() {
       COMPREPLY=$( compgen -W "$(fd --maxdepth 2 --type d . "${base_dir}" | grep -i "${regex}" | __FZF_PREVIEW_COMMAND)"  )
     fi
   }
-  complete -F _repo repo
+  complete -F _repo r
 
   # git greps and offers vim to open a result
   ggrep() {
