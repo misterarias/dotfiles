@@ -10,7 +10,7 @@
 __preview_dir() {
     local dir=$1
     [ -f "${dir}/README.md" ] && bat --style=numbers --color=always "${dir}/README.md" && return
-    tree --filelimit=25 -t  -r -D --prune -L 2  "$dir"
+    tree --filelimit=25  -C -t  -r -D --prune -L 2  "$dir"
 }
 
 __preview_file() {

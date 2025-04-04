@@ -25,43 +25,46 @@ call plug#begin('~/.vim/bundle')
 "Plug 'Shougo/ddc-sorter_rank'
 
 Plug 'junegunn/vim-plug'
-Plug 'scrooloose/syntastic'
+
+" Use 'dir' option to install plugin in a non-default directory
+Plug 'junegunn/fzf', { 'dir': '~/.fzf' }
+
 "Plug 'Shougo/ddc.vim'
 "Plug 'vim-denops/denops.vim'
 Plug 'https://github.com/ctrlpvim/ctrlp.vim'
 Plug 'vim-scripts/bufkill.vim'
-Plug 'vim-scripts/dbext.vim'
+"Plug 'vim-scripts/dbext.vim'
 "Plug 'derekwyatt/vim-scala'
 "Plug 'git://git.code.sf.net/p/vim-latex/vim-latex'
 "Plug 'othree/html5.vim'
-Plug 'scrooloose/nerdtree' | Plug 'Xuyuanp/nerdtree-git-plugin'
+"Plug 'scrooloose/nerdtree' | Plug 'Xuyuanp/nerdtree-git-plugin'
+Plug 'preservim/nerdtree', { 'on':  'NERDTreeFind' }
+"Plug 'dense-analysis/ale', { 'on': 'ALEEnable' }
+Plug 'scrooloose/syntastic'
+Plug 'vim-airline/vim-airline'
+Plug 'vim-airline/vim-airline-themes'
+
 " TO work with React this two are useful
-"Plug 'pangloss/vim-javascript'
-"Plug 'mxw/vim-jsx'
-Plug 'sheerun/vim-polyglot'
-Plug 'pearofducks/ansible-vim'
+Plug 'pangloss/vim-javascript', { 'for': 'javascript' }
+Plug 'mxw/vim-jsx', { 'for': 'javascript' }
+"Plug 'sheerun/vim-polyglot'
+Plug 'pearofducks/ansible-vim', { 'for': 'ansible' }
 " Write environment
 "Plug 'junegunn/goyo.vim'
 " Markdown pluginS - https://github.com/plasticboy/vim-markdown
 "Plug 'godlygeek/tabular'
 "Plug 'plasticboy/vim-markdown'
 " Better status bar
-Plug 'vim-airline/vim-airline'
-Plug 'vim-airline/vim-airline-themes'
 " GIT integration
 " Plug 'tpope/vim-fugitive'
 "Plug 'davidhalter/jedi-vim'   " Remember to globally install Jedi
-Plug 'martinda/Jenkinsfile-vim-syntax'
-Plug 'alfredodeza/coveragepy.vim'
-Plug 'rust-lang/rust.vim'
-Plug 'speshak/vim-cfn'
-Plug 'hashivim/vim-terraform'
+"Plug 'martinda/Jenkinsfile-vim-syntax'
+Plug 'rust-lang/rust.vim', { 'for': 'rust'}
+Plug 'speshak/vim-cfn', { 'for': 'yaml' }
+Plug 'hashivim/vim-terraform', { 'for': 'hcl' }
 
 " Has to enabled on connected accountirloine
 Plug 'github/copilot.vim'
-
-
-
 
 call plug#end()
 
@@ -240,9 +243,9 @@ set splitbelow
 set splitright
 
 " Syntastic
-set statusline+=%#warningmsg#
-set statusline+=%{SyntasticStatuslineFlag()}
-set statusline+=%*
+"set statusline+=%#warningmsg#
+"set statusline+=%{SyntasticStatuslineFlag()}
+"set statusline+=%*
 
 " Toggle Syntastic status
 noremap <leader>st :SyntasticToggle<cr>
@@ -278,36 +281,6 @@ set completeopt=longest,menuone
 highlight Pmenu ctermfg=black ctermbg=lightblue
 highlight PmenuSel ctermfg=white ctermbg=red
 
-" Spell checking!
-let b:myLang=0
-let g:myLangList=["nospell","en_gb"]
-function! ToggleSpell()
-  if !exists( "b:myLang" )
-    if &spell
-      let b:myLang=index(g:myLangList, &spelllang)
-    else
-      let b:myLang=0
-    endif
-  endif
-  let b:myLang=b:myLang+1
-  if b:myLang>=len(g:myLangList)
-    let b:myLang=0
-  endif
-  if b:myLang==0
-    setlocal nospell
-  else
-    execute "setlocal spell spelllang=".get(g:myLangList, b:myLang)
-  endif
-  echo "spell checking language:" g:myLangList[b:myLang]
-endfunction
-
-nmap <silent> <leader>ts :call ToggleSpell()<CR>
-" ]s -> next spelling error
-nmap z+ ]s
-" [s -> previous spelling error
-nmap z- [s
-" z= -> bring up list of suggestions
-" zg -> Add current spelling error to dictionary
 
 " Command to yank into clipboard (needs vim-gtk)
 if has('clipboard')==1
@@ -392,3 +365,12 @@ let b:copilot_enabled=v:true
 set laststatus=2 " Always display the statusline in all windows
 set showtabline=2 " Always display the tabline, even if there is only one tab
 set noshowmode " Hide the default mode text (e.g. -- INSERT -- below the statusline)
+
+" Chat gpt suggestions
+let g:loaded_matchparen = 1
+let g:loaded_2html_plugin = 1
+let g:loaded_remote_plugins = 1
+let g:loaded_shada_plugin = 1
+let g:loaded_tutor_mode_plugin = 1
+
+set shell=/bin/sh

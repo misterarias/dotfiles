@@ -99,7 +99,7 @@ enable.fzf() {
 
   export FZF_DEFAULT_COMMAND="fd --type f  --color=auto -H"
   __FZF_PREVIEW_COMMAND() {
-    fzf $FZF_DEFAULT_OPTS --preview 'preview.sh {}'
+    fzf $FZF_DEFAULT_OPTS --preview 'fzf-preview.sh {}'
     #fzf --style default  --preview 'fzf-preview.sh {}' --bind 'focus:transform-header:file --brief {}'
     #fzf $FZF_DEFAULT_OPTS --preview 'fzf-preview.sh {}' --preview-window 'right,border-none,60%,<70(bottom,60%,border-top)'
   }

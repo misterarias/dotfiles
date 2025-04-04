@@ -41,38 +41,48 @@ enable.pyenv() {
 
   ## Lazy-load pyenv when a relevant command is run
   _pyenv_lazyload() {
-    [ ! -z "${_PYENV_LAZYLOAD}" ] && return
+    [ -n "${_PYENV_LAZYLOAD}" ] && return
     export _PYENV_LAZYLOAD=1
-    unset -f pyenv
+    unalias pyenv
+
     #eval "$(pyenv init --path)"
     eval "$(pyenv init -)"
     #eval "$(pyenv virtualenv-init -)"
-    alias pyenv="_pyenv_lazyload; pyenv"
   }
 
   ## Alias pyenv to the lazy loader
   alias pyenv="_pyenv_lazyload; pyenv"
+}
 
-  #eval "$(pyenv init -)"
-  # Tip from https://github.com/pyenv/pyenv-virtualenv/issues/259#issuecomment-1731123922
-  #eval "$(pyenv virtualenv-init - | sed s/precmd/chpwd/g)"
-  #eval "$(pyenv virtualenv-init -)"
+enable.sdkman() {
+  [ ! -d "$HOME/.sdkman" ] && echo "SDKMAN not installed in your system" && return
+
+  # lazy load sdk
+  _lazyload_sdk() {
+    [ -n "${_SDK_LAZY_LOAD}" ] && return
+    export _SDK_LAZY_LOAD=1
+    unalias sdk
+    export SDKMAN_DIR="$HOME/.sdkman"
+    source "${SDKMAN_DIR}/bin/sdkman-init.sh"
+  }
+
+  alias sdk='_lazyload_sdk; sdk'
 }
 
 # Enable NVM in current shell
 enable.npm() {
-  if [ -z "$NVM_DIR" ]; then
-    export NVM_DIR="$HOME/.nvm"
-  fi
 
   _nvm_lazyload() {
     [ ! -z "${__NVM_LAZYLOAD}" ] && return
     export __NVM_LAZYLOAD=1
 
-    green "Lazy loading NPM"
-    unalias nvm npm node vim
+    unalias nvm
+    unalias npm
+    unalias node
+    unalias vim
 
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
 
     # Optionally load bash_completion only when required
     if [ -n "$BASH_COMPLETION" ] && [ -s "$NVM_DIR/bash_completion" ]; then
@@ -251,6 +261,7 @@ _vim_branch_diff() {
 # Open modified files between current branch and develop or master
 vim.branch_diff.develop() { _vim_branch_diff "develop" ; }
 vim.branch_diff.master() { _vim_branch_diff "master" ; }
+vim.branch_diff.main() { _vim_branch_diff "main" ; }
 
 # Edit files with merge conflicts in workspace
 vim.conflicted() {
@@ -271,11 +282,21 @@ git() {
   _get_repo_n_project() {
     remote="$1" ; [ -z "${remote}" ] && \
       remote=$(git remote get-url --push origin)
-    if echo "${remote}" | grep -q "github.com" ; then
+    if echo "${remote}" | grep -q ".ghe.com" ; then
+      _get_ghe_repo_n_project "$@"
+    elif echo "${remote}" | grep -q "github.com" ; then
       _get_github_repo_n_project "$@"
-    else
+    elif echo "${remote}" | grep -q "bitbucket" ; then
       _get_bb_repo_n_project "$@"
+    else
+      error "Unsupported clone URL: ${remote}" && exit 1
     fi
+  }
+
+  _get_ghe_repo_n_project() {
+    repo_url="$1" ; [ -z "${repo_url}" ] && \
+      repo_url="$(git remote get-url --push origin)"
+    echo "${repo_url}" | sed 's#.*ghe.com.\(.*\)/\(.*\)\.git#\1 \2#'
   }
 
   # Returns a two-item array!!
@@ -327,17 +348,10 @@ git() {
     help*)
       echo && command git --help && echo
       echo "Custom git commands:" && echo
-      echo "  branchD   Delete all local, non-merged branches + unused remotes"
       echo "  perrete   Pushes current branchs and opens browser in the Pull Request page"
       echo "  pushete   Pushes current branch"
       echo "  open      Opens current repo's page in browser"
       echo "  klone     Clones given repo in ssh-format to ~/Stuff/<project>/<repo>"
-      ;;
-    blame*)
-      echo "Probablemente tu, así que mejor no preguntes" ;;
-    branchD*)
-      git branch --no-color --merged | command grep -vE '(master|develop)' | command xargs -n 1 echo git branch -d
-      git fetch -puta
       ;;
     perrete*)
       shift; target_branch=${1:-master}
@@ -672,6 +686,3 @@ alias vi='vim'
 export EDITOR=vim
 export VISUAL_EDITOR=vim
 export PSQL_EDITOR='vim -c"set syntax=sql"'
-
-# SDKman enabler
-alias enable.sdkman='[[ -s "$HOME/.sdkman/bin/sdkman-init.sh" ]] && source "$HOME/.sdkman/bin/sdkman-init.sh"'
