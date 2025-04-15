@@ -66,37 +66,37 @@ enable.sdkman() {
     source "${SDKMAN_DIR}/bin/sdkman-init.sh"
   }
 
-  alias sdk='_lazyload_sdk; sdk'
+alias sdk='_lazyload_sdk; sdk'
 }
 
 # Enable NVM in current shell
 enable.npm() {
 
-  # shellcheck disable=2317
-  _nvm_lazyload() {
-    [ -n "${__NVM_LAZYLOAD}" ] && return
-    export __NVM_LAZYLOAD=1
+# shellcheck disable=2317
+_nvm_lazyload() {
+  [ -n "${__NVM_LAZYLOAD}" ] && return
+  export __NVM_LAZYLOAD=1
 
-    unalias nvm
-    unalias npm
-    unalias node
-    unalias vim
+  unalias nvm
+  unalias npm
+  unalias node
+  unalias vim
 
-    export NVM_DIR="$HOME/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+  export NVM_DIR="$HOME/.nvm"
+  [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
 
-    # Optionally load bash_completion only when required
-    if [ -n "$BASH_COMPLETION" ] && [ -s "$NVM_DIR/bash_completion" ]; then
-      . "$NVM_DIR/bash_completion"
-    fi
-  }
+  # Optionally load bash_completion only when required
+  if [ -n "$BASH_COMPLETION" ] && [ -s "$NVM_DIR/bash_completion" ]; then
+    . "$NVM_DIR/bash_completion"
+  fi
+}
 
-  alias nvm="_nvm_lazyload; nvm"
-  alias npm="_nvm_lazyload; npm"
-  alias node="_nvm_lazyload; node"
+alias nvm="_nvm_lazyload; nvm"
+alias npm="_nvm_lazyload; npm"
+alias node="_nvm_lazyload; node"
 
-  # TODO: Find something better than this crap
-  alias vim='_nvm_lazyload; vim'
+# TODO: Find something better than this crap
+alias vim='_nvm_lazyload; vim'
 }
 
 # re-source all aliases
@@ -160,11 +160,11 @@ docker.free_space() {
     echo "Deleting ${dangling_images_before_count} dangling images..." && \
     docker rmi -f "$(echo "${dangling_images_before}" | xargs)"
 
-  # Delete volumes
-  volumes=$(docker volume ls -q)
-  [ -n "${volumes}" ] && \
-    docker volume rm "${volumes}"
-}
+    # Delete volumes
+    volumes=$(docker volume ls -q)
+    [ -n "${volumes}" ] && \
+      docker volume rm "${volumes}"
+    }
 
 # Remove given line from file
 sys.delete_line() {
@@ -263,119 +263,119 @@ git() {
     fi
   }
 
-  _get_ghe_repo_n_project() {
-    repo_url="$1" ; [ -z "${repo_url}" ] && \
-      repo_url="$(git remote get-url --push origin)"
-    echo "${repo_url}" | sed "s/.*ghe.com.\(.*\)/\(.*\)\.git/\1 \2/"
-  }
+_get_ghe_repo_n_project() {
+  repo_url="$1" ; [ -z "${repo_url}" ] && \
+    repo_url="$(git remote get-url --push origin)"
+  echo "${repo_url}" | sed "s/.*ghe.com.\(.*\)/\(.*\)\.git/\1 \2/"
+}
 
-  # Returns a two-item array!!
-  _get_bb_repo_n_project() {
-    repo_url="$1" ; [ -z "${repo_url}" ] && \
-      repo_url="$(git remote get-url --push origin)"
-    if echo "${repo_url}" | grep -q "https://" ; then
-      echo "${repo_url}" | sed -E 's#.*scm/\(.*\)/\(.*\)\.git#\1 \2#'
-    elif echo "${repo_url}" | grep -q "ssh://" ; then
-      echo "${repo_url}" | sed -E 's#^.*:7999/(.*)/(.*).git#\1 \2#g'
-    fi
-  }
+# Returns a two-item array!!
+_get_bb_repo_n_project() {
+  repo_url="$1" ; [ -z "${repo_url}" ] && \
+    repo_url="$(git remote get-url --push origin)"
+  if echo "${repo_url}" | grep -q "https://" ; then
+    echo "${repo_url}" | sed -E 's#.*scm/\(.*\)/\(.*\)\.git#\1 \2#'
+  elif echo "${repo_url}" | grep -q "ssh://" ; then
+    echo "${repo_url}" | sed -E 's#^.*:7999/(.*)/(.*).git#\1 \2#g'
+  fi
+}
 
-  _get_github_repo_n_project() {
-    repo_url="$1" ; [ -z "${repo_url}" ] && \
-      repo_url="$(git remote get-url --push origin)"
-    if echo "${repo_url}" | grep -q "https://" ; then
-      echo "${repo_url}" | sed -E 's#.*scm/\(.*\)/\(.*\)\.git#\1 \2#'
-    elif echo "${repo_url}" | grep -q "ssh://" ; then
-      echo "${repo_url}" | sed -E 's#^.*github.com[:/](.*)/(.*).git#\1 \2#g'
-    fi
-  }
+_get_github_repo_n_project() {
+  repo_url="$1" ; [ -z "${repo_url}" ] && \
+    repo_url="$(git remote get-url --push origin)"
+  if echo "${repo_url}" | grep -q "https://" ; then
+    echo "${repo_url}" | sed -E 's#.*scm/\(.*\)/\(.*\)\.git#\1 \2#'
+  elif echo "${repo_url}" | grep -q "ssh://" ; then
+    echo "${repo_url}" | sed -E 's#^.*github.com[:/](.*)/(.*).git#\1 \2#g'
+  fi
+}
 
-  _get_repo_url() {
-    repo_and_project=($( _get_repo_n_project ))
-    remote=$(git remote get-url --push origin)
-    if echo "${remote}" | grep -q "github.com" ; then
-      printf "https://github.com/%s/%s" "${repo_and_project[0]}" "${repo_and_project[1]}"
+_get_repo_url() {
+  repo_and_project=($( _get_repo_n_project ))
+  remote=$(git remote get-url --push origin)
+  if echo "${remote}" | grep -q "github.com" ; then
+    printf "https://github.com/%s/%s" "${repo_and_project[0]}" "${repo_and_project[1]}"
+  else
+    printf "${BITBUCKET_REPO}/projects/%s/repos/%s" "${repo_and_project[0]}" "${repo_and_project[1]}"
+  fi
+}
+
+_get_browse_url() {
+  vcs_url=$(_get_repo_url)
+  file=$1
+  if echo "${remote}" | grep -q "github.com" ; then
+    error "Not implemented for Github yet"
+  else
+    printf "${vcs_url}/browse/%s" "${file}"
+  fi
+}
+
+_get_branch_name() {
+  git rev-parse --abbrev-ref HEAD
+}
+
+case "$1" in
+  help*)
+    echo && command git --help && echo
+    echo "Custom git commands:" && echo
+    echo "  perrete   Pushes current branchs and opens browser in the Pull Request page"
+    echo "  pushete   Pushes current branch"
+    echo "  open      Opens current repo's page in browser"
+    echo "  klone     Clones given repo in ssh-format to ~/Stuff/<project>/<repo>"
+    ;;
+  perrete*)
+    shift; target_branch=${1:-master}
+    branch_name=$( _get_branch_name )
+    command git push -u origin "${branch_name}"
+
+    repo_and_project=($( _get_bb_repo_n_project ))
+    project_url=$(printf "${BITBUCKET_REPO}/projects/%s/repos/%s/pull-requests" "${repo_and_project[0]}" "${repo_and_project[1]}")
+
+    url_params=$(printf "create&targetBranch=refs/heads/%s&sourceBranch=refs/heads/%s" "${target_branch}" "${branch_name}")
+    escaped_params=${url_params//\//%2F}
+
+    final_url="${project_url}?${escaped_params}"
+    sys.open "${final_url}"
+    ;;
+  pushete*)
+    # pushes current branch and opens browser in repo webpage
+    branch_name=$( _get_branch_name )
+    [ -n "${branch_name}" ] && \
+      command git push -u origin "${branch_name}" && git open
+    ;;
+  checkete*)
+    # like checkout -b but parsing incoming text into a proper branch name
+    shift; [ "${1}" == "-b" ] && shift;
+    branch_name=$(echo "${@}" | sed -Ee 's/[[:space:]:]+/_/g' )
+    command git checkout -b "${branch_name}"
+    ;;
+  git*)
+    shift ; git "$@" ;;
+  open*)
+    shift ;
+    [ -n "$1" ] && sys.open "$( _get_browse_url "$1" )" && return
+    sys.open "$( _get_repo_url )"
+    ;;
+  klone*)
+    shift; repo=$1 ; [ -z "${repo}" ] &&  \
+      command git clone --help  && return
+    parts=($( _get_repo_n_project "${repo}" ))
+    target_dir="$HOME/Stuff/${parts[0]}/${parts[1]}"
+    [ ! -d "${target_dir}" ] && command git clone "${repo}" "${target_dir}"
+    cd "${target_dir}" || return
+    ;;
+  branch*)
+    shift
+    if [ -n "${1}" ] ; then
+      command git branch "$@"
     else
-      printf "${BITBUCKET_REPO}/projects/%s/repos/%s" "${repo_and_project[0]}" "${repo_and_project[1]}"
+      branch=$(git brs)
+      [ -n "${branch}" ] && command git checkout "$branch"
     fi
-  }
-
-  _get_browse_url() {
-    vcs_url=$(_get_repo_url)
-    file=$1
-    if echo "${remote}" | grep -q "github.com" ; then
-      error "Not implemented for Github yet"
-    else
-      printf "${vcs_url}/browse/%s" "${file}"
-    fi
-  }
-
-  _get_branch_name() {
-    git rev-parse --abbrev-ref HEAD
-  }
-
-  case "$1" in
-    help*)
-      echo && command git --help && echo
-      echo "Custom git commands:" && echo
-      echo "  perrete   Pushes current branchs and opens browser in the Pull Request page"
-      echo "  pushete   Pushes current branch"
-      echo "  open      Opens current repo's page in browser"
-      echo "  klone     Clones given repo in ssh-format to ~/Stuff/<project>/<repo>"
-      ;;
-    perrete*)
-      shift; target_branch=${1:-master}
-      branch_name=$( _get_branch_name )
-      command git push -u origin "${branch_name}"
-
-      repo_and_project=($( _get_bb_repo_n_project ))
-      project_url=$(printf "${BITBUCKET_REPO}/projects/%s/repos/%s/pull-requests" "${repo_and_project[0]}" "${repo_and_project[1]}")
-
-      url_params=$(printf "create&targetBranch=refs/heads/%s&sourceBranch=refs/heads/%s" "${target_branch}" "${branch_name}")
-      escaped_params=${url_params//\//%2F}
-
-      final_url="${project_url}?${escaped_params}"
-      sys.open "${final_url}"
-      ;;
-    pushete*)
-      # pushes current branch and opens browser in repo webpage
-      branch_name=$( _get_branch_name )
-      [ -n "${branch_name}" ] && \
-        command git push -u origin "${branch_name}" && git open
-      ;;
-    checkete*)
-      # like checkout -b but parsing incoming text into a proper branch name
-      shift; [ "${1}" == "-b" ] && shift;
-      branch_name=$(echo "${@}" | sed -Ee 's/[[:space:]:]+/_/g' )
-      command git checkout -b "${branch_name}"
-      ;;
-    git*)
-      shift ; git "$@" ;;
-    open*)
-      shift ;
-      [ -n "$1" ] && sys.open $( _get_browse_url "$1" ) && return
-      sys.open "$( _get_repo_url )"
-      ;;
-    klone*)
-      shift; repo=$1 ; [ -z "${repo}" ] &&  \
-        command git clone --help  && return
-      parts=($( _get_repo_n_project "${repo}" ))
-      target_dir="$HOME/Stuff/${parts[0]}/${parts[1]}"
-      [ ! -d "${target_dir}" ] && command git clone "${repo}" "${target_dir}"
-      cd "${target_dir}" || return
-      ;;
-    branch*)
-      shift
-      if [ -n "${1}" ] ; then
-        command git branch "$@"
-      else
-        branch=$(git brs)
-        [ -n "${branch}" ] && command git checkout "$branch"
-      fi
-      ;;
-    *)
-      command git "$@" ;;
-  esac
+    ;;
+  *)
+    command git "$@" ;;
+esac
 }
 
 # Open AWS console for given tool, using currently logged-in profile
@@ -460,7 +460,7 @@ alias vin="echo 'VIN?? 'Vin' qué, Diesel??? Madre mía, que paciencia...' && re
 # Some bash-debugging help
 debug.on() {
   PS4='$(date "+%s.%N")\011 '
-  export PS4="+${PS4}(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }"
+  export PS4="+${PS4}(${BASH_SOURCE[0]}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }"
 }
 
 # Turn off SUPER VERBOSE bash-debugging help
@@ -484,13 +484,13 @@ alias awsume=". awsume"
 
 #Auto-Complete function for AWSume
 _awsume() {
-    local cur prev opts
-    COMPREPLY=()
-    cur="${COMP_WORDS[COMP_CWORD]}"
-    prev="${COMP_WORDS[COMP_CWORD-1]}"
-    opts=$(awsume-autocomplete)
-    COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-    return 0
+  local cur prev opts
+  COMPREPLY=()
+  cur="${COMP_WORDS[COMP_CWORD]}"
+  prev="${COMP_WORDS[COMP_CWORD-1]}"
+  opts=$(awsume-autocomplete)
+  COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+  return 0
 }
 complete -F _awsume awsume
 
@@ -514,9 +514,9 @@ _pipenv_venv_create() {
 layout pipenv
 unset PS1
 EOF
-  pipenv install
-  direnv allow
-  echo "[INFO] Successfully created direnv configuration for $(which pipenv)"
+pipenv install
+direnv allow
+echo "[INFO] Successfully created direnv configuration for $(which pipenv)"
 }
 alias envrc.pipenv='_pipenv_venv_create'
 
@@ -529,8 +529,8 @@ _poetry_venv_create() {
 layout poetry
 unset PS1
 EOF
-  direnv allow
-  echo "[INFO] Successfully created direnv configuration for $(which poetry)"
+direnv allow
+echo "[INFO] Successfully created direnv configuration for $(which poetry)"
 }
 alias envrc.poetry='_poetry_venv_create'
 
@@ -541,15 +541,15 @@ _venv_create() {
   enable.pyenv
   valid_versions="$(__pyenv_versions)"
   [ -z "$version" ] && error "No python version specified as parameter. Valid versions:\n${valid_versions}" && return
-  [ -z "$(echo "${valid_versions}" | grep -o "${version}")" ] && \
+  (echo "${valid_versions}" | grep -q -o "${version}" ) && \
     error "No valid Python version specified, choose one of:\n${valid_versions}" && return
 
-  # Allow commands to choose the env name (Ansible commands, for example)
-  base_name=$(basename "$(pwd)")
-  pyenv="${2:-${base_name}}"
+    # Allow commands to choose the env name (Ansible commands, for example)
+    base_name=$(basename "$(pwd)")
+    pyenv="${2:-${base_name}}"
 
-  pyenv local "${version}"
-  cat > .envrc << EOF
+    pyenv local "${version}"
+    cat > .envrc << EOF
 pyversion=${version}
 pvenv=${pyenv}
 
@@ -558,19 +558,19 @@ layout virtualenv \${pyversion} \${pvenv}
 layout activate \${pvenv}-\${pyversion}
 unset PS1
 EOF
-  direnv allow
-  echo "[INFO] Successfully created virtualenv '${pyenv}' for Python ${version}, autoactivated via direnv"
+direnv allow
+echo "[INFO] Successfully created virtualenv '${pyenv}' for Python ${version}, autoactivated via direnv"
 }
 
 alias envrc.venv='_venv_create'
 _complete_venv_create() {
-    local cur prev opts
-    COMPREPLY=()
-    cur="${COMP_WORDS[COMP_CWORD]}"
-    prev="${COMP_WORDS[COMP_CWORD-1]}"
-    opts="$(__pyenv_versions)"
-    COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
-    return 0
+  local cur prev opts
+  COMPREPLY=()
+  cur="${COMP_WORDS[COMP_CWORD]}"
+  prev="${COMP_WORDS[COMP_CWORD-1]}"
+  opts="$(__pyenv_versions)"
+  COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
+  return 0
 }
 complete -F _complete_venv_create envrc.venv
 
@@ -592,8 +592,8 @@ file.backup() {
       error "${_file} is already a .bkp file" && continue
     [ -f "${_file}" ] && \
       mv "${_file}" "${_file}.bkp" && echo "Backed up file into ${_file}.bkp"
-  done
-}
+    done
+  }
 
 # undoes file.backup, restoring a list of backups into the original name
 file.unbackup() {
@@ -602,60 +602,51 @@ file.unbackup() {
       error "${_file} is not a .bkp file" && continue
     [ -f "${_file}" ] && \
       mv "${_file}" "${_file//.bkp}" && echo "Restored ${_file//.bkp}"
-  done
-}
+    done
+  }
 
 # installs Ipython and dependencies
 __verify_ipython() {
-  local packages=""
   local pip_command="pipx"
   [ -n "${VIRTUAL_ENV}" ] && pip_command="pip"
   package_list=(ipython pandas openpyxl)
-  missing_packages=$($pip_command show ${package_list[@]} 2>&1 | grep -o "not found.*" | cut -d ':' -f2 | tr -d ',')
+  missing_packages=$($pip_command show "${package_list[@]}" 2>&1 | grep -o "not found.*" | cut -d ':' -f2 | tr -d ',')
   [ -n "${missing_packages}" ] && echo "Installing IPython and dependencies..." && \
-    $pip_command install ${missing_packages}
-}
+    $pip_command install "${missing_packages}"
+  }
 
 # open ipython with preloaded file
 df.load() {
-    # Check if a file argument is provided
-    local file="$1"
-    if [ -z "$file" ]; then
-        echo "Usage: load_df <file>"
-        return 1
-    fi
+  # Check if a file argument is provided
+  local file="$1"
+  if [ -z "$file" ]; then
+    echo "Usage: load_df <file>"
+    return 1
+  fi
 
-    # check if ipython is installed, along with pandas and openpyxl
-    __verify_ipython
+  # check if ipython is installed, along with pandas and openpyxl
+  __verify_ipython
 
-    local ipython_cmd=""
-    if [[ "$file" == *.csv ]]; then
-        ipython_cmd="import pandas as pd; df = pd.read_csv('$file'); print('CSV $file loaded as df')"
-    elif [[ "$file" == *.xlsx ]]; then
-        ipython_cmd="import pandas as pd; df = pd.read_excel('$file'); print('Excel $file loaded as df')"
-    elif [[ "$file" == *.pkz ]]; then
-        ipython_cmd="import pandas as pd; df = pd.read_pickle('$file', compression='bz2'); print('Pickle $file loaded as df')"
-    else
-        echo "Unsupported file type"
-        return 1
-    fi
+  local ipython_cmd=""
+  if [[ "$file" == *.csv ]]; then
+    ipython_cmd="import pandas as pd; df = pd.read_csv('$file'); print('CSV $file loaded as df')"
+  elif [[ "$file" == *.xlsx ]]; then
+    ipython_cmd="import pandas as pd; df = pd.read_excel('$file'); print('Excel $file loaded as df')"
+  elif [[ "$file" == *.pkz ]]; then
+    ipython_cmd="import pandas as pd; df = pd.read_pickle('$file', compression='bz2'); print('Pickle $file loaded as df')"
+  else
+    echo "Unsupported file type"
+    return 1
+  fi
 
-    # Open IPython and load the dataframe
-    ipython -i -c "$ipython_cmd"
+  # Open IPython and load the dataframe
+  ipython -i -c "$ipython_cmd"
 }
 
+# shellcheck disable=2317
 enable.fzf() {
 
-  # shellcheck disable=2317
-  #preload_fzf() {
-  #  [ -n "${_FZF_LOADED}" ] && return
-  #  echo "loading fzf"
-  #  export _FZF_LOADED=1
-
-  #  __source ~/.fzf.bash
-  #}
-  #alias fzf='preload_fzf; fzf'
-  export PATH="~/.fzf/bin:$PATH"
+  export PATH="$HOME/.fzf/bin:$PATH"
   [ -f ~/.fzf.bash ] && source ~/.fzf.bash
 
   # FZF Custom vars and functions
@@ -677,6 +668,7 @@ enable.fzf() {
   export FZF_DEFAULT_OPTS="${FZF_OPTS} ${FZF_COLOR} ${FZF_BORDER}"
 
   export FZF_DEFAULT_COMMAND="fd --type f  --color=auto -H"
+  # shellcheck disable=2317
   __FZF_PREVIEW_COMMAND() {
     fzf $FZF_DEFAULT_OPTS --preview 'fzf-preview.sh {}'
     #fzf --style default  --preview 'fzf-preview.sh {}' --bind 'focus:transform-header:file --brief {}'
@@ -684,6 +676,7 @@ enable.fzf() {
   }
 
   # filetype-based handler
+  # shellcheck disable=2317
   __open() {
     [ -z "$1" ] && error "No file to open" && return
     file=${1/#\~\//$HOME/}
@@ -694,19 +687,22 @@ enable.fzf() {
   }
 
   # time-based finders
+  # shellcheck disable=2317
   __finder() {
-    $FZF_DEFAULT_COMMAND --changed-within "$1" . $HOME | __FZF_PREVIEW_COMMAND
+    $FZF_DEFAULT_COMMAND --changed-within "$1" . "$HOME" | __FZF_PREVIEW_COMMAND
   }
   alias c.h='__open $(__finder 1h)'
   alias c.d='__open $(__finder 1d)'
   alias c.w='__open $(__finder 7d)'
   alias c.m='__open $(__finder 30d)'
 
+  # shellcheck disable=2317
   __list_repos() {
     fd -H --maxdepth 2 --min-depth 2 --type d . "$_REPO_AUTOCOMPLETE_BASE_DIR/"
   }
 
   # Automagically autocomplete repo names and 'cd' into them. Needs a proper base repo dir. Depends on fzf and fd
+  # shellcheck disable=2317
   r() {
     local regex
     base_dir="${_REPO_AUTOCOMPLETE_BASE_DIR}"
@@ -720,6 +716,7 @@ enable.fzf() {
     if [ -z "${repo}" ] ; then error "No results" ; else cd "${repo}" ; fi
   }
 
+  # shellcheck disable=2317
   _repo() {
     _get_comp_words_by_ref cur prev
 
@@ -757,11 +754,6 @@ enable.fzf() {
   }
 }
 
-# local brew openforti
-#alias openforti="~/.homebrew/opt/openfortivpn/bin/openfortivpn -c ~/.homebrew/etc/openfortivpn/openfortivpn/config"
-
-# MacVIM's own vim
-#alias vim="~/Applications/MacVim.app/Contents/MacOS/Vim"
 alias vi='vim'
 
 # Useful for everything: bash, git, postgres...

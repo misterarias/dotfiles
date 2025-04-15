@@ -39,8 +39,8 @@ Plug 'vim-scripts/bufkill.vim'
 "Plug 'othree/html5.vim'
 "Plug 'scrooloose/nerdtree' | Plug 'Xuyuanp/nerdtree-git-plugin'
 Plug 'preservim/nerdtree', { 'on':  'NERDTreeFind' }
-"Plug 'dense-analysis/ale', { 'on': 'ALEEnable' }
-Plug 'scrooloose/syntastic'
+Plug 'dense-analysis/ale', { 'on': 'ALEEnable' }
+"Plug 'scrooloose/syntastic'
 Plug 'vim-airline/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
 
