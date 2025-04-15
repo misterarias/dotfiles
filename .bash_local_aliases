@@ -39,7 +39,7 @@ enable.pyenv() {
     return
   fi
 
-  ## Lazy-load pyenv when a relevant command is run
+  # shellcheck disable=2317
   _pyenv_lazyload() {
     [ -n "${_PYENV_LAZYLOAD}" ] && return
     export _PYENV_LAZYLOAD=1
@@ -57,7 +57,7 @@ enable.pyenv() {
 enable.sdkman() {
   [ ! -d "$HOME/.sdkman" ] && echo "SDKMAN not installed in your system" && return
 
-  # lazy load sdk
+  # shellcheck disable=2317
   _lazyload_sdk() {
     [ -n "${_SDK_LAZY_LOAD}" ] && return
     export _SDK_LAZY_LOAD=1
@@ -72,8 +72,9 @@ enable.sdkman() {
 # Enable NVM in current shell
 enable.npm() {
 
+  # shellcheck disable=2317
   _nvm_lazyload() {
-    [ ! -z "${__NVM_LAZYLOAD}" ] && return
+    [ -n "${__NVM_LAZYLOAD}" ] && return
     export __NVM_LAZYLOAD=1
 
     unalias nvm
@@ -135,53 +136,13 @@ sys.kill() {
   done
 }
 
-# Returns true if the current dir is a git repository
-is.repo() {
-  [ -n "$(git rev-parse \
-    --git-dir --is-inside-git-dir \
-    --is-bare-repository --is-inside-work-tree \
-    --short HEAD 2>/dev/null)" ]
-}
-
-# Report of disk space usage in current path
-sys.disk_usage() {
-  echo "Disk usage report for '$(pwd)':"
-  for dir in $(\ls  -h .) ; do
-    total=$(du -ch "$dir" | grep total | grep -E -o "[0-9]+[GM]")
-    [ -n "${total}" ] && printf "* %-20s: %s\n" "$dir" "$total"
-  done
-}
-
-# Find something similar to argument, from here downwards
-sys.find() {
-  local arg=$1
-  shift
-  [ -n "$*" ] && \
-    echo "[WARNING] Ignoring extra input parameters: $*"
-  find . -iname "*${arg}*"
-}
-
-# Rename a bunch of files
-sys.renamer() {
-  local where file_name file_dir
-  where=${1:-.}
-  for file in $(find "${where}" -type f -depth 1) ; do
-    file_name="$(basename "$file")"
-    file_dir="$(dirname "$file")"
-    echo "Type in new name for ${file_name}? [Empty to ignore, \$ matches all]" && read -r new_name
-    [ -z "${new_name}" ] && continue
-    new_name="${new_name//\$/$file_name}"
-    mv "${file_dir}/${file_name}" "${file_dir}/${new_name}"
-  done
-}
-
 # Show a pretty error message
 error() { red "[ERROR] $*" ; }
 
 # 'Darwin' for Mac, 'Linux' or similar elsewhere
-is.mac() { [ $(uname) == "Darwin" ] ; }
-is.debian() { [ $(uname) == "Linux" ] && [ -f /etc/debian_version ] ; }
-is.arch() { [ $(uname) == "Linux" ] && [ -f /etc/arch-release ] ; }
+is.mac() { [ "$(uname)" == "Darwin" ] ; }
+is.debian() { [ "$(uname)" == "Linux" ] && [ -f /etc/debian_version ] ; }
+is.arch() { [ "$(uname)" == "Linux" ] && [ -f /etc/arch-release ] ; }
 
 # Free some Docker disk space
 docker.free_space() {
@@ -254,8 +215,11 @@ vim() {
 _vim_branch_diff() {
   local name="${1:-develop}"
   branch_files=$(git diff "${name}" --name-only | xargs)
-  [ -n "${branch_files}" ] && command vim ${branch_files} \
-    || error "No changes between current branch and '${name}'"
+  if [ -n "${branch_files}" ] ; then
+    command vim "${branch_files}"
+  else
+    error "No changes between current branch and '${name}'"
+  fi
 }
 
 # Open modified files between current branch and develop or master
@@ -266,15 +230,21 @@ vim.branch_diff.main() { _vim_branch_diff "main" ; }
 # Edit files with merge conflicts in workspace
 vim.conflicted() {
   modified_files=$(git status -s | grep '^\s*UU\s' | sed -E 's/^.*UU //g' | xargs)
-  [ -n "${modified_files}" ] && command vim ${modified_files} \
-    || error "No files with conflicts to edit"
+  if [ -n "${modified_files}" ] ; then
+    command vim "${modified_files}"
+  else
+    error "No files with conflicts to edit"
+  fi
 }
 
 # Edit current modified files in workspace
 vim.modified() {
   modified_files=$(git status -s | grep '^\s*M\s' | sed -E 's/^.*M //g' | xargs)
-  [ -n "${modified_files}" ] && command vim ${modified_files} \
-    || error "No modified files to edit"
+  if [ -n "${modified_files}" ] ; then
+    command vim "${modified_files}"
+  else
+    error "No modified files to edit"
+  fi
 }
 
 # Allows overriding GIT commands
@@ -296,7 +266,7 @@ git() {
   _get_ghe_repo_n_project() {
     repo_url="$1" ; [ -z "${repo_url}" ] && \
       repo_url="$(git remote get-url --push origin)"
-    echo "${repo_url}" | sed 's#.*ghe.com.\(.*\)/\(.*\)\.git#\1 \2#'
+    echo "${repo_url}" | sed "s/.*ghe.com.\(.*\)/\(.*\)\.git/\1 \2/"
   }
 
   # Returns a two-item array!!
@@ -304,7 +274,7 @@ git() {
     repo_url="$1" ; [ -z "${repo_url}" ] && \
       repo_url="$(git remote get-url --push origin)"
     if echo "${repo_url}" | grep -q "https://" ; then
-      echo "${repo_url}" | sed 's#.*scm/\(.*\)/\(.*\)\.git#\1 \2#'
+      echo "${repo_url}" | sed -E 's#.*scm/\(.*\)/\(.*\)\.git#\1 \2#'
     elif echo "${repo_url}" | grep -q "ssh://" ; then
       echo "${repo_url}" | sed -E 's#^.*:7999/(.*)/(.*).git#\1 \2#g'
     fi
@@ -314,7 +284,7 @@ git() {
     repo_url="$1" ; [ -z "${repo_url}" ] && \
       repo_url="$(git remote get-url --push origin)"
     if echo "${repo_url}" | grep -q "https://" ; then
-      echo "${repo_url}" | sed 's#.*scm/\(.*\)/\(.*\)\.git#\1 \2#'
+      echo "${repo_url}" | sed -E 's#.*scm/\(.*\)/\(.*\)\.git#\1 \2#'
     elif echo "${repo_url}" | grep -q "ssh://" ; then
       echo "${repo_url}" | sed -E 's#^.*github.com[:/](.*)/(.*).git#\1 \2#g'
     fi
@@ -383,8 +353,8 @@ git() {
       shift ; git "$@" ;;
     open*)
       shift ;
-      [ -n $1 ] && sys.open $( _get_browse_url $1 ) && return
-      sys.open $( _get_repo_url )
+      [ -n "$1" ] && sys.open $( _get_browse_url "$1" ) && return
+      sys.open "$( _get_repo_url )"
       ;;
     klone*)
       shift; repo=$1 ; [ -z "${repo}" ] &&  \
@@ -400,7 +370,7 @@ git() {
         command git branch "$@"
       else
         branch=$(git brs)
-        [ -n "${branch}" ] && command git checkout $branch
+        [ -n "${branch}" ] && command git checkout "$branch"
       fi
       ;;
     *)
@@ -489,7 +459,7 @@ alias vin="echo 'VIN?? 'Vin' qué, Diesel??? Madre mía, que paciencia...' && re
 
 # Some bash-debugging help
 debug.on() {
-  PS4='$(date "+%s.%N")\011 '
+  PS4='$(date "+%s.%N")\011 '
   export PS4="+${PS4}(${BASH_SOURCE}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }"
 }
 
@@ -519,7 +489,7 @@ _awsume() {
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     opts=$(awsume-autocomplete)
-    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+    COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
     return 0
 }
 complete -F _awsume awsume
@@ -599,7 +569,7 @@ _complete_venv_create() {
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
     opts="$(__pyenv_versions)"
-    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+    COMPREPLY=( $(compgen -W "${opts}" -- "${cur}") )
     return 0
 }
 complete -F _complete_venv_create envrc.venv
@@ -674,6 +644,118 @@ df.load() {
     ipython -i -c "$ipython_cmd"
 }
 
+enable.fzf() {
+
+  # shellcheck disable=2317
+  #preload_fzf() {
+  #  [ -n "${_FZF_LOADED}" ] && return
+  #  echo "loading fzf"
+  #  export _FZF_LOADED=1
+
+  #  __source ~/.fzf.bash
+  #}
+  #alias fzf='preload_fzf; fzf'
+  export PATH="~/.fzf/bin:$PATH"
+  [ -f ~/.fzf.bash ] && source ~/.fzf.bash
+
+  # FZF Custom vars and functions
+  _USE_FZF_CUSTOM_THEME=
+  if [ "${_USE_FZF_CUSTOM_THEME}" = "1" ] ; then
+    FZF_OPTS="--layout=reverse"
+    FZF_OPTS="${FZF_OPTS} --info=hidden"
+    FZF_OPTS="${FZF_OPTS} --height=60%"
+    FZF_BORDER="--border=none --margin=0,1"
+    FZF_COLOR="\
+      --color=dark \
+      --color=preview-bg:#e8e8e8 \
+      "
+  else
+    FZF_COLOR=""
+    FZF_BORDER=""
+    FZF_OPTS="--style full"
+  fi
+  export FZF_DEFAULT_OPTS="${FZF_OPTS} ${FZF_COLOR} ${FZF_BORDER}"
+
+  export FZF_DEFAULT_COMMAND="fd --type f  --color=auto -H"
+  __FZF_PREVIEW_COMMAND() {
+    fzf $FZF_DEFAULT_OPTS --preview 'fzf-preview.sh {}'
+    #fzf --style default  --preview 'fzf-preview.sh {}' --bind 'focus:transform-header:file --brief {}'
+    #fzf $FZF_DEFAULT_OPTS --preview 'fzf-preview.sh {}' --preview-window 'right,border-none,60%,<70(bottom,60%,border-top)'
+  }
+
+  # filetype-based handler
+  __open() {
+    [ -z "$1" ] && error "No file to open" && return
+    file=${1/#\~\//$HOME/}
+    [ -d "$file" ] && cd "$file" && return
+    [ ! -f "$file" ] && error "$file is not a valid file"
+    type="$(file --dereference --mime "$file")"
+    if [[ ! $type =~ image/ ]] && [[ ! $type =~ =binary ]]; then vim "$file" ; else file "$file" ; fi
+  }
+
+  # time-based finders
+  __finder() {
+    $FZF_DEFAULT_COMMAND --changed-within "$1" . $HOME | __FZF_PREVIEW_COMMAND
+  }
+  alias c.h='__open $(__finder 1h)'
+  alias c.d='__open $(__finder 1d)'
+  alias c.w='__open $(__finder 7d)'
+  alias c.m='__open $(__finder 30d)'
+
+  __list_repos() {
+    fd -H --maxdepth 2 --min-depth 2 --type d . "$_REPO_AUTOCOMPLETE_BASE_DIR/"
+  }
+
+  # Automagically autocomplete repo names and 'cd' into them. Needs a proper base repo dir. Depends on fzf and fd
+  r() {
+    local regex
+    base_dir="${_REPO_AUTOCOMPLETE_BASE_DIR}"
+    [ -d "$*" ] && cd "$*" && return
+    [ $# -gt 0 ] && regex=$(echo "$*" | sed -E 's# +#.*#g')
+    [ "${regex}" != "" ] && [ -d "${base_dir}/${regex}" ] && cd "${base_dir}/${regex}" && return
+
+    repo="$(__list_repos | grep -i "${regex}" | __FZF_PREVIEW_COMMAND)"
+    [ -z "${repo}" ] && error "No results" && return
+    #repo="$(__list_repos | grep -i "${regex}" | fzf --preview 'fzf-preview.sh {}/README.md')"
+    if [ -z "${repo}" ] ; then error "No results" ; else cd "${repo}" ; fi
+  }
+
+  _repo() {
+    _get_comp_words_by_ref cur prev
+
+    base_dir="${_REPO_AUTOCOMPLETE_BASE_DIR}"
+    [ "${prev}" = "repo" ] && prev=""
+    regex="${prev} ${cur}"
+    regex="${regex// /.*}"
+    if [ -d "${base_dir}/${regex}" ] ; then
+      COMPREPLY=$( compgen -W "${base_dir}/${regex}" )
+    elif __list_repos | grep -iq "${regex}"  ; then
+      COMPREPLY=$( compgen -W "$(fd --maxdepth 2 --type d . "${base_dir}" | grep -i "${regex}" | __FZF_PREVIEW_COMMAND)"  )
+    fi
+  }
+  complete -F _repo r
+
+  # git greps and offers vim to open a result
+  ggrep() {
+    [ -z "$1" ] && error "Cannot search nothing...."
+    local matches
+
+    matches=$(git grep -i "$@" | cut -d":" -f1 | sort -u | __FZF_PREVIEW_COMMAND)
+    [ -z "${matches}" ] && error "No matches for '$*'" && return
+    vim +/"$1" "${matches}"
+  }
+
+  # Vim + fzf
+  fim() {
+    local matches
+    if [ $# -gt 0 ] ; then
+      matches=$(fd --hidden --type file | grep -i "$1" | __FZF_PREVIEW_COMMAND)
+    else
+      matches="$(__FZF_PREVIEW_COMMAND)"
+    fi
+    [ -n "${matches}" ] && vim "${matches}"
+  }
+}
 
 # local brew openforti
 #alias openforti="~/.homebrew/opt/openfortivpn/bin/openfortivpn -c ~/.homebrew/etc/openfortivpn/openfortivpn/config"
@@ -686,3 +768,32 @@ alias vi='vim'
 export EDITOR=vim
 export VISUAL_EDITOR=vim
 export PSQL_EDITOR='vim -c"set syntax=sql"'
+
+# Edit ~/.ssh/config
+alias ssh.edit='vim ~/.ssh/config'
+
+# Add this AFTER any prompt-manipulating extensions: https://direnv.net/docs/hook.html
+_direnv_hook() {
+  local previous_exit_status=$?;
+  direnv_out=$(direnv export bash)
+  if [[ -n $direnv_out ]]; then
+    eval "$direnv_out"
+  fi
+  return $previous_exit_status
+}
+
+##if ! [[ "${PROMPT_COMMAND:-}" =~ _direnv_hook ]]; then
+##  PROMPT_COMMAND="_direnv_hook${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
+##fi
+# bash autocompletion
+if is.debian ; then
+  __source /etc/bash_completion
+elif is.mac ; then
+  __source /opt/homebrew/etc/profile.d/bash_completion.sh
+fi
+
+# git autocompletion
+__source ~/.git-completion.bash
+
+# Private stuff, depends on laptop, never to be shared or versioned
+. ~/.bash_private_vars
