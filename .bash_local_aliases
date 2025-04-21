@@ -774,18 +774,19 @@ _direnv_hook() {
   return $previous_exit_status
 }
 
-##if ! [[ "${PROMPT_COMMAND:-}" =~ _direnv_hook ]]; then
-##  PROMPT_COMMAND="_direnv_hook${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
-##fi
+if ! [[ "${PROMPT_COMMAND:-}" =~ _direnv_hook ]]; then
+  PROMPT_COMMAND="_direnv_hook${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
+fi
+
 # bash autocompletion
 if is.debian ; then
-  __source /etc/bash_completion
+  source /etc/bash_completion
 elif is.mac ; then
-  __source /opt/homebrew/etc/profile.d/bash_completion.sh
+  source /opt/homebrew/etc/profile.d/bash_completion.sh
 fi
 
 # git autocompletion
-__source ~/.git-completion.bash
+source ~/.git-completion.bash
 
 # Private stuff, depends on laptop, never to be shared or versioned
 . ~/.bash_private_vars
