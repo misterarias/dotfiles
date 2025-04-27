@@ -253,6 +253,7 @@ __install_autocompletion() {
     fi
     [ ! -f ~/.git-completion.bash ] &&
         curl -v -sL https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash > ~/.git-completion.bash
+    return 0
 }
 
 __install_direnv() {
@@ -277,19 +278,17 @@ __install_direnv() {
 
 __install_status_bar() {
     # We now use starship: https://starship.rs/guide/
-    if command -v starship &>/dev/null ; then
-        return
-    fi
-
-    if is.mac ; then
-        brew install starship
-    elif is.debian ; then
-        curl -sS https://starship.rs/install.sh | sh
-        # sudo apt install -y starship
-    elif is.arch ; then
-        sudo pacman -S --noconfirm starship
-    else
-        error "Don't know how to install starship"
+    if ! command -v starship &>/dev/null ; then
+        if is.mac ; then
+            brew install starship
+        elif is.debian ; then
+            curl -sS https://starship.rs/install.sh | sh
+            # sudo apt install -y starship
+        elif is.arch ; then
+            sudo pacman -S --noconfirm starship
+        else
+            error "Don't know how to install starship"
+        fi
     fi
 
     statusbar_config_file="${HOME}/.config/starship.toml"
