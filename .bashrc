@@ -78,3 +78,8 @@ bind '"\e[B": history-search-forward'
 
 # testing starship
 command -v starship &> /dev/null && eval "$(starship init bash)"
+
+# enable all
+enable.fzf
+enable.pyenv
+enable.npm
