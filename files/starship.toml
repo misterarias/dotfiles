@@ -2,76 +2,81 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
 format = """\
-$battery\
-$time @ $hostname\
-$directory\
-$git_branch\
-$git_status\
+$time$hostname$directory$git_branch$git_status\
 $rust$python$golang$nodejs$custom\
+$battery\
 $line_break\
 $status$shell$character
 """
 
 add_newline = true
 
-[hostname]
-disabled = false
-ssh_only = false
-
 [time]
 disabled = false
 time_format = "%H:%M:%S.%3f"
-style = "bg:#1d2230"
-format = '[[ $time ](fg:#a0a9cb bg:#1d2230)]($style)'
+style = "fg:#a0a9cb bg:#0d1117"
+format = '[ $time ]($style)'
 
-[line_break]
+[hostname]
 disabled = false
-
-[gcloud]
-disabled = true
-
-[battery]
-disabled = false
-full_symbol = '🔋'
-charging_symbol = '⚡️'
-discharging_symbol = '💀'
-[[battery.display]]
-threshold = 30
-style = 'bold red'
+ssh_only = false
+style = "fg:#a0a9cb bg:#11151c"
+format = '[ $hostname ]($style)'
 
 [directory]
-style = "fg:#e3e5e5 bg:#769ff0"
-format = "[ $path ]($style)"
+style = "fg:#e3e5e5 bg:#161b22"
+format = '[ $path ]($style)'
 truncation_length = 3
 truncation_symbol = "…/"
 
 [git_branch]
-symbol = " "
-style = "bg:#394260"
-format = '[[ $symbol $branch ](fg:#769ff0 bg:#394260)]($style)'
+symbol = ""
+style = "fg:#a0a9cb bg:#1c2230"
+format = '[ $symbol $branch ]($style)'
 
 [git_status]
-style = "bg:#394260"
-format = '[[($all_status$ahead_behind )](fg:#769ff0 bg:#394260)]($style)'
+style = "fg:#a0a9cb bg:#1c2230"
+format = '([$all_status$ahead_behind]($style))'
 disabled = false
-
-[nodejs]
-disabled = true
-symbol = "⬢"
-style = "bg:#212736"
-format = '[[ $symbol ($version) ](fg:#769ff0 bg:#212736)]($style)'
 
 [rust]
 symbol = ""
-style = "bg:#212736"
-format = '[[ $symbol ($version) ](fg:#769ff0 bg:#212736)]($style)'
-
-[golang]
-symbol = ""
-style = "bg:#212736"
-format = '[[ $symbol ($version) ](fg:#769ff0 bg:#212736)]($style)'
+style = "fg:#769ff0 bg:#202736"
+format = '[ $symbol $version ]($style)'
 
 [python]
-symbol = "🐍"
-style = "bg:#212736"
-format = '[[ $symbol ($version) ](fg:#769ff0 bg:#212736)]($style)'
+symbol = "Py"
+style = "fg:#769ff0 bg:#202736"
+format = '[ $symbol $version ]($style)'
+
+[golang]
+symbol = "Go"
+style = "fg:#769ff0 bg:#202736"
+format = '[ $symbol $version ]($style)'
+
+[nodejs]
+disabled = true
+
+[battery]
+disabled = false
+full_symbol = "Full"
+charging_symbol = "Charging"
+discharging_symbol = "Battery"
+[[battery.display]]
+threshold = 30
+style = "fg:#ff6b6b bg:#11151c"
+format = '[ $symbol $percentage ]($style)'
+
+[line_break]
+disabled = false
+
+[status]
+style = "fg:#ff6b6b"
+format = '[$status]($style)'
+
+[shell]
+disabled = true
+
+[custom]
+disabled = true
+

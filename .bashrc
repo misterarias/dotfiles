@@ -78,6 +78,7 @@ bind '"\e[B": history-search-forward'
 
 # testing starship
 command -v starship &> /dev/null && eval "$(starship init bash)"
+export STARSHIP_CACHE="$HOME/.cache/starship"
 
 # enable all
 enable.fzf
