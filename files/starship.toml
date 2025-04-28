@@ -62,10 +62,10 @@ disabled = false
 full_symbol = "Full"
 charging_symbol = "Charging"
 discharging_symbol = "Battery"
+format = '[ $symbol $percentage ]($style)'
 [[battery.display]]
 threshold = 30
 style = "fg:#ff6b6b bg:#11151c"
-format = '[ $symbol $percentage ]($style)'
 
 [line_break]
 disabled = false
