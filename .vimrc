@@ -39,7 +39,7 @@ Plug 'vim-scripts/bufkill.vim'
 "Plug 'othree/html5.vim'
 "Plug 'scrooloose/nerdtree' | Plug 'Xuyuanp/nerdtree-git-plugin'
 Plug 'preservim/nerdtree', { 'on':  'NERDTreeFind' }
-Plug 'dense-analysis/ale', { 'on': 'ALEEnable' }
+Plug 'dense-analysis/ale'
 "Plug 'scrooloose/syntastic'
 Plug 'vim-airline/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
@@ -374,3 +374,7 @@ let g:loaded_shada_plugin = 1
 let g:loaded_tutor_mode_plugin = 1
 
 set shell=/bin/sh
+
+" ALE magic
+let g:ale_completion_enabled = 1
+let g_ale_fixers = { 'javascript': ['eslint'], 'python': ['black'], 'yaml': ['ansible-lint'], 'hcl': ['terraform'], }
