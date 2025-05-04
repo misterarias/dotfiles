@@ -700,7 +700,7 @@ enable.fzf() {
 
   # shellcheck disable=2317
   __list_repos() {
-    fd -H --maxdepth 2 --min-depth 2 --type d . "$_REPO_AUTOCOMPLETE_BASE_DIR/"
+    fd  --maxdepth 2 --min-depth 2 --type d . "$_REPO_AUTOCOMPLETE_BASE_DIR/"
   }
 
   # Automagically autocomplete repo names and 'cd' into them. Needs a proper base repo dir. Depends on fzf and fd
@@ -791,4 +791,4 @@ fi
 source ~/.git-completion.bash
 
 # Private stuff, depends on laptop, never to be shared or versioned
-. ~/.bash_private_vars
+[ -f ~/.bash_private_vars ] && . ~/.bash_private_vars || true

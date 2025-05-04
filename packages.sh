@@ -335,9 +335,10 @@ setup_dotfiles() {
 
   dotfiles_link .bashrc ~/.bashrc
   dotfiles_link .bash_local_aliases ~/.bash_local_aliases
-  [ ! -f ~/.bash_private_vars ] && \
-    cp .bash_private_vars ~/.bash_private_vars && \
+  if [ ! -f ~/.bash_private_vars ] ; then
+    cp .bash_private_vars ~/.bash_private_vars
     printf "\nCreated sample %s file, edit it and modify %s var to enable 'repo' command autocompletion.\n" "${BLUECOLOR_BOLD}~/.bash_private_vars${ENDCOLOR}" "${REDCOLOR}_REPO_AUTOCOMPLETE_BASE_DIR${ENDCOLOR}"
+  fi
 
 
   # shellcheck source=/dev/null
