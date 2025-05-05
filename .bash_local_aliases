@@ -267,7 +267,7 @@ git() {
 _get_ghe_repo_n_project() {
   repo_url="$1" ; [ -z "${repo_url}" ] && \
     repo_url="$(git remote get-url --push origin)"
-  echo "${repo_url}" | sed "s/.*ghe.com.\(.*\)/\(.*\)\.git/\1 \2/"
+  echo "${repo_url}" | sed  "s/.*ghe.com.\(.*\)/\(.*\)\.git/\1 \2/"
 }
 
 # Returns a two-item array!!
@@ -275,9 +275,9 @@ _get_bb_repo_n_project() {
   repo_url="$1" ; [ -z "${repo_url}" ] && \
     repo_url="$(git remote get-url --push origin)"
   if echo "${repo_url}" | grep -q "https://" ; then
-    echo "${repo_url}" | sed -E 's#.*scm/\(.*\)/\(.*\)\.git#\1 \2#'
+    echo "${repo_url}" | sed 's#.*scm/\(.*\)/\(.*\)\.git#\1 \2#'
   elif echo "${repo_url}" | grep -q "ssh://" ; then
-    echo "${repo_url}" | sed -E 's#^.*:7999/(.*)/(.*).git#\1 \2#g'
+    echo "${repo_url}" | sed  's#^.*:7999/(.*)/(.*).git#\1 \2#g'
   fi
 }
 
