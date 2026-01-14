@@ -6,14 +6,23 @@
 # By using meaningful one-line comments to functions, they'll get nicely printed
 # by means of the 'my_commands' help function (defined in ~/.bashrc)
 
-BOLD=$(tput bold)
-BLUECOLOR=$(tput setaf 4)
-REDCOLOR=$(tput setaf 1)
-GREENCOLOR=$(tput setaf 2)
-BLUECOLOR_BOLD=$BLUECOLOR$BOLD
-REDCOLOR_BOLD=$REDCOLOR$BOLD
-GREENCOLOR_BOLD=$GREENCOLOR$BOLD
-ENDCOLOR=$(tput sgr0)
+##BOLD=$(tput bold)
+##BLUECOLOR=$(tput setaf 4)
+##REDCOLOR=$(tput setaf 1)
+##GREENCOLOR=$(tput setaf 2)
+##BLUECOLOR_BOLD=$BLUECOLOR$BOLD
+##REDCOLOR_BOLD=$REDCOLOR$BOLD
+##GREENCOLOR_BOLD=$GREENCOLOR$BOLD
+##ENDCOLOR=$(tput sgr0)
+# Use ANSI escape codes directly (faster, no subshells)
+BOLD='\033[1m'
+BLUECOLOR='\033[34m'
+REDCOLOR='\033[31m'
+GREENCOLOR='\033[32m'
+BLUECOLOR_BOLD='\033[1;34m'
+REDCOLOR_BOLD='\033[1;31m'
+GREENCOLOR_BOLD='\033[1;32m'
+ENDCOLOR='\033[0m'
 
 green() {
   echo -e "${GREENCOLOR_BOLD}$*${ENDCOLOR}"
@@ -453,14 +462,94 @@ is.mac && [ -n "$(command -v gawk > /dev/null)" ] && alias awk='gawk'
 alias bim="echo 'LOL eres un mamón, es ''vi'' o ''vim'', no va con B... te lo paso por esta' && read && vim \$*"
 alias vin="echo 'VIN?? 'Vin' qué, Diesel??? Madre mía, que paciencia...' && read && vim \$*"
 
-# Some bash-debugging help
-debug.on() {
-  PS4='$(date "+%s.%N")\011 '
-  export PS4="+${PS4}(${BASH_SOURCE[0]}:${LINENO}): ${FUNCNAME[0]:+${FUNCNAME[0]}(): }"
-}
 
-# Turn off SUPER VERBOSE bash-debugging help
-alias debug.off='unset PS4'
+# Profile bash startup time and identify slow parts
+bash.profile() {
+  local log_file="/tmp/bashprofile.$$.log"
+  local report_file="/tmp/bashprofile.$$.report"
+  
+  green "Profiling bash startup..."
+  green "This will reload your shell configuration with timing enabled"
+  echo
+  
+  # Create a temporary bash script that profiles the load
+  cat > "${log_file}.sh" << 'PROFILE_EOF'
+PS4='+ $(date "+%s%N")\011 '
+exec 3>&2 2>"${PROFILE_LOG}"
+set -x
+source ~/.bashrc
+set +x
+exec 2>&3 3>&-
+PROFILE_EOF
+  
+  # Run the profiling
+  PROFILE_LOG="${log_file}" bash --noprofile --norc "${log_file}.sh" 2>/dev/null
+  
+  # Process the results
+  if [ -f "${log_file}" ]; then
+    green "Processing results..."
+    echo
+    
+    # Calculate timing differences and sort by duration
+    awk '
+    BEGIN {
+      prev_time = 0
+      print "Duration (ms) | Line | Command"
+      print "------------- | ---- | -------"
+    }
+    {
+      # Extract timestamp (nanoseconds since epoch)
+      current_time = substr($2, 1, length($2))
+      
+      # Calculate duration in milliseconds
+      if (prev_time > 0) {
+        duration = (current_time - prev_time) / 1000000
+        
+        # Extract the command (everything after the timestamp)
+        cmd = ""
+        for (i = 3; i <= NF; i++) {
+          cmd = cmd (i > 3 ? " " : "") $i
+        }
+        
+        # Only show operations taking > 1ms
+        if (duration > 1) {
+          printf "%12.2f | %s\n", duration, cmd
+        }
+      }
+      prev_time = current_time
+    }
+    ' "${log_file}" | sort -rn -k1 | head -30 > "${report_file}"
+    
+    blue "=== Top 30 Slowest Operations (>1ms) ==="
+    echo
+    cat "${report_file}"
+    echo
+    
+    # Calculate total time
+    total_time=$(awk 'NR==1 {first=$2} END {last=$2; print (last-first)/1000000}' "${log_file}")
+    green "Total startup time: ${total_time} ms"
+    echo
+    
+    # Summary statistics
+    blue "=== Summary ==="
+    echo "Full log: ${log_file}"
+    echo "Report:   ${report_file}"
+    echo
+    echo "To analyze further:"
+    echo "  cat ${log_file}        # View full trace"
+    echo "  cat ${report_file}     # View this report again"
+    echo
+    echo "To clean up:"
+    echo "  rm ${log_file}* ${report_file}"
+    
+  else
+    error "Profiling failed - no log file generated"
+    return 1
+  fi
+  
+  # Cleanup temporary script
+  rm -f "${log_file}.sh"
+}
 
 # Sudo edit /etc/hosts
 alias sys.hosts='sudo vim /etc/hosts'
@@ -570,17 +659,6 @@ _complete_venv_create() {
   return 0
 }
 complete -F _complete_venv_create envrc.venv
-
-# proper release procedure with python and bumpversion
-release.minor() {
-  set -e
-  [ -z "$(which bumpversion)" ] && error "Bumpversion not detected in PATH, exiting..."
-  git checkout -b tmp
-  bumpversion minor
-  new_version=$(git log -1 --format="%s" | rev | cut -d' ' -f1 | rev | cut -d'.' -f1-2)
-  git branch -M "release/${new_version}"
-  git perrete
-}
 
 # move a list of files into backups of themselves
 file.backup() {
@@ -804,11 +882,16 @@ export PSQL_EDITOR='vim -c"set syntax=sql"'
 alias ssh.edit='vim ~/.ssh/config'
 
 # Add this AFTER any prompt-manipulating extensions: https://direnv.net/docs/hook.html
+# Optimized direnv hook - only runs on directory change
+_DIRENV_LAST_DIR=""
 _direnv_hook() {
-  local previous_exit_status=$?;
-  direnv_out=$(direnv export bash)
-  if [[ -n $direnv_out ]]; then
-    eval "$direnv_out"
+  local previous_exit_status=$?
+  # Only run direnv if directory changed or first time
+  if [[ "$PWD" != "$_DIRENV_LAST_DIR" ]]; then
+    _DIRENV_LAST_DIR="$PWD"
+    trap -- '' SIGINT  # Prevent ctrl-c issues during direnv
+    eval "$(direnv export bash 2>/dev/null)"
+    trap - SIGINT
   fi
   return $previous_exit_status
 }
@@ -824,8 +907,29 @@ elif is.mac ; then
     __source /opt/homebrew/etc/profile.d/bash_completion.sh
 fi
 
-# git autocompletion
-__source ~/.git-completion.bash
+# git autocompletion - lazy loaded on first use
+_git_completion_loaded=0
+_load_git_completion() {
+  [ "$_git_completion_loaded" -eq 1 ] && return
+  _git_completion_loaded=1
+  [ -f ~/.git-completion.bash ] && __source ~/.git-completion.bash
+}
+
+# Wrap git command to load completion on first use
+_git_with_completion() {
+  _load_git_completion
+  unset -f _git_with_completion  # Remove wrapper after first use
+  complete -F __git_wrap__git_main git  # Re-enable completion
+  command git "$@"
+}
+
+# Only load git completion if in a git repo or after first git command
+if git rev-parse --git-dir >/dev/null 2>&1; then
+  _load_git_completion
+else
+  # Defer loading until first git command
+  alias git='_git_with_completion'
+fi
 
 # Private stuff, depends on laptop, never to be shared or versioned
 [ -f ~/.bash_private_vars ] && __source ~/.bash_private_vars || true

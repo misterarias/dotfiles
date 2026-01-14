@@ -4,6 +4,12 @@
 
 This repository contains a comprehensive dotfiles management system for setting up and maintaining a consistent development environment across multiple platforms (macOS, Debian/Ubuntu, Arch Linux). It automates the installation and configuration of CLI tools, shell customization, development utilities, and various programming environments.
 
+## Important considerations
+
+I am specially sensible to performance, hence the timing scipts I can add via flags: I want my session to load as fast as possible and my prompts to have subsecond response times.
+
+I have this setup to avoid using zsh or other shells, I want to keep using bash as my main shell, so all the instructions and code must be compatible with bash.
+
 ## Key Technologies & Tools
 
 - **Shell**: Bash (primary shell scripting language)
