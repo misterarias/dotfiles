@@ -30,6 +30,39 @@ red() {
 # BSD ls colors
 export LSCOLORS=Ehfxcxdxbxegedabagacad
 
+# source wrapper
+__source() {
+  [ -z "${__TIMINGS_ENABLED}" ] && source "${1}" && return
+  [ -f "${1}" ] && __time_cmd source "${1}" && return
+  error "Cannot source '${1}': File not found"
+}
+
+__get_timing_date() {
+  date '+%s.%N'
+}
+
+__get_timing_diff() {
+  start_timer="$1"
+  end_timer="$2"
+  echo "scale=3; ${end_timer} - ${start_timer}" | bc | LC_NUMERIC=C awk '{printf "%.3f\n", $1}'
+  #env LC_ALL=en_US.UTF-8 printf "%'.3f\n" "${diff}"
+}
+
+__time_cmd() {
+  [ -z "${__TIMINGS_ENABLED}" ] && return
+  _tmp_file="/tmp/_timing_$(echo "$@" | cksum | awk '{print $1}')"
+  __get_timing_date > "$_tmp_file"
+
+  "$@"
+  _tmp_file="/tmp/_timing_$(echo "$@" | cksum | awk '{print $1}')"
+  _start=$(cat "$_tmp_file")
+  _end="$(__get_timing_date)"
+  _diff=$(__get_timing_diff "${_start}" "${_end}")
+  printf "[TIMING] - %-72s - %s\n" "${*}" "${_diff}ms"
+  rm "$_tmp_file"
+}
+
+
 # Enable Pyenv in current shell
 enable.pyenv() {
 
@@ -73,18 +106,8 @@ enable.sdkman() {
 # Enable NVM in current shell
 enable.npm() {
 
-# shellcheck disable=2317
-_nvm_lazyload() {
-  [ -n "${__NVM_LAZYLOAD}" ] && return
-  export __NVM_LAZYLOAD=1
-
-  unalias nvm
-  unalias npm
-  unalias node
-  unalias vim
-
   export NVM_DIR="$HOME/.nvm"
-  [ -s "$NVM_DIR/nvm.sh" ] && source "$NVM_DIR/nvm.sh"
+  [ -s "$NVM_DIR/nvm.sh" ] && __source "$NVM_DIR/nvm.sh"
 
   # Optionally load bash_completion only when required
   if [ -n "$BASH_COMPLETION" ] && [ -s "$NVM_DIR/bash_completion" ]; then
@@ -92,16 +115,8 @@ _nvm_lazyload() {
   fi
 }
 
-alias nvm="_nvm_lazyload; nvm"
-alias npm="_nvm_lazyload; npm"
-alias node="_nvm_lazyload; node"
-
-# TODO: Find something better than this crap
-alias vim='_nvm_lazyload; vim'
-}
-
 # re-source all aliases
-alias bash.reload='source ${HOME}/.bashrc'
+alias bash.reload='__source ${HOME}/.bashrc'
 
 # Edit aliases fast -and reenable faster.
 alias bash.edit='vim "${HOME}/.bashrc" && bash.reload'
@@ -141,9 +156,10 @@ sys.kill() {
 error() { red "[ERROR] $*" ; }
 
 # 'Darwin' for Mac, 'Linux' or similar elsewhere
-is.mac() { [ "$(uname)" == "Darwin" ] ; }
-is.debian() { [ "$(uname)" == "Linux" ] && [ -f /etc/debian_version ] ; }
-is.arch() { [ "$(uname)" == "Linux" ] && [ -f /etc/arch-release ] ; }
+_UNAME="$(uname)"
+is.mac() { [ "${_UNAME}" == "Darwin" ] ; }
+is.debian() { [ "${_UNAME}" == "Linux" ] && [ -f /etc/debian_version ] ; }
+is.arch() { [ "${_UNAME}" == "Linux" ] && [ -f /etc/arch-release ] ; }
 
 # Free some Docker disk space
 docker.free_space() {
@@ -217,7 +233,7 @@ _vim_branch_diff() {
   local name="${1:-develop}"
   branch_files=$(git diff "${name}" --name-only | xargs)
   if [ -n "${branch_files}" ] ; then
-    command vim "${branch_files}"
+    command vim ${branch_files}
   else
     error "No changes between current branch and '${name}'"
   fi
@@ -254,7 +270,7 @@ git() {
     remote="$1" ; [ -z "${remote}" ] && \
       remote=$(git remote get-url --push origin)
     if echo "${remote}" | grep -q ".ghe.com" ; then
-      _get_ghe_repo_n_project "$@"
+      _get_github_repo_n_project "$@"
     elif echo "${remote}" | grep -q "github.com" ; then
       _get_github_repo_n_project "$@"
     elif echo "${remote}" | grep -q "bitbucket" ; then
@@ -264,31 +280,25 @@ git() {
     fi
   }
 
-_get_ghe_repo_n_project() {
-  repo_url="$1" ; [ -z "${repo_url}" ] && \
-    repo_url="$(git remote get-url --push origin)"
-  echo "${repo_url}" | sed  "s/.*ghe.com.\(.*\)/\(.*\)\.git/\1 \2/"
-}
-
 # Returns a two-item array!!
 _get_bb_repo_n_project() {
   repo_url="$1" ; [ -z "${repo_url}" ] && \
     repo_url="$(git remote get-url --push origin)"
   if echo "${repo_url}" | grep -q "https://" ; then
-    echo "${repo_url}" | sed 's#.*scm/\(.*\)/\(.*\)\.git#\1 \2#'
+    echo "${repo_url}" | sed -E 's#.*scm/(.*)/(.*)\.git$#\1 \2#'
   elif echo "${repo_url}" | grep -q "ssh://" ; then
-    echo "${repo_url}" | sed  's#^.*:7999/(.*)/(.*).git#\1 \2#g'
+    echo "${repo_url}" | sed -E 's#^.*:7999/(.*)/(.*).git#\1 \2#g'
   fi
 }
 
 _get_github_repo_n_project() {
+  # git@github.com:actions/setup-java.git
+  # https://github.com/actions/setup-java.git
+  # https://bbvatest.ghe.com/piloto/mpgdrarbolpreguntas_rules.git
+  # bbvatest@bbvatest.ghe.com:piloto/mpgdrarbolpreguntas_rules.git
   repo_url="$1" ; [ -z "${repo_url}" ] && \
     repo_url="$(git remote get-url --push origin)"
-  if echo "${repo_url}" | grep -q "https://" ; then
-    echo "${repo_url}" | sed -E 's#.*scm/\(.*\)/\(.*\)\.git#\1 \2#'
-  elif echo "${repo_url}" | grep -q "ssh://" ; then
-    echo "${repo_url}" | sed -E 's#^.*github.com[:/](.*)/(.*).git#\1 \2#g'
-  fi
+  echo "${repo_url}" | sed -E 's#.*.com.(.*)/(.*)\.git#\1 \2#g'
 }
 
 _get_repo_url() {
@@ -296,6 +306,8 @@ _get_repo_url() {
   remote=$(git remote get-url --push origin)
   if echo "${remote}" | grep -q "github.com" ; then
     printf "https://github.com/%s/%s" "${repo_and_project[0]}" "${repo_and_project[1]}"
+  elif echo "${remote}" | grep -q "ghe.com" ; then
+    printf "https://bbva.ghe.com/%s/%s" "${repo_and_project[0]}" "${repo_and_project[1]}"
   else
     printf "${BITBUCKET_REPO}/projects/%s/repos/%s" "${repo_and_project[0]}" "${repo_and_project[1]}"
   fi
@@ -355,7 +367,8 @@ case "$1" in
   open*)
     shift ;
     [ -n "$1" ] && sys.open "$( _get_browse_url "$1" )" && return
-    sys.open "$( _get_repo_url )"
+    repo_url="$( _get_repo_url )"
+    sys.open "${repo_url}"
     ;;
   klone*)
     shift; repo=$1 ; [ -z "${repo}" ] &&  \
@@ -404,24 +417,6 @@ shell.expansion() {
   delimiter="__apply_shell_expansion_delimiter__"
   command="cat <<$delimiter"$'\n'"$data"$'\n'"$delimiter"
   eval "$command"
-}
-
-# Open Whatsapp web
-web.whatsapp() {
-  sys.open "https://web.whatsapp.com"
-}
-
-# Search for something from the commmand line
-q() {
-  engine="Duck Duck GO"
-  base_url="https://duckduckgo.com/?q="
-  search_string="$*"
-  [ -z "${search_string}" ] && \
-    error "I need something to search...." && return 1
-
-  escaped_search_string=$( web.escape "${search_string}" )
-  echo "Let's search for '${search_string}' using '${engine}'...."
-  sys.open "${base_url}${escaped_search_string}"
 }
 
 # Perform a faster, recursive and case-ignoring 'grep' search on a GIT repo.
@@ -505,21 +500,21 @@ __envrc_assert() {
   error ".envrc file already exists and __ENVRC_ALLOW_OVERWRITE is not set: refusing to overwrite" && return 1
 }
 
-# Enable a Pipenv-powered virtualenv via direnv
-_pipenv_venv_create() {
+# Enable a UV-powered virtualenv via direnv
+_uv_venv_create() {
   __envrc_assert || return
-  [ ! -x "$(which pipenv)" ] && \
-    error "PipEnv is not installed/available on current path" && return
+  [ ! -x "$(which uv)" ] && \
+    error "uv is not installed/available on current path" && return
 
   cat > .envrc << EOF
-layout pipenv
+layout python_uv
 unset PS1
 EOF
-pipenv install
+[ ! -f uv.lock ] && uv init
 direnv allow
-echo "[INFO] Successfully created direnv configuration for $(which pipenv)"
+echo "[INFO] Successfully created direnv configuration for $(which uv)"
 }
-alias envrc.pipenv='_pipenv_venv_create'
+alias envrc.uv='_uv_venv_create'
 
 # Enable a poetry-powered virtualenv via direnv
 _poetry_venv_create() {
@@ -609,6 +604,11 @@ file.unbackup() {
 
 # installs Ipython and dependencies
 __verify_ipython() {
+  if [ -f uv.lock ] ; then
+    uv add --dev ipython pandas openpyxl > /dev/null 2>&1
+    return
+  fi
+
   local pip_command="pipx"
   [ -n "${VIRTUAL_ENV}" ] && pip_command="pip"
   package_list=(ipython pandas openpyxl)
@@ -629,27 +629,31 @@ df.load() {
   # check if ipython is installed, along with pandas and openpyxl
   __verify_ipython
 
-  local ipython_cmd=""
+  local ipython_cmd="import pandas as pd; import json"
   if [[ "$file" == *.csv ]]; then
-    ipython_cmd="import pandas as pd; df = pd.read_csv('$file'); print('CSV $file loaded as df')"
+    ipython_cmd="${ipython_cmd}; df = pd.read_csv('$file'); print('CSV $file loaded as df')"
   elif [[ "$file" == *.xlsx ]]; then
-    ipython_cmd="import pandas as pd; df = pd.read_excel('$file'); print('Excel $file loaded as df')"
+    ipython_cmd="${ipython_cmd}; df = pd.read_excel('$file'); print('Excel $file loaded as df')"
   elif [[ "$file" == *.pkz ]]; then
-    ipython_cmd="import pandas as pd; df = pd.read_pickle('$file', compression='bz2'); print('Pickle $file loaded as df')"
+    ipython_cmd="${ipython_cmd}; df = pd.read_pickle('$file', compression='bz2'); print('Pickle $file loaded as df')"
+  elif [[ "$file" == *.json ]]; then
+    ipython_cmd="${ipython_cmd}; data = json.load(open('$file')); df = pd.json_normalize(data); print('JSON $file loaded as df')"
   else
     echo "Unsupported file type"
     return 1
   fi
+  ipython_cmd="${ipython_cmd}; df.head(); df.columns"
 
   # Open IPython and load the dataframe
-  ipython -i -c "$ipython_cmd"
+  ipython_bin="ipython"
+  [ -f uv.lock ] && ipython_bin="uv run ipython"
+  ${ipython_bin} -i -c "$ipython_cmd"
 }
 
 # shellcheck disable=2317
 enable.fzf() {
-
   export PATH="$HOME/.fzf/bin:$PATH"
-  [ -f ~/.fzf.bash ] && source ~/.fzf.bash
+  [ -f ~/.fzf.bash ] && __source ~/.fzf.bash
 
   # FZF Custom vars and functions
   _USE_FZF_CUSTOM_THEME=
@@ -677,6 +681,39 @@ enable.fzf() {
     #fzf $FZF_DEFAULT_OPTS --preview 'fzf-preview.sh {}' --preview-window 'right,border-none,60%,<70(bottom,60%,border-top)'
   }
 
+  # A function to perform a grep search and then use fzf for interactive selection.
+  g() {
+      # Check if a pattern is provided
+      if [ -z "$1" ]; then
+          echo "Usage: $0 <pattern>"
+          return 1
+      fi
+
+      pattern="$1"
+      ! git grep -i -q "$pattern" . && return 0
+      # --exclude-dir={.git,node_modules,vendor,build,dist,.terraform} \
+    # --exclude=*.{jpg,jpeg,png,gif,bmp,zip,gz,tar,mp4,mov,pyc,class,tfstate} | \
+      git grep -il "$pattern" .  | \
+      fzf \
+          --preview-window=right,60% \
+          --bind "enter:execute(vim {} +'/${pattern}')" \
+          --bind "ctrl-o:execute(xdg-open {})" \
+          --preview "
+              # Get the line number of the first match
+              line_num=\$(grep -n -i -m1 '${pattern}' {} | cut -d: -f1)
+              line_range_start=\$((line_num < 5 ? 1 : line_num - 5))
+
+              # Check if a line number was found
+              if [ -n \"\$line_num\" ]; then
+                  # Use bat to highlight the line
+                  bat -f --highlight-line=\${line_num} --theme=gruvbox-light --line-range \${line_range_start}: {}
+              else
+                  # Fallback: just display the file normally
+                  bat --color=always --style=numbers {}
+              fi
+          "
+  }
+
   # filetype-based handler
   # shellcheck disable=2317
   __open() {
@@ -694,9 +731,9 @@ enable.fzf() {
     $FZF_DEFAULT_COMMAND --changed-within "$1" . "$HOME" | __FZF_PREVIEW_COMMAND
   }
   alias c.h='__open $(__finder 1h)'
-  alias c.d='__open $(__finder 1d)'
-  alias c.w='__open $(__finder 7d)'
-  alias c.m='__open $(__finder 30d)'
+  ##alias c.d='__open $(__finder 1d)'
+  ##alias c.w='__open $(__finder 7d)'
+  ##alias c.m='__open $(__finder 30d)'
 
   # shellcheck disable=2317
   __list_repos() {
@@ -745,7 +782,7 @@ enable.fzf() {
   }
 
   # Vim + fzf
-  fim() {
+  v() {
     local matches
     if [ $# -gt 0 ] ; then
       matches=$(fd --hidden --type file | grep -i "$1" | __FZF_PREVIEW_COMMAND)
@@ -782,13 +819,13 @@ fi
 
 # bash autocompletion
 if is.debian ; then
-  source /etc/bash_completion
+    __source /etc/bash_completion
 elif is.mac ; then
-  source /opt/homebrew/etc/profile.d/bash_completion.sh
+    __source /opt/homebrew/etc/profile.d/bash_completion.sh
 fi
 
 # git autocompletion
-source ~/.git-completion.bash
+__source ~/.git-completion.bash
 
 # Private stuff, depends on laptop, never to be shared or versioned
-[ -f ~/.bash_private_vars ] && . ~/.bash_private_vars || true
+[ -f ~/.bash_private_vars ] && __source ~/.bash_private_vars || true

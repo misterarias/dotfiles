@@ -19,7 +19,7 @@ style = "fg:#e0e9cb bg:#0d1117"
 format = '[$time]($style)'
 
 [hostname]
-disabled = false
+disabled = true
 ssh_only = false
 style = "fg:#a0a9cb bg:#11151c"
 format = '[ $hostname ]($style)'
@@ -39,7 +39,7 @@ format = '[ $symbol $branch ]($style)'
 [git_status]
 style = "fg:#a0a9cb bg:#1c2230"
 format = '([$all_status$ahead_behind]($style))'
-stashed = "stash!"
+stashed = "💾 $count"
 disabled = false
 
 [rust]

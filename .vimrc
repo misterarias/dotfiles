@@ -353,6 +353,8 @@ let g:airline#extensions#tabline#fnamemod = ':t'
 
 "" Enable copilot in all buffers
 let b:copilot_enabled=v:true
+let g:copilot_enterprise_uri = 'https://bbva.ghe.com'
+
 "let g:copilot_proxy = '127.0.0.1:8999'  "'proxyvip.igrupobbva:8080'
 "let g:copilot_proxy_strict_ssl = v:false
 
@@ -378,3 +380,92 @@ set shell=/bin/sh
 " ALE magic
 let g:ale_completion_enabled = 1
 let g_ale_fixers = { 'javascript': ['eslint'], 'python': ['black'], 'yaml': ['ansible-lint'], 'hcl': ['terraform'], }
+
+" To be invoked on any 'uses' clause on a GitHub Worflow file
+func! GoToAction()
+  let l:line = getline('.')
+  let l:pattern = 'uses:\s*\(\S\+\)@\(\S\+\)'
+
+  if l:line !~ 'uses:'
+    echo "Error: Line does not contain a 'uses:' directive"
+    return
+  endif
+
+  " Extract the path part and the version/branch (after the @ symbol)
+  let l:match = matchlist(l:line, l:pattern)
+  if empty(l:match)
+    echo "Error: Could not parse GitHub action reference"
+    return
+  endif
+
+  let l:path = l:match[1]
+  let l:version = l:match[2]
+
+  " Handle official GitHub actions (actions/*) - open in browser
+  if l:path =~ '^actions/'
+    let l:action_name = substitute(l:path, '^actions/', '', '')
+    let l:url = 'https://github.com/actions/' . l:action_name . '/tree/' . l:version
+
+    " Determine which command to use based on OS
+    if has('mac')
+      silent execute '!open ' . shellescape(l:url)
+    elseif has('unix')
+      silent execute '!xdg-open ' . shellescape(l:url) . ' &'
+    else
+      echo "Error: Unsupported OS for opening browser"
+    endif
+    redraw!
+    echo "Opening GitHub action in browser: " . l:url
+    return
+  endif
+
+  let l:base_dir = $_REPO_AUTOCOMPLETE_BASE_DIR
+
+  if empty(l:base_dir)
+    echo "Error: _REPO_AUTOCOMPLETE_BASE_DIR environment variable not set"
+    return
+  endif
+
+  " Check if this is a workflow file or an action
+  if l:path =~ '\.github/workflows/.*\.ya\?ml$'
+    " This is a workflow file reference
+    let l:full_path = l:base_dir . '/' . l:path
+
+    if filereadable(l:full_path)
+      :execute "tabnew " . fnameescape(l:full_path)
+    else
+      echo "Error: Workflow file not found: " . l:full_path
+    endif
+  elseif l:path =~ '/actions/'
+    " This is an action reference
+    let l:action_dir = l:base_dir . '/' . l:path
+    let l:yaml_path = l:action_dir . '/action.yaml'
+    let l:yml_path = l:action_dir . '/action.yml'
+
+    if filereadable(l:yaml_path)
+      :execute "tabnew " . fnameescape(l:yaml_path)
+    elseif filereadable(l:yml_path)
+      :execute "tabnew " . fnameescape(l:yml_path)
+    else
+      echo "Error: Action file not found: neither " . l:yaml_path . " nor " . l:yml_path . " exists"
+    endif
+  else
+    " Try to guess if it's a workflow or action based on directory structure
+    let l:workflow_path = l:base_dir . '/' . l:path
+    let l:action_yaml_path = l:base_dir . '/' . l:path . '/action.yaml'
+    let l:action_yml_path = l:base_dir . '/' . l:path . '/action.yml'
+
+    if filereadable(l:workflow_path)
+      :execute "tabnew " .  fnameescape(l:workflow_path)
+    elseif filereadable(l:action_yaml_path)
+      :execute "tabnew" .  fnameescape(l:action_yaml_path)
+    elseif filereadable(l:action_yml_path)
+      :execute "tabnew" .  fnameescape(l:action_yml_path)
+    else
+      echo "Error: Could not find file for: " . l:path
+    endif
+  endif
+endfunction
+
+" Map ga to GoToAction
+map ga :call GoToAction()<CR>

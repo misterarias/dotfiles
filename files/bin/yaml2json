@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 # vi: :set ft=sh
-python -c """
+python3 -c """
 import sys
 import yaml
 import json

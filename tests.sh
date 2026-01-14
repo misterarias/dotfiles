@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-SOURCES=$(cd "$(dirname "$0")" ; pwd )
-source "${SOURCES}/.bash_local_aliases"
+# SOURCES=$(cd "$(dirname "$0")" ; pwd )
+source .bash_local_aliases
 
 # Some color codes
 BOLD=$(tput bold)
