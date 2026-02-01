@@ -6,14 +6,6 @@
 # By using meaningful one-line comments to functions, they'll get nicely printed
 # by means of the 'my_commands' help function (defined in ~/.bashrc)
 
-##BOLD=$(tput bold)
-##BLUECOLOR=$(tput setaf 4)
-##REDCOLOR=$(tput setaf 1)
-##GREENCOLOR=$(tput setaf 2)
-##BLUECOLOR_BOLD=$BLUECOLOR$BOLD
-##REDCOLOR_BOLD=$REDCOLOR$BOLD
-##GREENCOLOR_BOLD=$GREENCOLOR$BOLD
-##ENDCOLOR=$(tput sgr0)
 # Use ANSI escape codes directly (faster, no subshells)
 BOLD='\033[1m'
 BLUECOLOR='\033[34m'
@@ -38,6 +30,8 @@ red() {
 
 # BSD ls colors
 export LSCOLORS=Ehfxcxdxbxegedabagacad
+
+export __TIMINGS_ENABLED=
 
 # source wrapper
 __source() {
@@ -467,11 +461,11 @@ alias vin="echo 'VIN?? 'Vin' qué, Diesel??? Madre mía, que paciencia...' && re
 bash.profile() {
   local log_file="/tmp/bashprofile.$$.log"
   local report_file="/tmp/bashprofile.$$.report"
-  
+
   green "Profiling bash startup..."
   green "This will reload your shell configuration with timing enabled"
   echo
-  
+
   # Create a temporary bash script that profiles the load
   cat > "${log_file}.sh" << 'PROFILE_EOF'
 PS4='+ $(date "+%s%N")\011 '
@@ -481,15 +475,15 @@ source ~/.bashrc
 set +x
 exec 2>&3 3>&-
 PROFILE_EOF
-  
+
   # Run the profiling
   PROFILE_LOG="${log_file}" bash --noprofile --norc "${log_file}.sh" 2>/dev/null
-  
+
   # Process the results
   if [ -f "${log_file}" ]; then
     green "Processing results..."
     echo
-    
+
     # Calculate timing differences and sort by duration
     awk '
     BEGIN {
@@ -500,17 +494,17 @@ PROFILE_EOF
     {
       # Extract timestamp (nanoseconds since epoch)
       current_time = substr($2, 1, length($2))
-      
+
       # Calculate duration in milliseconds
       if (prev_time > 0) {
         duration = (current_time - prev_time) / 1000000
-        
+
         # Extract the command (everything after the timestamp)
         cmd = ""
         for (i = 3; i <= NF; i++) {
           cmd = cmd (i > 3 ? " " : "") $i
         }
-        
+
         # Only show operations taking > 1ms
         if (duration > 1) {
           printf "%12.2f | %s\n", duration, cmd
@@ -519,17 +513,17 @@ PROFILE_EOF
       prev_time = current_time
     }
     ' "${log_file}" | sort -rn -k1 | head -30 > "${report_file}"
-    
+
     blue "=== Top 30 Slowest Operations (>1ms) ==="
     echo
     cat "${report_file}"
     echo
-    
+
     # Calculate total time
     total_time=$(awk 'NR==1 {first=$2} END {last=$2; print (last-first)/1000000}' "${log_file}")
     green "Total startup time: ${total_time} ms"
     echo
-    
+
     # Summary statistics
     blue "=== Summary ==="
     echo "Full log: ${log_file}"
@@ -541,12 +535,12 @@ PROFILE_EOF
     echo
     echo "To clean up:"
     echo "  rm ${log_file}* ${report_file}"
-    
+
   else
     error "Profiling failed - no log file generated"
     return 1
   fi
-  
+
   # Cleanup temporary script
   rm -f "${log_file}.sh"
 }
@@ -919,6 +913,7 @@ _load_git_completion() {
 _git_with_completion() {
   _load_git_completion
   unset -f _git_with_completion  # Remove wrapper after first use
+  unalias git
   complete -F __git_wrap__git_main git  # Re-enable completion
   command git "$@"
 }

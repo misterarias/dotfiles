@@ -48,3 +48,7 @@ bind '"\e[B": history-search-forward'
 # testing starship
 command -v starship &> /dev/null && eval "$(starship init bash)"
 export STARSHIP_CACHE="$HOME/.cache/starship"
+
+[ -f ~/.fzf.bash ] && source ~/.fzf.bash
+export PATH="${HOME}/.pyenv/bin:$PATH"
+export PATH="${HOME}/.pyenv/bin:$PATH"

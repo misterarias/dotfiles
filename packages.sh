@@ -313,6 +313,12 @@ __install_python() {
   fi
 }
 
+__install_uv() {
+    if ! command -v uv > /dev/null ; then
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+    fi
+}
+
 __prepare_pip() {
   __install_python
 
@@ -329,6 +335,7 @@ setup_dotfiles() {
   __prepare_pip
   __install_fzf
   __install_pyenv
+  __install_uv
   __install_autocompletion
   __install_direnv
   __install_status_bar
