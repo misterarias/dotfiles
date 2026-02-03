@@ -54,7 +54,7 @@ __get_timing_diff() {
 }
 
 __time_cmd() {
-  [ -z "${__TIMINGS_ENABLED}" ] && return
+  [ -z "${__TIMINGS_ENABLED}" ] && $@  && return
   _tmp_file="/tmp/_timing_$(echo "$@" | cksum | awk '{print $1}')"
   __get_timing_date > "$_tmp_file"
 
@@ -687,29 +687,36 @@ __verify_ipython() {
 # open ipython with preloaded file
 df.load() {
   # Check if a file argument is provided
-  local file="$1"
-  if [ -z "$file" ]; then
-    echo "Usage: load_df <file>"
+  if [ -z "$1" ]; then
+    echo "Usage: load_df <file1> [<file2> ...]"
     return 1
   fi
-
+  local ipython_cmd="import pandas as pd; import json"
   # check if ipython is installed, along with pandas and openpyxl
   __verify_ipython
 
-  local ipython_cmd="import pandas as pd; import json"
-  if [[ "$file" == *.csv ]]; then
-    ipython_cmd="${ipython_cmd}; df = pd.read_csv('$file'); print('CSV $file loaded as df')"
-  elif [[ "$file" == *.xlsx ]]; then
-    ipython_cmd="${ipython_cmd}; df = pd.read_excel('$file'); print('Excel $file loaded as df')"
-  elif [[ "$file" == *.pkz ]]; then
-    ipython_cmd="${ipython_cmd}; df = pd.read_pickle('$file', compression='bz2'); print('Pickle $file loaded as df')"
-  elif [[ "$file" == *.json ]]; then
-    ipython_cmd="${ipython_cmd}; data = json.load(open('$file')); df = pd.json_normalize(data); print('JSON $file loaded as df')"
-  else
-    echo "Unsupported file type"
-    return 1
-  fi
-  ipython_cmd="${ipython_cmd}; df.head(); df.columns"
+  local file="$1"
+  i=0
+  for arg in "$@"; do
+    file="$arg"
+    [ ! -f "$file" ] && echo "File not found: $file" && continue
+    df="df${i}"
+    if [[ "$file" == *.csv ]]; then
+      ipython_cmd="${ipython_cmd}; ${df} = pd.read_csv('$file'); print('CSV $file loaded as ''$df''')"
+    elif [[ "$file" == *.xlsx ]]; then
+      ipython_cmd="${ipython_cmd}; ${df} = pd.read_excel('$file'); print('Excel $file loaded as ''$df''')"
+    elif [[ "$file" == *.pkz ]]; then
+      ipython_cmd="${ipython_cmd}; ${df} = pd.read_pickle('$file', compression='bz2'); print('Pickle $file loaded as ''$df''')"
+    elif [[ "$file" == *.json ]]; then
+      ipython_cmd="${ipython_cmd}; data = json.load(open('$file')); ${df} = pd.json_normalize(data); print('JSON $file loaded as ''$df''')"
+    else
+      echo "Unsupported file type"
+      return 1
+    fi
+    ipython_cmd="${ipython_cmd}; ${df}.head(); ${df}.columns"
+
+    i=$((i + 1))
+  done
 
   # Open IPython and load the dataframe
   ipython_bin="ipython"
