@@ -36,7 +36,6 @@ declare -a TOOLS=(
     "git"
     "vim"
     "python3"
-    "pip3"
     "uv"
     "fzf"
     "fd"
@@ -46,6 +45,7 @@ declare -a TOOLS=(
     "starship"
     "imgcat"
     "pyenv"
+    "nvm"
 )
 
 # Initialize backup folder
@@ -279,13 +279,6 @@ install_fzf() {
         error "fzf installation failed"
         return 1
     fi
-
-    dotfiles_link .fzf.bash "${HOME}/.fzf.bash"
-    dotfiles_link files/.fzf/bin/fzf-preview.sh "${FZF_DIR}/bin/fzf-preview.sh"
-
-    install_imgcat
-    install_fd
-    install_bat
 }
 
 install_imgcat() {
@@ -355,32 +348,7 @@ configure_direnv() {
     dotfiles_link files/direnvrc "${DIRENV_CONFIG_DIR}/.direnvrc"
 }
 
-install_status_bar() {
-    # We now use starship: https://starship.rs/guide/
-    if ! command -v starship &>/dev/null ; then
-        if is.mac ; then
-            brew install starship
-        elif is.debian ; then
-            curl -sS https://starship.rs/install.sh | sh
-            # sudo apt install -y starship
-        elif is.arch ; then
-            sudo pacman -S --noconfirm starship
-        else
-            error "Don't know how to install starship"
-            return 1
-        fi
-    fi
-
-    if ! command -v starship &>/dev/null ; then
-        error "starship installation failed"
-        return 1
-    fi
-
-    green "Setting up starship main files in ${STARSHIP_CONFIG}"
-    dotfiles_link "files/starship.toml" "${STARSHIP_CONFIG}"
-}
-
-install_python() {
+install_python3() {
     if command -v python3 >/dev/null 2>&1 && command -v pip3 >/dev/null 2>&1 ; then
         return
     fi
@@ -402,6 +370,98 @@ install_python() {
     fi
 }
 
+install_starship() {
+    # We now use starship: https://starship.rs/guide/
+    if ! command -v starship &>/dev/null ; then
+        if is.mac ; then
+            brew install starship
+        elif is.debian ; then
+            curl -sS https://starship.rs/install.sh | sh
+            # sudo apt install -y starship
+        elif is.arch ; then
+            sudo pacman -S --noconfirm starship
+        else
+            error "Don't know how to install starship"
+            return 1
+        fi
+    fi
+
+    if ! command -v starship &>/dev/null ; then
+        error "starship installation failed"
+        return 1
+    fi
+}
+
+configure_starship() {
+    green "Setting up starship main files in ${STARSHIP_CONFIG}"
+    dotfiles_link "files/starship.toml" "${STARSHIP_CONFIG}"
+}
+
+install_nvm() {
+    if command -v nvm >/dev/null 2>&1 ; then
+        return
+    fi
+
+    if [ -d "${HOME}/.nvm" ] ; then
+        if [ -s "${HOME}/.nvm/nvm.sh" ] ; then
+            # shellcheck source=/dev/null
+            . "${HOME}/.nvm/nvm.sh"
+        fi
+    fi
+
+    if command -v nvm >/dev/null 2>&1 ; then
+        return
+    fi
+
+    install_curl
+    curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.6/install.sh | bash
+
+    if [ -s "${HOME}/.nvm/nvm.sh" ] ; then
+        # shellcheck source=/dev/null
+        . "${HOME}/.nvm/nvm.sh"
+    fi
+
+    if ! command -v nvm >/dev/null 2>&1 ; then
+        error "nvm installation failed"
+        return 1
+    fi
+}
+
+configure_nvm() {
+    # handled by 'enable.npm' file in bash_local_aliases
+    return 0
+}
+
+configure_uv() {
+    # handled by 'envrc.uv' loader
+    return 0
+}
+
+configure_fzf() {
+    dotfiles_link .fzf.bash "${HOME}/.fzf.bash"
+    dotfiles_link files/.fzf/bin/fzf-preview.sh "${FZF_DIR}/bin/fzf-preview.sh"
+}
+
+configure_fd() {
+    return 0
+}
+
+configure_bat() {
+    return 0
+}
+
+configure_curl() {
+    return 0
+}
+
+configure_imgcat() {
+    return 0
+}
+
+configure_pyenv() {
+    return 0
+}
+
 install_uv() {
     if command -v uv >/dev/null 2>&1 ; then
         return
@@ -415,52 +475,46 @@ install_uv() {
     fi
 }
 
-__prepare_pip() {
-  install_python
-
-  green "Updating PIP now..."
-  #pip install --upgrade  pip
-  pip3 list --no-color > "${PIPFILE_LIST}"
-}
 
 install_all_tools() {
-    green "Installing all required tools..."
-    
-    # __prepare_pip
-    install_git
-    install_vim
-    install_fzf
-    install_pyenv
-    install_uv
-    install_autocompletion
-    install_direnv
-    install_status_bar
+    green "Installing and configuring all required tools..."
+
+    for tool in "${TOOLS[@]}"; do
+        install_fn="install_${tool}"
+        configure_fn="configure_${tool}"
+
+        if declare -F "${install_fn}" >/dev/null 2>&1 ; then
+            "${install_fn}"
+        else
+            error "Missing installer function: ${install_fn}"
+            return 1
+        fi
+
+        if declare -F "${configure_fn}" >/dev/null 2>&1 ; then
+            "${configure_fn}"
+        else
+            error "Missing config function: ${configure_fn}"
+            return 1
+        fi
+    done
 }
 
-configure_python() {
+configure_python3() {
     green "Setting up some Python defaults..."
-    pip install -q --upgrade --break-system-packages \
-        pip \
-        flake8 \
-        mypy \
-        ipython \
-        pandas
+    python3 -m pip install -q --upgrade --break-system-packages \
+        pip flake8 mypy ipython pandas
     blue "   Installed global Python tools: pip, flake8, mypy, ipython and pandas"
 }
+
 configure_all_tools() {
-    green "Configuring all tools..."
-    
-    configure_git
-    configure_python
-    configure_vim
-    configure_direnv
-    
+    green "Finishing tool configuration..."
+
     # Ruby configuration
     if ! grep -q 'irb/completion' "${IRBRC}" ; then
         green "Setting up Ruby defaults..."
         echo "require 'irb/completion'" >> "${IRBRC}"
     fi
-    
+
     # PostgreSQL configuration
     green "Setting up PostgreSQL defaults..."
     dotfiles_link .psqlrc "${PSQLRC}"
@@ -522,6 +576,11 @@ print_installation_summary() {
     printf "%-20s %-50s %s\n" "----" "--------" "-------"
     
     for tool in "${TOOLS[@]}"; do
+        if [ "$tool" = "nvm" ] && [ -s "${HOME}/.nvm/nvm.sh" ] ; then
+            # shellcheck source=/dev/null
+            . "${HOME}/.nvm/nvm.sh"
+        fi
+
         location="$(command -v "$tool" 2>/dev/null || echo "—")"
         
         if [ "$location" != "—" ]; then
@@ -532,6 +591,8 @@ print_installation_summary() {
                     version=$("$tool" --version 2>/dev/null | awk '{print $NF}' || echo "—") ;;
                 vim|uv|fzf|fd|bat|direnv|starship|imgcat|pyenv)
                     version=$("$tool" --version 2>/dev/null | head -n1 | sed 's/^[^0-9]*//; s/[^0-9.].*$//' || echo "—") ;;
+                nvm)
+                    version=$(nvm --version 2>/dev/null || echo "—") ;;
                 *)
                     version="—" ;;
             esac
