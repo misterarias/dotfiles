@@ -381,15 +381,6 @@ case "$1" in
     [ ! -d "${target_dir}" ] && command git clone "${repo}" "${target_dir}"
     cd "${target_dir}" || return
     ;;
-  branch*)
-    shift
-    if [ -n "${1}" ] ; then
-      command git branch "$@"
-    else
-      branch=$(git brs)
-      [ -n "${branch}" ] && command git checkout "$branch"
-    fi
-    ;;
   *)
     command git "$@" ;;
 esac
@@ -809,7 +800,7 @@ enable.fzf() {
 
   # shellcheck disable=2317
   __list_repos() {
-    fd  --maxdepth 2 --min-depth 2 --type d . "$_REPO_AUTOCOMPLETE_BASE_DIR/"
+    fd  --maxdepth 2 --min-depth 2  . "$_REPO_AUTOCOMPLETE_BASE_DIR/"
   }
 
   # Automagically autocomplete repo names and 'cd' into them. Needs a proper base repo dir. Depends on fzf and fd
