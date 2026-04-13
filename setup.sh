@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -o errexit
+#set -o errexit
 # set -o nounset
 set -o pipefail
 
@@ -46,6 +46,7 @@ declare -a TOOLS=(
     "imgcat"
     "pyenv"
     "nvm"
+    "autocompletion"
 )
 
 # Initialize backup folder
@@ -109,7 +110,7 @@ configure_git() {
 
     # This is now configured in core.excludesfile
     dotfiles_link .gitignore "${GITIGNORE_FILE}"
-    
+
     if [ -z "$(git config --global user.name)" ] || [ -z "$(git config --global user.email)" ] ; then
         red "Remember to execute: ${GREENCOLOR_BOLD}git config --global user.email <YOUR_EMAIL>${ENDCOLOR}"
     fi
@@ -154,6 +155,8 @@ configure_vim() {
 install_bat() {
     if command -v bat >/dev/null 2>&1 ; then
         return
+    elif is.bazzite ; then
+        brew install bat
     elif is.mac ; then
         pip install bat --break-system-packages
     elif is.debian ; then
@@ -202,6 +205,8 @@ install_fd() {
 
     if is.mac ; then
         pip install fd --break-system-packages
+    elif is.bazzite ; then
+        brew install fd
     elif is.debian ; then
         sudo apt install -y fd-find
     elif is.arch ; then
@@ -286,7 +291,7 @@ install_imgcat() {
         return
     fi
 
-    if is.mac ; then
+    if is.mac || is.bazzite ; then
         brew install imgcat
     elif is.debian ; then
         sudo apt install -y imgcat
@@ -306,6 +311,8 @@ install_imgcat() {
 install_autocompletion() {
     if is.mac ; then
         [ ! -f /opt/homebrew/etc/profile.d/bash_completion.sh ] && brew install bash-completion@2
+    elif is.bazzite ; then
+        [ ! -f "${HOMEBREW_PREFIX}/etc/bash_completion" ] && brew install bash-completion
     elif is.debian ; then
         [[ -r "/etc/profile.d/bash_completion.sh" ]] ||  sudo apt install  bash-completion
     elif is.arch ; then
@@ -314,7 +321,7 @@ install_autocompletion() {
         error "Don't know how to install bash completion"
     fi
     [ ! -f "${GIT_COMPLETION}" ] &&
-        curl -v -sL https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash > "${GIT_COMPLETION}"
+        curl -q -sL https://raw.githubusercontent.com/git/git/master/contrib/completion/git-completion.bash > "${GIT_COMPLETION}"
     return 0
 }
 
@@ -327,6 +334,8 @@ install_direnv() {
 
     if is.mac ;then
         curl -sfL https://direnv.net/install.sh | bash
+    elif is.bazzite ; then
+        brew install direnv
     elif is.debian ; then
         sudo apt install direnv
     elif is.arch ; then
@@ -373,7 +382,7 @@ install_python3() {
 install_starship() {
     # We now use starship: https://starship.rs/guide/
     if ! command -v starship &>/dev/null ; then
-        if is.mac ; then
+        if is.mac || is.bazzite ; then
             brew install starship
         elif is.debian ; then
             curl -sS https://starship.rs/install.sh | sh
@@ -459,6 +468,10 @@ configure_imgcat() {
 }
 
 configure_pyenv() {
+    return 0
+}
+
+configure_autocompletion() {
     return 0
 }
 
@@ -567,14 +580,14 @@ prerequisites() {
 
 print_installation_summary() {
     local tool version location
-    
+
     blue "\n════════════════════════════════════════════════════════════════\n"
     green "Installation Summary"
     blue "════════════════════════════════════════════════════════════════\n"
-    
+
     printf "%-20s %-50s %s\n" "Tool" "Location" "Version"
     printf "%-20s %-50s %s\n" "----" "--------" "-------"
-    
+
     for tool in "${TOOLS[@]}"; do
         if [ "$tool" = "nvm" ] && [ -s "${HOME}/.nvm/nvm.sh" ] ; then
             # shellcheck source=/dev/null
@@ -582,7 +595,7 @@ print_installation_summary() {
         fi
 
         location="$(command -v "$tool" 2>/dev/null || echo "—")"
-        
+
         if [ "$location" != "—" ]; then
             case "$tool" in
                 git|curl)
@@ -599,10 +612,10 @@ print_installation_summary() {
         else
             version="—"
         fi
-        
+
         printf "%-20s %-50s %s\n" "$tool" "${location:0:50}" "$version"
     done
-    
+
     # Custom binaries from ~/.local/bin
     if [ -d "${LOCAL_BIN_DIR}" ]; then
         local custom_bins
@@ -611,7 +624,7 @@ print_installation_summary() {
             printf "%-20s %-50s %s\n" "custom scripts" "${LOCAL_BIN_DIR}" "$custom_bins"
         fi
     fi
-    
+
     blue "════════════════════════════════════════════════════════════════\n"
 }
 

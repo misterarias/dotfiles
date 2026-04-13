@@ -161,6 +161,7 @@ error() { red "[ERROR] $*" ; }
 # 'Darwin' for Mac, 'Linux' or similar elsewhere
 _UNAME="$(uname)"
 is.mac() { [ "${_UNAME}" == "Darwin" ] ; }
+is.bazzite() { [ "${_UNAME}" == "Linux" ] && grep -q -i 'bazzite' /etc/fedora-release ; }
 is.debian() { [ "${_UNAME}" == "Linux" ] && [ -f /etc/debian_version ] ; }
 is.arch() { [ "${_UNAME}" == "Linux" ] && [ -f /etc/arch-release ] ; }
 
@@ -569,6 +570,7 @@ __pyenv_versions() {
 }
 
 __envrc_assert() {
+  ! command -v direnv > /dev/null && error "Direnv is not installed"
   [ ! -f .envrc ] && return 0
   [ -n "${__ENVRC_ALLOW_OVERWRITE}" ] && green ".envrc file already exists but __ENVRC_ALLOW_OVERWRITE is set" && return 0
   error ".envrc file already exists and __ENVRC_ALLOW_OVERWRITE is not set: refusing to overwrite" && return 1
@@ -866,30 +868,37 @@ export PSQL_EDITOR='vim -c"set syntax=sql"'
 # Edit ~/.ssh/config
 alias ssh.edit='vim ~/.ssh/config'
 
+# Private stuff, depends on laptop, never to be shared or versioned
+[ -f ~/.bash_private_vars ] && __source ~/.bash_private_vars || true
+
 # Add this AFTER any prompt-manipulating extensions: https://direnv.net/docs/hook.html
 # Optimized direnv hook - only runs on directory change
-_DIRENV_LAST_DIR=""
-_direnv_hook() {
-  local previous_exit_status=$?
-  # Only run direnv if directory changed or first time
-  if [[ "$PWD" != "$_DIRENV_LAST_DIR" ]]; then
-    _DIRENV_LAST_DIR="$PWD"
-    trap -- '' SIGINT  # Prevent ctrl-c issues during direnv
-    eval "$(direnv export bash 2>/dev/null)"
-    trap - SIGINT
-  fi
-  return $previous_exit_status
-}
+if command -v direnv > /dev/null ; then
+  _DIRENV_LAST_DIR=""
+  _direnv_hook() {
+    local previous_exit_status=$?
+    # Only run direnv if directory changed or first time
+    if [[ "$PWD" != "$_DIRENV_LAST_DIR" ]]; then
+      _DIRENV_LAST_DIR="$PWD"
+      trap -- '' SIGINT  # Prevent ctrl-c issues during direnv
+      eval "$(direnv export bash 2>/dev/null)"
+      trap - SIGINT
+    fi
+    return $previous_exit_status
+  }
 
-if ! [[ "${PROMPT_COMMAND:-}" =~ _direnv_hook ]]; then
-  PROMPT_COMMAND="_direnv_hook${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
+  if ! [[ "${PROMPT_COMMAND:-}" =~ _direnv_hook ]]; then
+    PROMPT_COMMAND="_direnv_hook${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
+  fi
 fi
 
 # bash autocompletion
 if is.debian ; then
-    __source /etc/bash_completion
+  __source /etc/bash_completion
 elif is.mac ; then
-    __source /opt/homebrew/etc/profile.d/bash_completion.sh
+  __source /opt/homebrew/etc/profile.d/bash_completion.sh
+elif is.bazzite ; then
+  __source "${HOMEBREW_PREFIX}/etc/bash_completion"
 fi
 
 # git autocompletion - lazy loaded on first use
@@ -917,5 +926,3 @@ else
   alias git='_git_with_completion'
 fi
 
-# Private stuff, depends on laptop, never to be shared or versioned
-[ -f ~/.bash_private_vars ] && __source ~/.bash_private_vars || true
