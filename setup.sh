@@ -43,10 +43,13 @@ declare -a TOOLS=(
     "curl"
     "direnv"
     "starship"
-    "imgcat"
     "pyenv"
     "nvm"
     "autocompletion"
+    "awscli"
+    "ansible"
+    "terraform"
+    "vagrant"
 )
 
 # Initialize backup folder
@@ -75,8 +78,68 @@ dotfiles_link() {
         mv "$system_dotfile" "$BACKUP_FOLDER" > /dev/null 2>&1 || true
     fi
     ln -sf "$local_dotfile" "$system_dotfile"
-    blue "   ${local_dotfile} ---> ${system_dotfile}"
+    # blue "   ${local_dotfile} ---> ${system_dotfile}"
 }
+
+install_terraform() {
+    # tofuenv — manages OpenTofu versions (like tfenv for Terraform)
+    if ! command -v tofuenv >/dev/null 2>&1 ; then
+        brew install tofuenv || true
+    fi
+    if ! command -v tofu >/dev/null 2>&1 ; then
+        tofuenv install latest && tofuenv use latest
+    fi
+}
+configure_terraform() {
+    ln -sf "$HOME/.tofuenv/bin/tofuenv" "$LOCAL_BIN_DIR/tfenv"
+    ln -sf "$HOME/.tofuenv/bin/tofu"    "$LOCAL_BIN_DIR/terraform"
+    return 0
+}
+
+install_ansible() {
+    # Ansible
+    if ! command -v ansible >/dev/null 2>&1 ; then
+        pip3 install --user ansible ansible-lint
+    fi
+}
+configure_ansible() {
+    return 0
+}
+
+install_awscli() {
+    # AWS CLI v2
+    if ! command -v aws >/dev/null 2>&1 ; then
+        curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip
+        unzip -q /tmp/awscliv2.zip -d /tmp
+        /tmp/aws/install --install-dir "$HOME/.local/aws-cli" --bin-dir "$LOCAL_BIN_DIR"
+        rm -rf /tmp/aws /tmp/awscliv2.zip
+    fi
+}
+configure_awscli() {
+    return 0
+}
+
+install_vagrant() {
+    if ! command -v vagrant >/dev/null 2>&1 ; then
+        if [ ! -f ~/.config/distrobox/distrobox.ini ]; then
+            mkdir -p ~/.config/distrobox
+            cat > ~/.config/distrobox/distrobox.ini <<'EOL'
+[devops]
+image = fedora:41
+EOL
+        fi
+        distrobox assemble create --file ~/.config/distrobox/distrobox.ini
+        distrobox enter devops -- sudo dnf install -y vagrant vagrant-libvirt libvirt
+        distrobox enter devops -- sudo systemctl enable --now libvirtd
+        distrobox enter devops -- vagrant plugin install vagrant-libvirt
+        distrobox enter devops -- distrobox-export --bin /usr/bin/vagrant --export-path "$LOCAL_BIN_DIR"
+    fi
+}
+configure_vagrant() {
+    return 0
+}
+
+
 
 install_git() {
     if command -v git >/dev/null 2>&1 ; then
@@ -286,27 +349,6 @@ install_fzf() {
     fi
 }
 
-install_imgcat() {
-    if command -v imgcat >/dev/null 2>&1 ; then
-        return
-    fi
-
-    if is.mac || is.bazzite ; then
-        brew install imgcat
-    elif is.debian ; then
-        sudo apt install -y imgcat
-    elif is.arch ; then
-        sudo pacman -S --noconfirm imgcat
-    else
-        error "Don't know how to install imgcat"
-        return 1
-    fi
-
-    if ! command -v imgcat >/dev/null 2>&1 ; then
-        error "imgcat installation failed"
-        return 1
-    fi
-}
 
 install_autocompletion() {
     if is.mac ; then
@@ -326,12 +368,6 @@ install_autocompletion() {
 }
 
 install_direnv() {
-    if command -v direnv >/dev/null 2>&1 ; then
-        green "Setting up direnv main file in ${DIRENV_CONFIG_DIR}"
-        dotfiles_link files/direnvrc "${DIRENV_CONFIG_DIR}/.direnvrc"
-        return
-    fi
-
     if is.mac ;then
         curl -sfL https://direnv.net/install.sh | bash
     elif is.bazzite ; then
@@ -449,6 +485,15 @@ configure_uv() {
 configure_fzf() {
     dotfiles_link .fzf.bash "${HOME}/.fzf.bash"
     dotfiles_link files/.fzf/bin/fzf-preview.sh "${FZF_DIR}/bin/fzf-preview.sh"
+
+    # Needed for image preview
+    if is.mac ; then
+        brew install imgcat
+    elif is.bazzite ; then
+        orange "TODO: Find an alternative to chafa for bazzite, skipping image preview setup for fzf"
+    elif is.debian ; then
+        sudo apt install -y chafa
+    fi
 }
 
 configure_fd() {
@@ -489,6 +534,30 @@ install_uv() {
 }
 
 
+generic_tool_installer() {
+    local tool_name="$1"
+
+    if command -v "$tool_name" >/dev/null 2>&1 ; then
+        return
+    fi
+    orange "Trying to install ${tool_name}..."
+    if is.mac || is.bazzite ; then
+        brew install "$tool_name"
+    elif is.debian ; then
+        sudo apt install -y "$tool_name"
+    elif is.arch ; then
+        sudo pacman -S --noconfirm "$tool_name"
+    else
+        error "Don't know how to install ${tool_name}"
+        return 1
+    fi
+    if ! command -v "$tool_name" >/dev/null 2>&1 ; then
+        error "${tool_name} installation failed"
+        return 1
+    fi
+}
+
+
 install_all_tools() {
     green "Installing and configuring all required tools..."
 
@@ -499,15 +568,13 @@ install_all_tools() {
         if declare -F "${install_fn}" >/dev/null 2>&1 ; then
             "${install_fn}"
         else
-            error "Missing installer function: ${install_fn}"
-            return 1
+            genric_tool_installer "$tool"
         fi
 
         if declare -F "${configure_fn}" >/dev/null 2>&1 ; then
             "${configure_fn}"
         else
-            error "Missing config function: ${configure_fn}"
-            return 1
+            orange "No specific configuration function for ${tool}, skipping configuration."
         fi
     done
 }
@@ -599,13 +666,21 @@ print_installation_summary() {
         if [ "$location" != "—" ]; then
             case "$tool" in
                 git|curl)
-                    version=$("$tool" --version 2>/dev/null | head -n1 | awk '{print $NF}' || echo "—") ;;
+                    version=$("$tool" --version 2>&1 | head -n1 | awk '{print $NF}' || echo "—") ;;
                 python3|pip3)
-                    version=$("$tool" --version 2>/dev/null | awk '{print $NF}' || echo "—") ;;
+                    version=$("$tool" --version 2>&1 | awk '{print $NF}' || echo "—") ;;
                 vim|uv|fzf|fd|bat|direnv|starship|imgcat|pyenv)
-                    version=$("$tool" --version 2>/dev/null | head -n1 | sed 's/^[^0-9]*//; s/[^0-9.].*$//' || echo "—") ;;
+                    version=$("$tool" --version 2>&1 | head -n1 | sed 's/^[^0-9]*//; s/[^0-9.].*$//' || echo "—") ;;
                 nvm)
-                    version=$(nvm --version 2>/dev/null || echo "—") ;;
+                    version=$(nvm --version 2>&1 || echo "—") ;;
+                ansible)
+                    version=$(ansible --version 2>&1 | grep core | cut -d' ' -f2- || echo "—") ;;
+                awscli)
+                    version=$(aws --version 2>&1 | awk '{print $1}' | cut -d'/' -f2 || echo "—") ;;
+                terraform)
+                    version=$(tofu --version 2>&1 | head -n1 | awk '{print $2}' || echo "—") ;;
+                vagrant)
+                    version=$(vagrant --version 2>&1 | awk '{print $2}' || echo "—") ;;
                 *)
                     version="—" ;;
             esac
@@ -616,7 +691,7 @@ print_installation_summary() {
         printf "%-20s %-50s %s\n" "$tool" "${location:0:50}" "$version"
     done
 
-    # Custom binaries from ~/.local/bin
+    # Custom binaries from ${LOCAL_BIN_DIR}
     if [ -d "${LOCAL_BIN_DIR}" ]; then
         local custom_bins
         custom_bins=$(ls -1 "${LOCAL_BIN_DIR}" 2>/dev/null | tr '\n' ' ')

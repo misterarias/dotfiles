@@ -2,6 +2,10 @@
 # vi: ft=sh ts=2 sw=2
 # shellcheck source=/dev/null
 
+if [ ! -z "$DISTROBOX_ENTER_PATH" ]; then
+    return
+fi
+
 # Set default shell mode to VIM, fuck emacs
 set -o vi
 #set -o emacs  # sorry pal

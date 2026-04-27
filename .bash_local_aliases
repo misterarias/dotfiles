@@ -28,6 +28,10 @@ red() {
   echo -e "${REDCOLOR_BOLD}$*${ENDCOLOR}"
 }
 
+orange() {
+  echo -e "\033[38;5;214m$*\033[0m"
+}
+
 # BSD ls colors
 export LSCOLORS=Ehfxcxdxbxegedabagacad
 
@@ -802,7 +806,7 @@ enable.fzf() {
 
   # shellcheck disable=2317
   __list_repos() {
-    fd  --maxdepth 2 --min-depth 2  . "$_REPO_AUTOCOMPLETE_BASE_DIR/"
+    fd  --type d --maxdepth "${_REPO_DEPTH:-2}" --min-depth 2  . "$_REPO_AUTOCOMPLETE_BASE_DIR/"
   }
 
   # Automagically autocomplete repo names and 'cd' into them. Needs a proper base repo dir. Depends on fzf and fd
