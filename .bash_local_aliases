@@ -96,7 +96,7 @@ enable.pyenv() {
 }
 
 enable.sdkman() {
-[ ! -d "$HOME/.sdkman" ] && echo "SDKMAN not installed in your system" && return
+    [ ! -d "$HOME/.sdkman" ] && echo "SDKMAN not installed in your system" && return
 
   # shellcheck disable=2317
   _lazyload_sdk() {
@@ -165,7 +165,7 @@ error() { red "[ERROR] $*" ; }
 # 'Darwin' for Mac, 'Linux' or similar elsewhere
 _UNAME="$(uname)"
 is.mac() { [ "${_UNAME}" == "Darwin" ] ; }
-is.bazzite() { [ "${_UNAME}" == "Linux" ] && grep -q -i 'bazzite' /etc/fedora-release ; }
+is.bazzite() { [ "${_UNAME}" == "Linux" ] && [ -f /etc/fedora-release ] && grep -q -i 'bazzite' /etc/fedora-release ; }
 is.debian() { [ "${_UNAME}" == "Linux" ] && [ -f /etc/debian_version ] ; }
 is.arch() { [ "${_UNAME}" == "Linux" ] && [ -f /etc/arch-release ] ; }
 
@@ -912,21 +912,4 @@ _load_git_completion() {
   _git_completion_loaded=1
   [ -f ~/.git-completion.bash ] && __source ~/.git-completion.bash
 }
-
-# Wrap git command to load completion on first use
-_git_with_completion() {
-  _load_git_completion
-  unset -f _git_with_completion  # Remove wrapper after first use
-  unalias git
-  complete -F __git_wrap__git_main git  # Re-enable completion
-  command git "$@"
-}
-
-# Only load git completion if in a git repo or after first git command
-if git rev-parse --git-dir >/dev/null 2>&1; then
-  _load_git_completion
-else
-  # Defer loading until first git command
-  alias git='_git_with_completion'
-fi
-
+_load_git_completion

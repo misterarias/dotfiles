@@ -36,9 +36,11 @@ declare -a TOOLS=(
     "git"
     "vim"
     "python3"
+    "xclip"
     "uv"
     "fzf"
     "fd"
+    "sdkman"
     "bat"
     "curl"
     "direnv"
@@ -119,22 +121,55 @@ configure_awscli() {
     return 0
 }
 
-install_vagrant() {
-    if ! command -v vagrant >/dev/null 2>&1 ; then
-        if [ ! -f ~/.config/distrobox/distrobox.ini ]; then
-            mkdir -p ~/.config/distrobox
-            cat > ~/.config/distrobox/distrobox.ini <<'EOL'
-[devops]
-image = fedora:41
-EOL
+install_zip() {
+    if ! command -v zip >/dev/null 2>&1 ; then
+        if is.mac || is.bazzite ; then
+            brew install zip
+        elif is.debian ; then
+            sudo apt install -y zip
+        elif is.arch ; then
+            sudo pacman -S --noconfirm zip
+        else
+            error "Don't know how to install zip"
+            return 1
         fi
-        distrobox assemble create --file ~/.config/distrobox/distrobox.ini
-        distrobox enter devops -- sudo dnf install -y vagrant vagrant-libvirt libvirt
-        distrobox enter devops -- sudo systemctl enable --now libvirtd
-        distrobox enter devops -- vagrant plugin install vagrant-libvirt
-        distrobox enter devops -- distrobox-export --bin /usr/bin/vagrant --export-path "$LOCAL_BIN_DIR"
+    fi
+
+    if ! command -v zip >/dev/null 2>&1 ; then
+        error "ip installation failed"
+        return 1
     fi
 }
+
+install_sdkman() {
+    if ! command -v sdk >/dev/null 2>&1 ; then
+        install_zip
+        curl -s "https://get.sdkman.io" | bash
+    fi
+}
+configure_sdkman() {
+    return 0
+}
+
+install_vagrant() {
+    if command -v vagrant >/dev/null 2>&1 ; then
+        return
+    elif is.debian ; then
+        sudo apt install -y vagrant
+    elif is.arch ; then
+        sudo pacman -S --noconfirm vagrant
+    else
+        error "Don't know how to install 'vagrant'"
+        return 1
+    fi
+
+    if ! command -v vagrant >/dev/null 2>&1 ; then
+        error "vagrant installation failed"
+        return 1
+    fi
+}
+
+
 configure_vagrant() {
     return 0
 }
@@ -538,6 +573,7 @@ generic_tool_installer() {
     local tool_name="$1"
 
     if command -v "$tool_name" >/dev/null 2>&1 ; then
+        green "${tool_name} is already installed, skipping installation."
         return
     fi
     orange "Trying to install ${tool_name}..."
@@ -566,9 +602,10 @@ install_all_tools() {
         configure_fn="configure_${tool}"
 
         if declare -F "${install_fn}" >/dev/null 2>&1 ; then
+            green "Installing ${tool}..."
             "${install_fn}"
         else
-            genric_tool_installer "$tool"
+            generic_tool_installer "$tool"
         fi
 
         if declare -F "${configure_fn}" >/dev/null 2>&1 ; then
