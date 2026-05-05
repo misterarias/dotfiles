@@ -875,9 +875,6 @@ export PSQL_EDITOR='vim -c"set syntax=sql"'
 # Edit ~/.ssh/config
 alias ssh.edit='vim ~/.ssh/config'
 
-# Private stuff, depends on laptop, never to be shared or versioned
-[ -f ~/.bash_private_vars ] && __source ~/.bash_private_vars || true
-
 # Add this AFTER any prompt-manipulating extensions: https://direnv.net/docs/hook.html
 # Optimized direnv hook - only runs on directory change
 if command -v direnv > /dev/null ; then
@@ -908,7 +905,6 @@ elif is.bazzite ; then
   __source "${HOMEBREW_PREFIX}/etc/bash_completion"
 fi
 
-# git autocompletion - lazy loaded on first use
 _git_completion_loaded=0
 _load_git_completion() {
   [ "$_git_completion_loaded" -eq 1 ] && return
@@ -916,3 +912,6 @@ _load_git_completion() {
   [ -f ~/.git-completion.bash ] && __source ~/.git-completion.bash
 }
 _load_git_completion
+
+# Private stuff, depends on laptop, never to be shared or versioned
+[ -f ~/.bash_private_vars ] && __source ~/.bash_private_vars || true
