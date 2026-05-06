@@ -7,17 +7,15 @@
 # by means of the 'my_commands' help function (defined in ~/.bashrc)
 
 # Use ANSI escape codes directly (faster, no subshells)
-BOLD='\033[1m'
-BLUECOLOR='\033[34m'
-REDCOLOR='\033[31m'
-GREENCOLOR='\033[32m'
 BLUECOLOR_BOLD='\033[1;34m'
 REDCOLOR_BOLD='\033[1;31m'
 GREENCOLOR_BOLD='\033[1;32m'
 ENDCOLOR='\033[0m'
 
 green() {
-  echo -e "${GREENCOLOR_BOLD}$*${ENDCOLOR}"
+  # add a positive symbol before message, to make it more visually identifiable as a success message
+  message="> $*"
+  echo -e "${GREENCOLOR_BOLD}${message}${ENDCOLOR}"
 }
 
 blue() {
@@ -719,7 +717,7 @@ df.load() {
   ${ipython_bin} -i -c "$ipython_cmd"
 }
 
-# shellcheck disable=2317
+# shellcheck disable=2317,2329
 enable.fzf() {
   export PATH="$HOME/.fzf/bin:$PATH"
   [ -f ~/.fzf.bash ] && __source ~/.fzf.bash
@@ -743,7 +741,6 @@ enable.fzf() {
   export FZF_DEFAULT_OPTS="${FZF_OPTS} ${FZF_COLOR} ${FZF_BORDER}"
 
   export FZF_DEFAULT_COMMAND="fd --type f  --color=auto -H"
-  # shellcheck disable=2317
   __FZF_PREVIEW_COMMAND() {
     fzf $FZF_DEFAULT_OPTS --preview 'fzf-preview.sh {}'
     #fzf --style default  --preview 'fzf-preview.sh {}' --bind 'focus:transform-header:file --brief {}'
@@ -820,7 +817,6 @@ enable.fzf() {
 
     repo="$(__list_repos | grep -i "${regex}" | __FZF_PREVIEW_COMMAND)"
     [ -z "${repo}" ] && error "No results" && return
-    #repo="$(__list_repos | grep -i "${regex}" | fzf --preview 'fzf-preview.sh {}/README.md')"
     if [ -z "${repo}" ] ; then error "No results" ; else cd "${repo}" ; fi
   }
 

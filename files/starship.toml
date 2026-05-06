@@ -1,50 +1,48 @@
-# Get editor completions based on the config schema
 "$schema" = 'https://starship.rs/config-schema.json'
 
-format = """
-$time$hostname$directory$git_branch$git_status\
-$rust$python$golang$nodejs$custom\
-$battery\
-$line_break\
-$status$shell$cmd_duration
+format = """\
+$directory$git_branch$git_status\
+$rust$python$golang\
+$fill\
+$cmd_duration$battery$time\
+$status
 $character
 """
 
 add_newline = true
 
+[fill]
+symbol = " "
+
 [line_break]
 disabled = false
-
 
 [character]
 success_symbol = "[❯](bold green)"
 error_symbol = "[❯](bold red)"
 vimcmd_symbol = "[❮](bold green)"
 
-
 [time]
 disabled = false
 time_format = "%H:%M:%S.%3f"
-style = "fg:#e0e9cb bg:#0d1117"
-format = '[$time]($style)'
+style = "bold fg:#e0e9cb"
+format = '[ $time ]($style)'
 
 [hostname]
 disabled = false
-ssh_only = false
-style = "fg:#a0a9cb bg:#11151c"
+ssh_only = true
+style = "fg:#a0a9cb"
 format = '[ $hostname ]($style)'
-aliases = {"LMES-JLY4LRQ7FK" = "McBook"}
 
 [directory]
-style = "fg:#e3e5e5 bg:#161b22"
+style = "fg:#e3e5e5"
 format = '[ $path ]($style)'
-truncation_length = 3
+truncation_length = 4
 truncation_symbol = "…/"
 
 [git_branch]
 symbol = ""
-style = "fg:#a0a9cb bg:#1c2230"
-# format = '[ $symbol $branch ]($style)'
+style = "fg:#a0a9cb"
 format = "[ $symbol $branch(:$remote_branch) ]($style) "
 
 [git_status]
@@ -62,18 +60,18 @@ renamed = "»"
 deleted = "✘"
 
 [rust]
-symbol = ""
-style = "fg:#769ff0 bg:#202736"
+symbol = ""
+style = "fg:#769ff0"
 format = '[ $symbol $version ]($style)'
 
 [python]
 symbol = "🐍"
-style = "fg:#769ff0 bg:#202736"
+style = "fg:#769ff0"
 format = '[ $symbol$version ]($style)'
 
 [golang]
 symbol = "Go"
-style = "fg:#769ff0 bg:#202736"
+style = "fg:#769ff0"
 format = '[ $symbol $version ]($style)'
 
 [nodejs]
@@ -81,13 +79,19 @@ disabled = true
 
 [battery]
 disabled = false
-full_symbol = "Full"
-charging_symbol = "Charging"
-discharging_symbol = "Battery"
-format = '[ $symbol $percentage ]($style)'
+full_symbol = "●"
+charging_symbol = "↑"
+discharging_symbol = "↓"
+format = '[$symbol$percentage ]($style)'
 [[battery.display]]
 threshold = 30
-style = "fg:#ff6b6b bg:#11151c"
+style = "fg:#ff6b6b"
+[[battery.display]]
+threshold = 60
+style = "fg:#f0a500"
+[[battery.display]]
+threshold = 90
+style = "fg:#a0a9cb"
 
 [status]
 style = "fg:#ff6b6b"
@@ -100,7 +104,7 @@ disabled = true
 disabled = true
 
 [cmd_duration]
-min_time = 2_000
+min_time = 1_000
 format = "[$duration](bold yellow) "
-show_milliseconds = false
+show_milliseconds = true
 
