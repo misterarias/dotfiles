@@ -84,23 +84,34 @@ dotfiles_link() {
 }
 
 install_terraform() {
-    # tofuenv — manages OpenTofu versions (like tfenv for Terraform)
     if ! command -v tofuenv >/dev/null 2>&1 ; then
-        brew install tofuenv || true
+        if is.mac || is.bazzite ; then
+            brew install tfenv
+        elif is.debian ; then
+            sudo apt install -y tfenv
+        elif is.arch ; then
+            git clone --depth=1 https://github.com/tfutils/tfenv.git ~/.tfenv
+        else
+            error "Don't know how to install tfenv"
+            return 1
+        fi
+        ln -s ~/.tfenv/bin/tfenv "${LOCAL_BIN_DIR}/tfenv"
+        tfenv use latest
+        ln -s ~/.tfenv/bin/terraform "${LOCAL_BIN_DIR}/terraform"
+
     fi
-    if ! command -v tofu >/dev/null 2>&1 ; then
-        tofuenv install latest && tofuenv use latest
+    if ! command -v terraform >/dev/null 2>&1 ; then
+        tfenv use latest
     fi
 }
 configure_terraform() {
-    ln -sf "$HOME/.tofuenv/bin/tofuenv" "$LOCAL_BIN_DIR/tfenv"
-    ln -sf "$HOME/.tofuenv/bin/tofu"    "$LOCAL_BIN_DIR/terraform"
     return 0
 }
 
 install_ansible() {
     # Ansible
     if ! command -v ansible >/dev/null 2>&1 ; then
+        install_python3
         pip3 install --user ansible ansible-lint
     fi
 }
@@ -142,10 +153,11 @@ install_zip() {
 }
 
 install_sdkman() {
-    if ! command -v sdk >/dev/null 2>&1 ; then
-        install_zip
-        curl -s "https://get.sdkman.io" | bash
+    if [ -d "${HOME}/.sdkman" ] ; then
+        return
     fi
+    install_zip
+    curl -s "https://get.sdkman.io" | bash
 }
 configure_sdkman() {
     return 0
@@ -393,7 +405,7 @@ install_autocompletion() {
     elif is.debian ; then
         [[ -r "/etc/profile.d/bash_completion.sh" ]] ||  sudo apt install  bash-completion
     elif is.arch ; then
-        sudo pacman -S --noconfirm bash-completion
+        [ ! -d /etc/bash_completion.d ] && sudo pacman -S --noconfirm --needed bash-completion
     else
         error "Don't know how to install bash completion"
     fi
@@ -403,6 +415,10 @@ install_autocompletion() {
 }
 
 install_direnv() {
+    if command -v direnv >/dev/null 2>&1 ; then
+        return
+    fi
+
     if is.mac ;then
         curl -sfL https://direnv.net/install.sh | bash
     elif is.bazzite ; then
@@ -438,7 +454,7 @@ install_python3() {
     elif is.debian ; then
         sudo apt install -y python3 pip
     elif is.arch ; then
-        sudo pacman -S --noconfirm python3 python-pip
+        sudo pacman -S --noconfirm --needed python3 python-pip
     else
         error "Don't know how to install python3 and pip3"
         return 1
@@ -602,7 +618,7 @@ install_all_tools() {
         configure_fn="configure_${tool}"
 
         if declare -F "${install_fn}" >/dev/null 2>&1 ; then
-            green "Installing ${tool}..."
+            blue "Installing ${tool}..."
             "${install_fn}"
         else
             generic_tool_installer "$tool"
@@ -708,6 +724,8 @@ print_installation_summary() {
                     version=$("$tool" --version 2>&1 | awk '{print $NF}' || echo "—") ;;
                 vim|uv|fzf|fd|bat|direnv|starship|imgcat|pyenv)
                     version=$("$tool" --version 2>&1 | head -n1 | sed 's/^[^0-9]*//; s/[^0-9.].*$//' || echo "—") ;;
+                sdkman)
+                    version=$(sdk version 2>&1 | grep script | awk '{print $2}' || echo "—") ;;
                 nvm)
                     version=$(nvm --version 2>&1 || echo "—") ;;
                 ansible)
@@ -715,7 +733,7 @@ print_installation_summary() {
                 awscli)
                     version=$(aws --version 2>&1 | awk '{print $1}' | cut -d'/' -f2 || echo "—") ;;
                 terraform)
-                    version=$(tofu --version 2>&1 | head -n1 | awk '{print $2}' || echo "—") ;;
+                    version=$(terraform --version 2>&1 | head -n1 | awk '{print $2}' || echo "—") ;;
                 vagrant)
                     version=$(vagrant --version 2>&1 | awk '{print $2}' || echo "—") ;;
                 *)
