@@ -1,8 +1,9 @@
 "$schema" = 'https://starship.rs/config-schema.json'
 
 format = """\
-$directory$git_branch$git_status\
+$directory\
 $rust$python$golang\
+$git_branch$git_status\
 $fill\
 $cmd_duration$battery$time\
 $status
@@ -24,8 +25,8 @@ vimcmd_symbol = "[❮](bold green)"
 
 [time]
 disabled = false
-time_format = "%H:%M:%S.%3f"
-style = "bold fg:#e0e9cb"
+time_format = "%H:%M:%S"
+style = "fg:#353A35"
 format = '[ $time ]($style)'
 
 [hostname]
@@ -67,7 +68,8 @@ format = '[ $symbol $version ]($style)'
 [python]
 symbol = "🐍"
 style = "fg:#769ff0"
-format = '[ $symbol$version ]($style)'
+format = '[ $symbol ]($style)'
+#format = '[ $symbol$version ]($style)'
 
 [golang]
 symbol = "Go"
@@ -104,7 +106,8 @@ disabled = true
 disabled = true
 
 [cmd_duration]
-min_time = 1_000
+disabled = true
+min_time = 10_000
 format = "[$duration](bold yellow) "
 show_milliseconds = true
 
