@@ -316,7 +316,7 @@ hi Search ctermbg=DarkYellow ctermfg=Yellow
 let g:ansible_unindent_after_newline=1
 
 " CtrlP custom settings
-"let g:ctrlp_cmd = 'CtrlP'
+let g:ctrlp_cmd = 'CtrlP'
 let g:ctrlp_mruf_case_sensitive = 1
 let g:ctrlp_working_path_mode = 'ra'
 let g:ctrlp_show_hidden = 1
@@ -469,3 +469,8 @@ endfunction
 
 " Map ga to GoToAction
 map ga :call GoToAction()<CR>
+
+" transparency
+highlight Normal guibg=NONE ctermbg=NONE
+highlight NonText guibg=NONE ctermbg=NONE
+autocmd ColorScheme * highlight Normal guibg=NONE ctermbg=NONE
