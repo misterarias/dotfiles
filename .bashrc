@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # vi: ft=sh ts=2 sw=2
 # shellcheck source=/dev/null
+#
 # Auto-start/attach tmux, but only for interactive local terminals
 if command -v tmux &> /dev/null \
    && [ -z "$TMUX" ] \
