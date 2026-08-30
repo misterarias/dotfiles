@@ -33,25 +33,26 @@ TERMINATOR_CONFIG="${CONFIG_DIR}/terminator/config"
 
 # Global tool list - source of truth for all managed software
 declare -a TOOLS=(
-    "git"
-    "vim"
-    "python3"
-    "xclip"
-    "uv"
-    "fzf"
-    "fd"
-    "sdkman"
+    "ansible"
+    "autocompletion"
+    "awscli"
     "bat"
     "curl"
     "direnv"
-    "starship"
-    "pyenv"
+    "fd"
+    "fzf"
+    "git"
     "nvm"
-    "autocompletion"
-    "awscli"
-    "ansible"
+    "pyenv"
+    "python3"
+    "sdkman"
+    "starship"
     "terraform"
+    "tmux"
+    "uv"
     "vagrant"
+    "vim"
+    "xclip"
 )
 
 # Initialize backup folder
@@ -186,7 +187,30 @@ configure_vagrant() {
     return 0
 }
 
+install_tmux() {
+    if command -v tmux >/dev/null 2>&1 ; then
+        return
+    elif is.mac ; then
+        brew install tmux
+    elif is.debian ; then
+        sudo apt install -y tmux
+    elif is.arch ; then
+        sudo pacman -S --noconfirm tmux
+    else
+        error "Don't know how to install 'tmux'"
+        return 1
+    fi
 
+    if ! command -v tmux >/dev/null 2>&1 ; then
+        error "tmux installation failed"
+        return 1
+    fi
+}
+
+configure_tmux() {
+    green "Setting up tmux defaults..."
+    dotfiles_link .tmux.conf "${HOME}/.tmux.conf"
+}
 
 install_git() {
     if command -v git >/dev/null 2>&1 ; then

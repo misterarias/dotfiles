@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
 # vi: ft=sh ts=2 sw=2
 # shellcheck source=/dev/null
-
-if [ ! -z "$DISTROBOX_ENTER_PATH" ]; then
-    return
+# Auto-start/attach tmux, but only for interactive local terminals
+if command -v tmux &> /dev/null \
+   && [ -z "$TMUX" ] \
+   && [ -n "$PS1" ] \
+   && [[ ! "$TERM" =~ screen ]] \
+   && [[ ! "$TERM" =~ tmux ]]; then
+    exec tmux new-session -A -s main
 fi
 
 # Set default shell mode to VIM, fuck emacs
